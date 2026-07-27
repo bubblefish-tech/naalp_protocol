@@ -14,5 +14,5 @@ presents one application surface for each of N-PAMP's twenty channels.
 - Conformance: `harness/`, independent oracles in `tools/`, corpora in `vectors/`
 - License: Apache-2.0 (`LICENSE`)
 
-Substrate: N-PAMP™ `draft-bubblefish-npamp-01`.
+BubbleFish Substrate™: N-PAMP™ `draft-bubblefish-npamp-01`.
 Copyright (c) 2026 BubbleFish Technologies™, Inc.
