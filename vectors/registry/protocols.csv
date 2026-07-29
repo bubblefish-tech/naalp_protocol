@@ -1,0 +1,5 @@
+protocol_id,name,class,range,reference
+0x01,MCP,JSONRPC,standards,design §13.4
+0x02,A2A,JSONRPC,standards,design §13.4
+0x03,HTTP,HTTP,standards,design §13.4
+0x04,WebSocket,STREAM,standards,design §13.4

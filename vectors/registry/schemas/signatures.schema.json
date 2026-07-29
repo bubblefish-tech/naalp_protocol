@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://naalp.bubblefish.sh/registries/signatures.schema.json",
+  "title": "N-AALP Signature (COSE Algorithm) Registry",
+  "description": "Schema for the JSON representation of vectors/registry/signatures.csv: an array of row objects, one per registered or reserved object-signature algorithm. The CI check converts the CSV to this array (header row -> object keys) and coerces the declared-integer columns (cose_alg, nist_level) from their CSV string form to int before validating. cose_alg is the COSE algorithm identifier (a signed integer) for a 'registered' algorithm, or empty for a 'reserved' one that carries no code point yet (e.g. SLH-DSA). nist_level is the NIST post-quantum security category: 0 for the classical Ed25519 hybrid leg, otherwise 1-5. Wrong types, missing columns, out-of-set role/status, out-of-range nist_level, and an empty reference are caught here; DUPLICATE algorithm names are caught by the companion scripts/validate_registries.py.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["name", "cose_alg", "nist_level", "role", "status", "reference"],
+    "properties": {
+      "name": { "type": "string", "minLength": 1, "description": "Signature algorithm name; MUST be non-empty (e.g. ML-DSA-65)." },
+      "cose_alg": { "oneOf": [ { "type": "integer" }, { "type": "string", "maxLength": 0 } ], "description": "COSE algorithm identifier (signed integer) for a registered algorithm; empty for a reserved algorithm that carries no code point." },
+      "nist_level": { "type": "integer", "minimum": 0, "maximum": 5, "description": "NIST PQ security category: 0 for the classical hybrid leg, 1-5 otherwise." },
+      "role": { "type": "string", "enum": ["pq-signature", "classical-hybrid-leg"], "description": "Role of the algorithm in the object-signing profile." },
+      "status": { "type": "string", "enum": ["registered", "reserved"], "description": "'registered' (has a code point and vectors) or 'reserved' (name held, no code point yet)." },
+      "reference": { "type": "string", "minLength": 1, "description": "Normative reference (e.g. RFC9964, RFC9864, FIPS205); MUST be non-empty." }
+    },
+    "if": { "properties": { "status": { "const": "registered" } } },
+    "then": { "properties": { "cose_alg": { "type": "integer" } } },
+    "else": { "properties": { "cose_alg": { "type": "string", "maxLength": 0 } } }
+  }
+}

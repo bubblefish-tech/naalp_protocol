@@ -1,0 +1,111 @@
+# Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
+# N-AALP conformance CI — the two-implementation parity + CDDL + registry gates (C14, T14).
+# Runs the same harness a developer runs locally (harness/run.sh).
+name: conformance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Set up Ruby (for the CDDL tool)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+
+      - name: Install the Bormann CDDL tool
+        run: gem install cddl
+
+      - name: Install the Python SDK adapter deps (dilithium-py + cryptography)
+        run: python -m pip install -r harness/adapters/python/requirements.txt
+
+      - name: Verify integrity pins (PIN.json + MANIFEST.sha256)
+        run: python scripts/verify_pins.py
+
+      - name: Run the N-AALP conformance harness
+        env:
+          GOWORK: 'off'
+          CGO_ENABLED: '1'
+        run: bash harness/run.sh
+
+  # A separate leg makes the byte-parity claim visible on its own: Go and Rust MUST produce
+  # byte-identical COSE_Sign1 and object-envelope bytes for the same key + payload (R-16.2).
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Go == Rust byte parity + vector drift
+        env:
+          GOWORK: 'off'
+          CGO_ENABLED: '1'
+        run: bash scripts/verify.sh
+
+  # Cross-language conformance (#23): the shared op-replay corpus is driven through every reference
+  # SDK adapter with the naalp-conform runner, and deterministic ML-DSA COSE_Sign1 is asserted
+  # byte-identical across languages. Extended to the eight additional-language adapters as they
+  # land under task #20; a language with no deterministic ML-DSA library grades its pure ops and
+  # tracks the crypto leg as an honest SKIP (never a false green).
+  cross-language:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: sodium, intl
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Install the Python SDK adapter deps (dilithium-py + cryptography)
+        run: python -m pip install -r harness/adapters/python/requirements.txt
+      # cross_language.sh grades every adapter whose toolchain is present (go, rust, python,
+      # typescript, java, ruby, php here) and asserts deterministic ML-DSA byte-parity across the
+      # crypto-capable ones. Ruby skips ML-DSA on the runner's OpenSSL 3.0 (honest, not a failure).
+      - name: Build adapters, grade the corpus, and assert cross-language ML-DSA parity
+        env:
+          GOWORK: 'off'
+          CGO_ENABLED: '1'
+        run: bash harness/cross_language.sh

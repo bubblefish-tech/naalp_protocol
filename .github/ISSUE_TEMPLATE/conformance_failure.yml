@@ -1,0 +1,136 @@
+# Issue form: an implementation fails a conformance vector.
+#
+# Auto-applies `conformance` (.github/labels.yml): the resolution is either an
+# implementation bug (no spec effect) or a defective vector/oracle — and a corpus
+# change is `design`-level per CONTRIBUTING.md (consensus + a numbered ADR).
+# `needs-discussion` puts the report in the triage queue until the failing side
+# (implementation vs. vector) is established.
+name: "Conformance failure"
+description: "A reference SDK or your own implementation fails a case from the N-AALP conformance corpus (naalp-conform)."
+title: "[conformance]: "
+labels: ["conformance", "needs-discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when `naalp-conform` (see `harness/INSTRUCTIONS.md`) reports a failure.
+        Every case carries a `requirement` field citing the spec clause it checks —
+        please include it. Expected values come from the independent oracles in `tools/`;
+        if you believe the vector is wrong, say so and cite the RFC/FIPS/NIST anchor.
+  - type: dropdown
+    id: language
+    attributes:
+      label: Implementation language
+      options:
+        - "C#"
+        - "Go"
+        - "Java"
+        - "Kotlin"
+        - "PHP"
+        - "Python"
+        - "Ruby"
+        - "Rust"
+        - "Swift"
+        - "TypeScript"
+        - "other (state it under Implementation)"
+    validations:
+      required: true
+  - type: input
+    id: implementation
+    attributes:
+      label: Implementation
+      description: "Which implementation fails: an in-tree reference (impl/<lang>) at a given commit, or your own (name + version)."
+      placeholder: "e.g. impl/go @ <commit>, or acme-naalp 0.3.1"
+    validations:
+      required: true
+  - type: input
+    id: vector-id
+    attributes:
+      label: Case identifier
+      description: "The failing case: op + tcId, as printed in the runner FAILURES list."
+      placeholder: "e.g. op=cose.tbs tcId=2"
+    validations:
+      required: true
+  - type: dropdown
+    id: operation
+    attributes:
+      label: Operation
+      description: "The runner op (harness/INSTRUCTIONS.md)."
+      options:
+        - "sha384"
+        - "cbor.encode"
+        - "cbor.decode"
+        - "content.id"
+        - "cose.tbs"
+        - "mldsa.keygen"
+        - "ed25519.sign"
+        - "cose.sign1"
+        - "cose.verify1"
+        - "signerid"
+        - "nfc.check"
+        - "effect.normalize"
+        - "effect.authorize"
+        - "effect.safety_label"
+        - "approval.body / approval.id"
+        - "ledger.entry"
+        - "receipt.body / receipt.head"
+        - "causal.verify"
+        - "delivery.update"
+        - "stream.digest / stream.open / stream.commit / stream.checkpoint"
+        - "transport.emit"
+        - "carriage.body"
+        - "channels.lookup / channels.effect_check"
+        - "federation.reconcile / federation.record"
+        - "other"
+    validations:
+      required: true
+  - type: input
+    id: corpus-version
+    attributes:
+      label: Corpus / spec revision
+      description: "As printed by the runner header (algorithm + specRevision)."
+      placeholder: "e.g. N-AALP draft-bubblefish-naalp-00"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected (from the case)
+      description: "The case's `expected` object — or, for `result: invalid` cases, the MUST-reject rule the implementation failed to enforce."
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual (from the implementation)
+      description: "What the implementation produced (out, error, or wrongly-accepted input)."
+    validations:
+      required: true
+  - type: textarea
+    id: runner-output
+    attributes:
+      label: Runner output
+      description: "The FAILURES lines from naalp-conform, including the requirement citation."
+      render: shell
+    validations:
+      required: false
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: "OS, architecture, and toolchain version(s)."
+      placeholder: "e.g. ubuntu 24.04 x86_64, go 1.24"
+    validations:
+      required: false
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight
+      options:
+        - label: "I ran against an unmodified corpus (the SHA-256 pins verify: MANIFEST.sha256 / scripts/verify-pins)."
+          required: true
+        - label: "The failure reproduces at the current head of this repository."
+          required: true
+        - label: "I read the case's `requirement` citation before concluding which side is wrong."
+          required: false

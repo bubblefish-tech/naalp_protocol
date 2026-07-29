@@ -1,0 +1,45 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 0,
+  "name": "Control",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "Hello",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "Bye",
+      "effect": 1,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "Ack",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 3,
+      "name": "Error",
+      "effect": 0,
+      "variable": false
+    }
+  ],
+  "states": [
+    "open",
+    "closing"
+  ],
+  "transitions": [
+    {
+      "from": "open",
+      "to": "closing"
+    }
+  ],
+  "errors": [
+    "UnknownKind",
+    "ProfileMismatch"
+  ]
+}

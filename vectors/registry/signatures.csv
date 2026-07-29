@@ -1,0 +1,5 @@
+name,cose_alg,nist_level,role,status,reference
+ML-DSA-65,-49,3,pq-signature,registered,RFC9964
+ML-DSA-87,-50,5,pq-signature,registered,RFC9964
+Ed25519,-19,0,classical-hybrid-leg,registered,RFC9864
+SLH-DSA,,5,pq-signature,reserved,FIPS205

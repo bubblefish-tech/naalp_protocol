@@ -1,0 +1,44 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 7,
+  "name": "Settlement",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "SettleIntent",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "SettleReceipt",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "SettleReject",
+      "effect": 1,
+      "variable": false
+    }
+  ],
+  "states": [
+    "intent",
+    "receipt",
+    "reject"
+  ],
+  "transitions": [
+    {
+      "from": "intent",
+      "to": "receipt"
+    },
+    {
+      "from": "intent",
+      "to": "reject"
+    }
+  ],
+  "errors": [
+    "ValueMismatch",
+    "SettleExpired"
+  ]
+}

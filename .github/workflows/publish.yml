@@ -1,0 +1,225 @@
+# Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
+#
+# Per-language publish pipeline for the N-AALP reference SDKs.
+#
+# Each job ALWAYS runs a pack / dry-run / validate step (the CI proof that the manifest is
+# well-formed and the package assembles), then a PUBLISH step GATED on a repo secret being present.
+# The gating idiom: map the registry secret to a JOB-level `env` (job env may read `secrets`), and
+# guard the publish step with `if: ${{ env.<SECRET> != '' }}` (a step `if` may read `env` but NOT
+# `secrets`). With no secret configured the publish step is skipped and the job still passes on the
+# dry-run — so this workflow is complete up to the credential boundary. The ACTUAL publish is
+# BLOCKED-EXTERNAL: it requires the operator to add each registry's token as a repo secret. Nothing
+# here fabricates a publish.
+#
+# Go and Swift are intentionally absent: both are consumed from source via a VCS tag (Go modules /
+# the Go proxy; Swift Package Manager) and have no registry-push step.
+#
+# ACTION PIN PROVENANCE: the pins below (actions/checkout@v4, actions/setup-python@v5,
+# actions/setup-node@v4, actions/setup-java@v4, actions/setup-dotnet@v4, ruby/setup-ruby@v1,
+# shivammathur/setup-php@v2, dtolnay/rust-toolchain@stable) match the majors this repo's
+# .github/workflows/conformance.yml already uses. gradle/actions/setup-gradle@v4 is the one pin not
+# also used by conformance.yml. The operator MUST confirm each major (and preferably pin to a commit
+# SHA) before enabling publish; all steps are inert until a registry secret exists, so an unverified
+# pin cannot push.
+
+name: publish
+
+# Publishing is a deliberate, tagged act — never on every push. A GitHub Release (or a manual
+# dispatch) triggers it; the per-secret gates then decide which registries actually receive a push.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # ---- Rust -> crates.io -------------------------------------------------------------------------
+  rust:
+    name: rust (crates.io)
+    runs-on: ubuntu-latest
+    env:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Package (dry-run — lists the crate contents, always runs)
+        run: cargo package --list --manifest-path impl/rust/Cargo.toml
+      - name: Publish to crates.io (gated on CARGO_REGISTRY_TOKEN)
+        if: ${{ env.CARGO_REGISTRY_TOKEN != '' }}
+        run: cargo publish --manifest-path impl/rust/Cargo.toml
+
+  # ---- Python -> PyPI ----------------------------------------------------------------------------
+  python:
+    name: python (PyPI)
+    runs-on: ubuntu-latest
+    env:
+      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install build + twine
+        run: python -m pip install build twine
+      - name: Build sdist + wheel (dry-run, always runs)
+        run: python -m build impl/python
+      - name: Validate the built distributions
+        run: twine check impl/python/dist/*
+      - name: Publish to PyPI (gated on PYPI_API_TOKEN)
+        if: ${{ env.PYPI_API_TOKEN != '' }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload impl/python/dist/*
+
+  # ---- TypeScript -> npm -------------------------------------------------------------------------
+  typescript:
+    name: typescript (npm)
+    runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+      - name: Pack (dry-run, always runs)
+        working-directory: impl/typescript
+        run: npm pack --dry-run
+      - name: Publish to npm (gated on NPM_TOKEN)
+        if: ${{ env.NPM_TOKEN != '' }}
+        working-directory: impl/typescript
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
+
+  # ---- Java -> Maven Central ---------------------------------------------------------------------
+  java:
+    name: java (Maven Central)
+    runs-on: ubuntu-latest
+    env:
+      MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+      - name: Build + verify (dry-run — assembles the jar + sources jar, always runs)
+        run: mvn -B -ntp -f impl/java/pom.xml verify
+      - name: Deploy to Maven Central (gated on MAVEN_CENTRAL_TOKEN)
+        if: ${{ env.MAVEN_CENTRAL_TOKEN != '' }}
+        env:
+          # The pom's `release` profile reads these via the central-publishing + gpg plugins; the
+          # operator supplies the Central Portal token pair and the GPG signing key as secrets.
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+          MAVEN_GPG_KEY: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+        run: mvn -B -ntp -f impl/java/pom.xml -P release deploy
+
+  # ---- Kotlin -> Maven Central -------------------------------------------------------------------
+  kotlin:
+    name: kotlin (Maven Central)
+    runs-on: ubuntu-latest
+    env:
+      MAVEN_CENTRAL_TOKEN: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10"
+      - name: Build (dry-run — assembles the jar + sources + javadoc jars, always runs)
+        run: gradle -p impl/kotlin build
+      - name: Publish to Maven Central (gated on MAVEN_CENTRAL_TOKEN)
+        if: ${{ env.MAVEN_CENTRAL_TOKEN != '' }}
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_TOKEN }}
+          MAVEN_GPG_PRIVATE_KEY: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        run: gradle -p impl/kotlin publish
+
+  # ---- C# -> NuGet -------------------------------------------------------------------------------
+  csharp:
+    name: csharp (NuGet)
+    runs-on: ubuntu-latest
+    env:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Pack (dry-run — builds the .nupkg, always runs)
+        run: dotnet pack impl/csharp/Bubblefish.Naalp.csproj -c Release -o impl/csharp/nupkg
+      - name: Push to NuGet (gated on NUGET_API_KEY)
+        if: ${{ env.NUGET_API_KEY != '' }}
+        run: >-
+          dotnet nuget push "impl/csharp/nupkg/*.nupkg"
+          --api-key "$NUGET_API_KEY"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+  # ---- PHP -> Packagist --------------------------------------------------------------------------
+  # Packagist has no CLI push: a package is registered once in the UI, then a webhook (or the
+  # update-package API) tells Packagist to re-crawl the repo when a new tag lands. The publish step
+  # here is that API ping, gated on the Packagist credentials.
+  php:
+    name: php (Packagist)
+    runs-on: ubuntu-latest
+    env:
+      PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: sodium, intl
+          tools: composer
+      # Plain `composer validate` (not --strict): this manifest hardcodes `version` to stay aligned
+      # with the other SDK manifests (all pin 0.1.0), which --strict flags as a publish-time
+      # recommendation to omit. Plain validate still fails on real errors (bad JSON/license/schema).
+      - name: Validate composer.json (dry-run, always runs)
+        working-directory: impl/php
+        run: composer validate
+      - name: Notify Packagist to re-crawl (gated on PACKAGIST_TOKEN)
+        if: ${{ env.PACKAGIST_TOKEN != '' }}
+        env:
+          PACKAGIST_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
+        run: >-
+          curl -sf -XPOST -H "content-type:application/json"
+          "https://packagist.org/api/update-package?username=${PACKAGIST_USERNAME}&apiToken=${PACKAGIST_TOKEN}"
+          -d '{"repository":{"url":"https://github.com/bubblefish-tech/naalp_protocol"}}'
+
+  # ---- Ruby -> RubyGems --------------------------------------------------------------------------
+  ruby:
+    name: ruby (RubyGems)
+    runs-on: ubuntu-latest
+    env:
+      RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+      - name: Build gem (dry-run, always runs)
+        working-directory: impl/ruby
+        run: gem build naalp.gemspec
+      - name: Push to RubyGems (gated on RUBYGEMS_API_KEY)
+        if: ${{ env.RUBYGEMS_API_KEY != '' }}
+        working-directory: impl/ruby
+        env:
+          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+        run: gem push naalp-0.1.0.gem

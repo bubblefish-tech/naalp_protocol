@@ -1,0 +1,13 @@
+# Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
+# Documentation-site build dependencies for the N-AALP public reference.
+#
+# Renders the Markdown surface (Internet-Draft, spec overview/object-model/channels, the worked
+# example, registries, conformance, the ten SDK quickstarts, and design decisions) into a static
+# site with MkDocs + the Material theme, published to GitHub Pages by .github/workflows/docs.yml.
+# Versions pinned to exact releases so `mkdocs build --strict` is reproducible in CI.
+mkdocs==1.6.1
+mkdocs-material==9.7.6
+# same-dir lets docs_dir be '.' (the repo root, co-located with mkdocs.yml), which MkDocs
+# otherwise forbids — required because the canonical Markdown is scattered across the repo, not
+# gathered under a docs/ subtree.
+mkdocs-same-dir==0.1.5

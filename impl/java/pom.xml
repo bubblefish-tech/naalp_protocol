@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>sh.bubblefish</groupId>
+  <artifactId>naalp</artifactId>
+  <version>0.1.0</version>
+  <packaging>jar</packaging>
+
+  <name>N-AALP Java SDK</name>
+  <description>Reference SDK for N-AALP (Native Agentic Application Layer Protocol), draft-bubblefish-naalp-00: the full signed-object envelope plus deterministic CBOR, COSE_Sign1, post-quantum ML-DSA (FIPS 204), self-certifying identity, effects, spine records, the causal graph, and the twenty-channel registry.</description>
+  <url>https://github.com/bubblefish-tech/naalp_protocol</url>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <organization>
+    <name>BubbleFish Technologies, Inc.</name>
+    <url>https://bubblefish.sh</url>
+  </organization>
+
+  <developers>
+    <developer>
+      <id>ssammartano</id>
+      <name>Shawn Sammartano</name>
+      <email>naalp-editor@bubblefish.sh</email>
+      <organization>BubbleFish Technologies, Inc.</organization>
+      <organizationUrl>https://bubblefish.sh</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/bubblefish-tech/naalp_protocol.git</connection>
+    <developerConnection>scm:git:git@github.com:bubblefish-tech/naalp_protocol.git</developerConnection>
+    <url>https://github.com/bubblefish-tech/naalp_protocol</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>21</maven.compiler.release>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk18on</artifactId>
+      <version>1.85</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>3.3.1</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

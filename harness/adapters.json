@@ -1,0 +1,94 @@
+{
+  "note": "Language -> {build, launch, status, mldsa} table for the N-AALP conformance adapters. 'wired' adapters build and pass the corpus in CI now; 'planned' adapters + their SDKs are built and graded under task #20. 'mldsa' records the deterministic FIPS 204 (rnd=0) library the SDK uses, or 'to-verify' until researched this session (C4/E8). An SDK with no deterministic ML-DSA returns skipped for mldsa.keygen/cose.sign1/cose.verify1 and is graded on every pure op; the gap is tracked here, never green-washed.",
+  "schemaVersion": 1,
+  "runner": {
+    "build": "cd harness/runner && GOWORK=off go build -o naalp-conform ./",
+    "launch": "./harness/runner/naalp-conform run --testee \"<adapter launch>\"",
+    "consensus": "python tools/crypto_consensus.py <name>=<launch> [<name>=<launch> ...]"
+  },
+  "adapters": {
+    "go": {
+      "status": "wired",
+      "dir": "harness/adapters/go",
+      "build": "cd harness/adapters/go && GOWORK=off go build -o naalp-adapter-go ./",
+      "launch": "./harness/adapters/go/naalp-adapter-go",
+      "sdk": "impl/go",
+      "mldsa": "cloudflare/circl v1.6.4 (mldsa65/87 SignTo randomized=false)"
+    },
+    "rust": {
+      "status": "wired",
+      "dir": "harness/adapters/rust",
+      "build": "cd harness/adapters/rust && cargo build --release",
+      "launch": "./harness/adapters/rust/target/release/naalp-adapter-rust",
+      "sdk": "impl/rust",
+      "mldsa": "fips204 0.4 (ml_dsa_65/87 try_sign_with_seed(&[0;32]))"
+    },
+    "python": {
+      "status": "wired",
+      "dir": "harness/adapters/python",
+      "build": "python -m pip install -r harness/adapters/python/requirements.txt",
+      "launch": "python harness/adapters/python/adapter.py",
+      "sdk": "impl/python",
+      "mldsa": "dilithium-py 1.4.0 (ML_DSA_65/87 sign(..., deterministic=True) -> FIPS 204 rnd=0); verified byte-identical to Go(CIRCL)+Rust(fips204)"
+    },
+    "typescript": {
+      "status": "wired",
+      "dir": "harness/adapters/typescript",
+      "build": "cd impl/typescript && npm install; cd harness/adapters/typescript && npm install",
+      "launch": "node harness/adapters/typescript/adapter.mjs",
+      "sdk": "impl/typescript",
+      "mldsa": "@noble/post-quantum 0.6.1 (ml_dsa65/87 sign(msg,sk,{extraEntropy:false}) = FIPS 204 rnd=0); verified byte-identical to go/rust/python/java/ruby"
+    },
+    "csharp": {
+      "status": "wired",
+      "graded": "ci-only (no working .NET SDK on the dev box; authored + statically self-reviewed against the Python reference; graded in CI via setup-dotnet)",
+      "dir": "harness/adapters/csharp",
+      "build": "dotnet build -c Release harness/adapters/csharp/Adapter.csproj",
+      "launch": "dotnet harness/adapters/csharp/bin/Release/net8.0/naalp-adapter-csharp.dll",
+      "sdk": "impl/csharp",
+      "mldsa": "BouncyCastle.Cryptography 2.6.2 (MLDsaSigner deterministic:true = rnd=0; MLDsaPrivateKeyParameters.FromSeed matches NIST ACVP). full-crypto (graded in CI)"
+    },
+    "java": {
+      "status": "wired",
+      "dir": "harness/adapters/java",
+      "build": "curl -L -o harness/adapters/java/lib/bcprov-jdk18on-1.85.jar https://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk18on/1.85/bcprov-jdk18on-1.85.jar && javac -cp harness/adapters/java/lib/bcprov-jdk18on-1.85.jar -d harness/adapters/java/out impl/java/src/sh/bubblefish/naalp/*.java harness/adapters/java/Json.java harness/adapters/java/Adapter.java",
+      "launch": "java -cp harness/adapters/java/out;harness/adapters/java/lib/bcprov-jdk18on-1.85.jar sh.bubblefish.naalp.Adapter",
+      "sdk": "impl/java",
+      "mldsa": "BouncyCastle bcprov-jdk18on 1.85 (MLDSASigner init without ParametersWithRandom = FIPS 204 rnd=0; seed-only MLDSAPrivateKeyParameters keygen matches NIST ACVP); verified byte-identical"
+    },
+    "kotlin": {
+      "status": "wired",
+      "graded": "local",
+      "dir": "harness/adapters/kotlin",
+      "build": "curl -L -o harness/adapters/kotlin/lib/bcprov-jdk18on-1.85.jar https://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk18on/1.85/bcprov-jdk18on-1.85.jar && kotlinc -cp harness/adapters/kotlin/lib/bcprov-jdk18on-1.85.jar impl/kotlin/**/*.kt harness/adapters/kotlin/Adapter.kt -include-runtime -d harness/adapters/kotlin/naalp-adapter-kotlin.jar",
+      "launch": "java -cp harness/adapters/kotlin/naalp-adapter-kotlin.jar;harness/adapters/kotlin/lib/bcprov-jdk18on-1.85.jar sh.bubblefish.naalp.AdapterKt",
+      "sdk": "impl/kotlin",
+      "mldsa": "BouncyCastle bcprov-jdk18on 1.85 (JVM, same deterministic path as Java); verified byte-identical 239/239"
+    },
+    "php": {
+      "status": "wired",
+      "dir": "harness/adapters/php",
+      "build": "",
+      "launch": "php -d extension=sodium -d extension=intl harness/adapters/php/adapter.php",
+      "sdk": "impl/php",
+      "mldsa": "pure-only — no deterministic ML-DSA in PHP (liboqs/OpenSSL 3.5 are randomized-only). Grades all pure ops + Ed25519 (ext-sodium); skip-tracks mldsa.keygen/cose.sign1/cose.verify1 (235/239 graded, 4 honest skips)"
+    },
+    "ruby": {
+      "status": "wired",
+      "dir": "harness/adapters/ruby",
+      "build": "",
+      "launch": "ruby harness/adapters/ruby/adapter.rb",
+      "sdk": "impl/ruby",
+      "mldsa": "platform OpenSSL >= 3.5 (key.sign deterministic=1 = FIPS 204 rnd=0; seed->pk via PKCS#8); verified byte-identical on OpenSSL 3.6. Gracefully skips ML-DSA where OpenSSL < 3.5 (e.g. older CI runners)"
+    },
+    "swift": {
+      "status": "wired",
+      "graded": "ci-only (no Swift toolchain on the dev box; authored + statically self-reviewed against the Python reference; graded in CI in a Swift container)",
+      "dir": "harness/adapters/swift",
+      "build": "swift build -c release --package-path harness/adapters/swift",
+      "launch": "harness/adapters/swift/.build/release/naalp-adapter",
+      "sdk": "impl/swift",
+      "mldsa": "pure-only — SwiftDilithium 3.6.0 has NO seed-based keygen (only random), so the corpus seed->pk / deterministic-sign path cannot be produced; grades all pure ops + Ed25519 (swift-crypto), skip-tracks the ML-DSA leg. Upgradable if a Swift ML-DSA lib adds seed keygen."
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://naalp.bubblefish.sh/registries/channels.schema.json",
+  "title": "N-AALP Channel and Object-Kind Registry",
+  "description": "Schema for the JSON representation of vectors/registry/channels.csv: an array of row objects, one per (channel, object-kind) pair. The CI check converts the CSV to this array (header row -> object keys) and coerces kind_code to int before validating. channel_id is a 16-bit hex code point (the twenty channels 0x0000-0x0013); kind_code is the per-channel kind index; effect is the authorization effect class (ADR-0004); variable_effect is the string 'true' exactly for the variable-effect kinds and 'false' otherwise, an invariant enforced by the if/then/else below. Format/required/enum defects and any effect<->variable_effect inconsistency are caught here; the (channel_id, kind_code) composite-key DUPLICATE check (which JSON Schema cannot express) is done by the companion scripts/validate_registries.py.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["channel_id", "channel_name", "kind_code", "kind_name", "effect", "variable_effect"],
+    "properties": {
+      "channel_id": { "type": "string", "pattern": "^0x[0-9A-Fa-f]{4}$", "description": "16-bit channel identifier, hex-prefixed, exactly 4 hex digits (e.g. 0x0000)." },
+      "channel_name": { "type": "string", "minLength": 1, "description": "Channel name; MUST be non-empty (e.g. Control)." },
+      "kind_code": { "type": "integer", "minimum": 0, "description": "Per-channel object-kind index; non-negative integer." },
+      "kind_name": { "type": "string", "minLength": 1, "description": "Object-kind name; MUST be non-empty (e.g. Hello)." },
+      "effect": { "type": "string", "enum": ["read_only", "idempotent_write", "non_idempotent_write", "destructive", "variable"], "description": "The authorization effect class of the kind (ADR-0004: effect is authorization)." },
+      "variable_effect": { "type": "string", "enum": ["true", "false"], "description": "String boolean: 'true' iff the kind's effect is determined per-object at runtime (effect=variable)." }
+    },
+    "if": { "properties": { "effect": { "const": "variable" } } },
+    "then": { "properties": { "variable_effect": { "const": "true" } } },
+    "else": { "properties": { "variable_effect": { "const": "false" } } }
+  }
+}

@@ -1,0 +1,6 @@
+# Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
+# Runtime deps for the N-AALP Python SDK + conformance adapter.
+# dilithium-py provides deterministic ML-DSA (FIPS 204, rnd=0) — verified byte-identical to the
+# Go (CIRCL) and Rust (fips204) reference implementations. cryptography provides Ed25519 (RFC 8032).
+dilithium-py>=1.4.0
+cryptography>=42

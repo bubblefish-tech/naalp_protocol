@@ -1,0 +1,56 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 14,
+  "name": "Commerce",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "Offer",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "Order",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "Fulfil",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 3,
+      "name": "Cancel",
+      "effect": 3,
+      "variable": false
+    }
+  ],
+  "states": [
+    "offer",
+    "order",
+    "fulfil",
+    "cancel"
+  ],
+  "transitions": [
+    {
+      "from": "offer",
+      "to": "order"
+    },
+    {
+      "from": "order",
+      "to": "fulfil"
+    },
+    {
+      "from": "order",
+      "to": "cancel"
+    }
+  ],
+  "errors": [
+    "OfferExpired",
+    "ApprovalRequired",
+    "OrderMismatch"
+  ]
+}

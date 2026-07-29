@@ -1,0 +1,67 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 2,
+  "name": "Capability",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "CapIssue",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "CapDelegate",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "CapRevoke",
+      "effect": 3,
+      "variable": false
+    },
+    {
+      "code": 3,
+      "name": "CapLookup",
+      "effect": 0,
+      "variable": false
+    }
+  ],
+  "states": [
+    "issued",
+    "delegated",
+    "revoked",
+    "expired"
+  ],
+  "transitions": [
+    {
+      "from": "issued",
+      "to": "delegated"
+    },
+    {
+      "from": "delegated",
+      "to": "delegated"
+    },
+    {
+      "from": "issued",
+      "to": "revoked"
+    },
+    {
+      "from": "delegated",
+      "to": "revoked"
+    },
+    {
+      "from": "issued",
+      "to": "expired"
+    },
+    {
+      "from": "delegated",
+      "to": "expired"
+    }
+  ],
+  "errors": [
+    "CapExceedsParent",
+    "CapRevoked"
+  ]
+}

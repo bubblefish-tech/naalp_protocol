@@ -1,0 +1,39 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 18,
+  "name": "Knowledge",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "Assert",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "Retract",
+      "effect": 3,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "KnowledgeQuery",
+      "effect": 0,
+      "variable": false
+    }
+  ],
+  "states": [
+    "asserted",
+    "retracted"
+  ],
+  "transitions": [
+    {
+      "from": "asserted",
+      "to": "retracted"
+    }
+  ],
+  "errors": [
+    "FactUnsigned",
+    "RetractUnknown"
+  ]
+}

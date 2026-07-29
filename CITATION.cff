@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "N-AALP: The Native Agentic Application Layer Protocol"
+message: "If you reference or implement N-AALP, please cite the Internet-Draft."
+type: software
+authors:
+  - family-names: Sammartano
+    given-names: Shawn
+    affiliation: "BubbleFish Technologies, Inc"
+repository-code: "https://github.com/bubblefish-tech/n-aalp_protocol"
+url: "https://datatracker.ietf.org/doc/draft-bubblefish-naalp/"
+identifiers:
+  - type: other
+    value: "draft-bubblefish-naalp-00"
+    description: "IETF Internet-Draft (Independent Submission stream, Informational)"
+keywords:
+  - agents
+  - agentic
+  - application layer
+  - object security
+  - post-quantum
+  - CBOR
+  - COSE
+license: Apache-2.0

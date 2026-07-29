@@ -1,0 +1,39 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 12,
+  "name": "Stream",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "StreamOpen",
+      "effect": 0,
+      "variable": true
+    },
+    {
+      "code": 1,
+      "name": "StreamCommit",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "StreamCheckpoint",
+      "effect": 0,
+      "variable": false
+    }
+  ],
+  "states": [
+    "open",
+    "committed"
+  ],
+  "transitions": [
+    {
+      "from": "open",
+      "to": "committed"
+    }
+  ],
+  "errors": [
+    "StreamDigestMismatch",
+    "FlowControlError"
+  ]
+}

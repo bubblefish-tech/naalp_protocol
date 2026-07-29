@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://naalp.bubblefish.sh/registries/multicodec.schema.json",
+  "title": "N-AALP Multicodec Registry (signer-id keys and multihash)",
+  "description": "Schema for the JSON representation of vectors/registry/multicodec.csv: an array of row objects, one per referenced multicodec code (the signer-id public-key codecs and the multihash used in content-id). code is the multicodec code point as a hex-prefixed unsigned varint of variable width (e.g. 0x12, 0xed, 0x1211). N-AALP references the multiformats registry and does not fork it. Format/required/enum defects (wrong-format code, missing column, out-of-set role or status, empty reference) are caught here; DUPLICATE codes are caught by the companion scripts/validate_registries.py.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["name", "code", "role", "status", "reference"],
+    "properties": {
+      "name": { "type": "string", "minLength": 1, "description": "Multicodec name; MUST be non-empty (e.g. ed25519-pub)." },
+      "code": { "type": "string", "pattern": "^0x[0-9A-Fa-f]{2,}$", "description": "Multicodec code point, hex-prefixed unsigned varint, at least 2 hex digits (e.g. 0x12, 0x1211)." },
+      "role": { "type": "string", "enum": ["multihash-hash", "signer-id-key-multicodec"], "description": "How the code is used in N-AALP: a multihash hash function (content-id) or a signer-id public-key multicodec." },
+      "status": { "type": "string", "enum": ["permanent", "draft"], "description": "multiformats registry status of the code." },
+      "reference": { "type": "string", "minLength": 1, "description": "Reference (e.g. multiformats-multicodec); MUST be non-empty." }
+    }
+  }
+}

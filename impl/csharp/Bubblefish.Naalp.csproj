@@ -1,0 +1,44 @@
+<!-- Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Naalp</AssemblyName>
+    <RootNamespace>Sh.Bubblefish.Naalp</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- The public XML-doc surface is intentionally partial (primitives are documented; internal
+         helpers are not); do not fail the build on CS1591 missing-doc warnings. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- NuGet package identity: a proper library published as Bubblefish.Naalp. -->
+  <PropertyGroup>
+    <PackageId>Bubblefish.Naalp</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Shawn Sammartano</Authors>
+    <Company>BubbleFish Technologies, Inc.</Company>
+    <Description>Reference SDK for N-AALP (Native Agentic Application Layer Protocol), draft-bubblefish-naalp-00: the full signed object envelope (deterministic CBOR + COSE_Sign1 + post-quantum ML-DSA-65/-87) plus the byte-level primitives, verifiable offline over any transport.</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/bubblefish-tech/naalp_protocol</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/bubblefish-tech/naalp_protocol.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>naalp;agents;agentic;post-quantum;cbor;cose;ml-dsa;protocol</PackageTags>
+  </PropertyGroup>
+
+  <!-- The library compiles only the SDK sources under impl/csharp; the tests and examples are
+       separate projects (test/Bubblefish.Naalp.Tests.csproj, examples/) and must not be pulled
+       into the library assembly by the SDK's default **/*.cs globbing. -->
+  <ItemGroup>
+    <Compile Remove="test/**/*.cs" />
+    <Compile Remove="examples/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+  </ItemGroup>
+
+</Project>

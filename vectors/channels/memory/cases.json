@@ -1,0 +1,72 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 1,
+  "name": "Memory",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "MemoryOffer",
+      "effect": 1,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "MemoryAccept",
+      "effect": 1,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "MemoryWrite",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 3,
+      "name": "MemoryRead",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 4,
+      "name": "MemoryExpire",
+      "effect": 3,
+      "variable": false
+    },
+    {
+      "code": 5,
+      "name": "MemoryRevoke",
+      "effect": 3,
+      "variable": false
+    }
+  ],
+  "states": [
+    "offered",
+    "accepted",
+    "live",
+    "expired",
+    "revoked"
+  ],
+  "transitions": [
+    {
+      "from": "offered",
+      "to": "accepted"
+    },
+    {
+      "from": "accepted",
+      "to": "live"
+    },
+    {
+      "from": "live",
+      "to": "expired"
+    },
+    {
+      "from": "live",
+      "to": "revoked"
+    }
+  ],
+  "errors": [
+    "AccessDenied",
+    "MemoryError"
+  ]
+}

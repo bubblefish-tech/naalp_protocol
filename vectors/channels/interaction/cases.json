@@ -1,0 +1,49 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 15,
+  "name": "Interaction",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "Elicit",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "Respond",
+      "effect": 1,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "Confirm",
+      "effect": 2,
+      "variable": false
+    }
+  ],
+  "states": [
+    "elicit",
+    "respond",
+    "confirm",
+    "timeout"
+  ],
+  "transitions": [
+    {
+      "from": "elicit",
+      "to": "respond"
+    },
+    {
+      "from": "elicit",
+      "to": "confirm"
+    },
+    {
+      "from": "elicit",
+      "to": "timeout"
+    }
+  ],
+  "errors": [
+    "InteractionTimeout",
+    "ElicitUnauthorized"
+  ]
+}

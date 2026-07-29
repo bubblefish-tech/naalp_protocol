@@ -1,0 +1,9 @@
+{
+  "canonical_draft": "ietf/draft-bubblefish-naalp-00.md",
+  "canonical_draft_sha256": "b6cc8f5324a7530a903f1abf079ae374cf5eea73f28d2e35101d61516f89a20e",
+  "conformance_corpus": "vectors/conformance/corpus.json",
+  "conformance_corpus_sha256": "9831de0796881a35733fc0ea0da12c893f2220e76807b3e6104209a385e972ff",
+  "manifest": "MANIFEST.sha256",
+  "manifest_sha256": "d7a6daf9a2b8c5954cf8f9db5249caec345429e7b067c406ae9e087f2d393348",
+  "note": "The reference implementations and SDKs ride these exact bytes. MANIFEST.sha256 covers the canonical draft, the CDDL wire authority, the machine-readable registries, and the full conformance corpus (all per-family vectors + the embedded runner copy). Run scripts/verify_pins.py to recompute every pinned hash and compare; any drift exits non-zero. All pinned files are stored LF (.gitattributes eol=lf) so the hashes are platform-independent."
+}

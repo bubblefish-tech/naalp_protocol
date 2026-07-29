@@ -1,0 +1,33 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 8,
+  "name": "Compliance",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "ComplianceRecord",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "ComplianceQuery",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "ComplianceReport",
+      "effect": 0,
+      "variable": false
+    }
+  ],
+  "states": [
+    "appended"
+  ],
+  "transitions": [],
+  "errors": [
+    "RecordUnsigned",
+    "JurisdictionUnknown"
+  ]
+}

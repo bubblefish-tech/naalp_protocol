@@ -1,0 +1,36 @@
+# Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "naalp"
+version = "0.1.0"
+description = "Reference SDK for N-AALP (Native Agentic Application Layer Protocol), draft-bubblefish-naalp-00"
+readme = "QUICKSTART.md"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+authors = [{ name = "Shawn Sammartano", email = "naalp-editor@bubblefish.sh" }]
+keywords = ["naalp", "agents", "agentic", "post-quantum", "cbor", "cose", "ml-dsa", "protocol"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Security :: Cryptography",
+]
+dependencies = [
+  "dilithium-py>=1.4.0",   # deterministic ML-DSA (FIPS 204, rnd=0)
+  "cryptography>=42",      # Ed25519 (RFC 8032)
+]
+
+[project.urls]
+Homepage = "https://github.com/bubblefish-tech/naalp_protocol"
+Repository = "https://github.com/bubblefish-tech/naalp_protocol"
+"Internet-Draft" = "https://datatracker.ietf.org/doc/draft-bubblefish-naalp-00/"
+
+[tool.setuptools]
+packages = ["naalp"]
+
+[tool.setuptools.package-data]
+naalp = ["py.typed"]

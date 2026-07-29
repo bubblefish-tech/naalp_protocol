@@ -1,0 +1,20 @@
+[package]
+name = "naalp"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Reference implementation of N-AALP (draft-bubblefish-naalp-00)"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+sha2 = "0.10"
+fips204 = "0.4"
+ed25519-dalek = "2"
+unicode-normalization = "0.1"
+data-encoding = "2"
+
+[dev-dependencies]
+serde_json = "1"
+hex = "0.4"

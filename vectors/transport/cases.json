@@ -1,0 +1,182 @@
+{
+  "source": "design \u00a712; one signed object = one message unit across N-PAMP/QUIC/WebSocket/HTTP; binding adds only framing; sensitive object over a non-confidential transport => ConfidentialTransportRequired; missing peer auth where required => PeerUnauthenticated; media type application/naalp+cbor.",
+  "media_type": "application/naalp+cbor",
+  "transports": [
+    {
+      "name": "npamp",
+      "confidential": true,
+      "peer_authenticated": true
+    },
+    {
+      "name": "quic",
+      "confidential": true,
+      "peer_authenticated": true
+    },
+    {
+      "name": "websocket+wss",
+      "confidential": true,
+      "peer_authenticated": false
+    },
+    {
+      "name": "websocket+ws",
+      "confidential": false,
+      "peer_authenticated": false
+    },
+    {
+      "name": "https",
+      "confidential": true,
+      "peer_authenticated": false
+    },
+    {
+      "name": "http",
+      "confidential": false,
+      "peer_authenticated": false
+    }
+  ],
+  "emit_matrix": [
+    {
+      "transport": "npamp",
+      "sensitive": false,
+      "require_peer_auth": false,
+      "result": "ok"
+    },
+    {
+      "transport": "npamp",
+      "sensitive": false,
+      "require_peer_auth": true,
+      "result": "ok"
+    },
+    {
+      "transport": "npamp",
+      "sensitive": true,
+      "require_peer_auth": false,
+      "result": "ok"
+    },
+    {
+      "transport": "npamp",
+      "sensitive": true,
+      "require_peer_auth": true,
+      "result": "ok"
+    },
+    {
+      "transport": "quic",
+      "sensitive": false,
+      "require_peer_auth": false,
+      "result": "ok"
+    },
+    {
+      "transport": "quic",
+      "sensitive": false,
+      "require_peer_auth": true,
+      "result": "ok"
+    },
+    {
+      "transport": "quic",
+      "sensitive": true,
+      "require_peer_auth": false,
+      "result": "ok"
+    },
+    {
+      "transport": "quic",
+      "sensitive": true,
+      "require_peer_auth": true,
+      "result": "ok"
+    },
+    {
+      "transport": "websocket+wss",
+      "sensitive": false,
+      "require_peer_auth": false,
+      "result": "ok"
+    },
+    {
+      "transport": "websocket+wss",
+      "sensitive": false,
+      "require_peer_auth": true,
+      "result": "PeerUnauthenticated"
+    },
+    {
+      "transport": "websocket+wss",
+      "sensitive": true,
+      "require_peer_auth": false,
+      "result": "ok"
+    },
+    {
+      "transport": "websocket+wss",
+      "sensitive": true,
+      "require_peer_auth": true,
+      "result": "PeerUnauthenticated"
+    },
+    {
+      "transport": "websocket+ws",
+      "sensitive": false,
+      "require_peer_auth": false,
+      "result": "ok"
+    },
+    {
+      "transport": "websocket+ws",
+      "sensitive": false,
+      "require_peer_auth": true,
+      "result": "PeerUnauthenticated"
+    },
+    {
+      "transport": "websocket+ws",
+      "sensitive": true,
+      "require_peer_auth": false,
+      "result": "ConfidentialTransportRequired"
+    },
+    {
+      "transport": "websocket+ws",
+      "sensitive": true,
+      "require_peer_auth": true,
+      "result": "ConfidentialTransportRequired"
+    },
+    {
+      "transport": "https",
+      "sensitive": false,
+      "require_peer_auth": false,
+      "result": "ok"
+    },
+    {
+      "transport": "https",
+      "sensitive": false,
+      "require_peer_auth": true,
+      "result": "PeerUnauthenticated"
+    },
+    {
+      "transport": "https",
+      "sensitive": true,
+      "require_peer_auth": false,
+      "result": "ok"
+    },
+    {
+      "transport": "https",
+      "sensitive": true,
+      "require_peer_auth": true,
+      "result": "PeerUnauthenticated"
+    },
+    {
+      "transport": "http",
+      "sensitive": false,
+      "require_peer_auth": false,
+      "result": "ok"
+    },
+    {
+      "transport": "http",
+      "sensitive": false,
+      "require_peer_auth": true,
+      "result": "PeerUnauthenticated"
+    },
+    {
+      "transport": "http",
+      "sensitive": true,
+      "require_peer_auth": false,
+      "result": "ConfidentialTransportRequired"
+    },
+    {
+      "transport": "http",
+      "sensitive": true,
+      "require_peer_auth": true,
+      "result": "ConfidentialTransportRequired"
+    }
+  ]
+}

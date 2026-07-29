@@ -1,0 +1,45 @@
+{
+  "name": "naalp",
+  "version": "0.1.0",
+  "description": "Reference SDK for N-AALP (Native Agentic Application Layer Protocol), draft-bubblefish-naalp-00",
+  "license": "Apache-2.0",
+  "type": "module",
+  "author": "Shawn Sammartano <naalp-editor@bubblefish.sh>",
+  "keywords": [
+    "naalp",
+    "agents",
+    "agentic",
+    "post-quantum",
+    "cbor",
+    "cose",
+    "ml-dsa",
+    "protocol"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bubblefish-tech/naalp_protocol.git"
+  },
+  "homepage": "https://github.com/bubblefish-tech/naalp_protocol",
+  "bugs": {
+    "url": "https://github.com/bubblefish-tech/naalp_protocol/issues"
+  },
+  "exports": {
+    ".": "./naalp/index.mjs",
+    "./*": "./naalp/*.mjs"
+  },
+  "files": [
+    "naalp"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\"",
+    "example": "node examples/sign-object.mjs"
+  },
+  "dependencies": {
+    "@noble/curves": "^2.2.0",
+    "@noble/hashes": "^2.2.0",
+    "@noble/post-quantum": "^0.6.1"
+  }
+}

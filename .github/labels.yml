@@ -1,0 +1,51 @@
+# Issue/PR label taxonomy for N-AALP (RFC 8874 "WG GitHub Usage Guidance" + quicwg practice).
+# The decision-process rule (CONTRIBUTING.md): every `design`-consensus issue produces a
+# closing comment + a numbered ADR in docs/adr/ + a "Since draft-NN" change-log bullet.
+
+- name: design
+  color: "d73a4a"
+  description: "Has or might have a substantive protocol effect; requires consensus even if the resolution is no change. Produces an ADR."
+
+- name: editorial
+  color: "0e8a16"
+  description: "No substantive protocol effect (wording, formatting, typos). No ADR required."
+
+- name: has-consensus
+  color: "0052cc"
+  description: "Consensus reached; ready to resolve and record the decision."
+
+- name: needs-discussion
+  color: "fbca04"
+  description: "Open design question; not yet ready for a consensus call."
+
+- name: proposal-ready
+  color: "5319e7"
+  description: "A concrete proposal is written and ready for review."
+
+- name: specification
+  color: "c5def5"
+  description: "Concerns the normative Internet-Draft text (ietf/draft-bubblefish-naalp-00.md)."
+
+- name: conformance
+  color: "1d76db"
+  description: "Affects the conformance corpus, the independent oracles (tools/), or the naalp-conform harness."
+
+- name: sdk
+  color: "0e8a16"
+  description: "Concerns a reference SDK (impl/<lang>) or its conformance adapter."
+
+- name: carriage-mapping
+  color: "fef2c0"
+  description: "A request or change to how a foreign agent protocol is carried by class (C12 carriage)."
+
+- name: channel
+  color: "bfdadc"
+  description: "Concerns one of the twenty channel surfaces or its object kinds (design-channels.md)."
+
+- name: iana
+  color: "d4c5f9"
+  description: "Affects an IANA registration (media type or an N-AALP registry) — see ietf/IANA.md."
+
+- name: security
+  color: "b60205"
+  description: "Security-relevant (downgrade, replay, identity, effect authorization, key lifecycle)."

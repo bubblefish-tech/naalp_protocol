@@ -1,0 +1,24 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 13,
+  "name": "Bridge",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "Carriage",
+      "effect": 0,
+      "variable": true
+    }
+  ],
+  "states": [
+    "carried"
+  ],
+  "transitions": [],
+  "errors": [
+    "EnvelopeMalformed",
+    "ProtocolUnsupported",
+    "MethodUnsupported",
+    "NotDelivered",
+    "EffectNotAuthorized"
+  ]
+}

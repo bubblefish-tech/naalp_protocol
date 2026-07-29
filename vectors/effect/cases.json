@@ -1,0 +1,183 @@
+{
+  "source": "N-PAMP draft-01 spec/companion/10_bridge_framework.md \u00a77 (SafetyLabel TLV 0x0013): effect u8 0x00..0x03; absence on a state-mutating op => destructive (fail-safe); 'describes intent and does not replace authorization'. N-AALP design \u00a76 closes the authorization hole.",
+  "effects": [
+    {
+      "value": 0,
+      "safety_label": "read_only",
+      "authorizes": "observation, no state change",
+      "denies": "any write"
+    },
+    {
+      "value": 1,
+      "safety_label": "idempotent_write",
+      "authorizes": "a write safe to repeat",
+      "denies": "non-idempotent or destructive change"
+    },
+    {
+      "value": 2,
+      "safety_label": "non_idempotent_write",
+      "authorizes": "a write not safe to repeat",
+      "denies": "destruction"
+    },
+    {
+      "value": 3,
+      "safety_label": "destructive",
+      "authorizes": "irreversible change / deletion",
+      "denies": "nothing further (top of lattice)"
+    }
+  ],
+  "bridge_mapping": [
+    {
+      "effect": 0,
+      "npamp_u8": 0,
+      "safety_label": "read_only"
+    },
+    {
+      "effect": 1,
+      "npamp_u8": 1,
+      "safety_label": "idempotent_write"
+    },
+    {
+      "effect": 2,
+      "npamp_u8": 2,
+      "safety_label": "non_idempotent_write"
+    },
+    {
+      "effect": 3,
+      "npamp_u8": 3,
+      "safety_label": "destructive"
+    }
+  ],
+  "authorization_matrix": [
+    {
+      "granted": 0,
+      "effect": 0,
+      "allow": true
+    },
+    {
+      "granted": 0,
+      "effect": 1,
+      "allow": false
+    },
+    {
+      "granted": 0,
+      "effect": 2,
+      "allow": false
+    },
+    {
+      "granted": 0,
+      "effect": 3,
+      "allow": false
+    },
+    {
+      "granted": 1,
+      "effect": 0,
+      "allow": true
+    },
+    {
+      "granted": 1,
+      "effect": 1,
+      "allow": true
+    },
+    {
+      "granted": 1,
+      "effect": 2,
+      "allow": false
+    },
+    {
+      "granted": 1,
+      "effect": 3,
+      "allow": false
+    },
+    {
+      "granted": 2,
+      "effect": 0,
+      "allow": true
+    },
+    {
+      "granted": 2,
+      "effect": 1,
+      "allow": true
+    },
+    {
+      "granted": 2,
+      "effect": 2,
+      "allow": true
+    },
+    {
+      "granted": 2,
+      "effect": 3,
+      "allow": false
+    },
+    {
+      "granted": 3,
+      "effect": 0,
+      "allow": true
+    },
+    {
+      "granted": 3,
+      "effect": 1,
+      "allow": true
+    },
+    {
+      "granted": 3,
+      "effect": 2,
+      "allow": true
+    },
+    {
+      "granted": 3,
+      "effect": 3,
+      "allow": true
+    }
+  ],
+  "unknown_normalization": [
+    {
+      "input": 4,
+      "effect": 3
+    },
+    {
+      "input": 5,
+      "effect": 3
+    },
+    {
+      "input": 99,
+      "effect": 3
+    },
+    {
+      "input": 255,
+      "effect": 3
+    },
+    {
+      "input": 256,
+      "effect": 3
+    },
+    {
+      "input": 65535,
+      "effect": 3
+    }
+  ],
+  "principal_sources": [
+    {
+      "source": "signature",
+      "accepted": true
+    },
+    {
+      "source": "transport_metadata",
+      "accepted": false
+    },
+    {
+      "source": "foreign_header",
+      "accepted": false
+    },
+    {
+      "source": "client_name",
+      "accepted": false
+    }
+  ],
+  "safety_label": {
+    "risk": "elevated",
+    "scope": "billing-records",
+    "ext_key": 1,
+    "cbor_hex": "a20168656c657661746564026f62696c6c696e672d7265636f726473"
+  }
+}

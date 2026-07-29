@@ -1,0 +1,33 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 6,
+  "name": "Federation",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "AuthorityAnnounce",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "ScopeReceipt",
+      "effect": 2,
+      "variable": false
+    }
+  ],
+  "states": [
+    "announced",
+    "ordering"
+  ],
+  "transitions": [
+    {
+      "from": "announced",
+      "to": "ordering"
+    }
+  ],
+  "errors": [
+    "AuthorityUnknown",
+    "ScopeOverlapConflict"
+  ]
+}

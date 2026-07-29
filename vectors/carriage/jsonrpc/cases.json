@@ -1,0 +1,10 @@
+{
+  "source": "design \u00a713; carriage body {1:protocol_id,2:class,3:content_type,4:correlation,5:method,6:foreign}; foreign carried octet-for-octet (R-14.4); round-trip identity is the independent authority (R-14.7).",
+  "protocol_id": 1,
+  "class": 0,
+  "content_type": 0,
+  "correlation_hex": "00000001",
+  "method": "tools/call",
+  "foreign_hex": "7b226a736f6e727063223a2022322e30222c20226964223a20312c20226d6574686f64223a2022746f6f6c732f63616c6c222c2022706172616d73223a207b226e616d65223a2022736561726368227d7d",
+  "body_hex": "a6010102000300044400000001056a746f6f6c732f63616c6c0658517b226a736f6e727063223a2022322e30222c20226964223a20312c20226d6574686f64223a2022746f6f6c732f63616c6c222c2022706172616d73223a207b226e616d65223a2022736561726368227d7d"
+}

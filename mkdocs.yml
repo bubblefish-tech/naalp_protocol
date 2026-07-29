@@ -1,0 +1,186 @@
+# Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
+#
+# MkDocs configuration for the N-AALP reference documentation site
+# (https://bubblefish-tech.github.io/naalp_protocol/), modeled on the N-PAMP docs site.
+#
+# The canonical Markdown is scattered across the repo (docs/, ietf/, impl/<lang>/QUICKSTART.md,
+# harness/), not gathered under a single docs/ tree. Rather than move or symlink those files,
+# docs_dir is set to the repo root ('.') so every page is addressed at its real repo-relative
+# path and stays browsable on GitHub. A hand-authored docs/index.md is the landing page.
+#
+# Build with the pinned toolchain in requirements-docs.txt:
+#     pip install -r requirements-docs.txt
+#     mkdocs build --strict
+# --strict promotes every nav/link validation warning to a build error, so a green strict
+# build proves the whole nav resolves and no in-page link is broken.
+
+site_name: N-AALP Protocol
+site_description: >-
+  Native Agentic Application Layer Protocol — the public reference: Internet-Draft, the
+  deterministic-CBOR object model, ten reference SDKs, a non-circular conformance corpus and
+  cross-language harness, machine-readable registries, and design decision records.
+site_author: BubbleFish Technologies, Inc.
+site_url: https://bubblefish-tech.github.io/naalp_protocol/
+
+repo_name: bubblefish-tech/naalp_protocol
+repo_url: https://github.com/bubblefish-tech/naalp_protocol
+edit_uri: edit/main/
+
+copyright: Copyright &copy; 2026 BubbleFish Technologies, Inc.
+
+# The canonical Markdown lives across the repo root, so the root is the docs_dir. The
+# `same-dir` plugin lifts MkDocs' guard against docs_dir == the config file's directory;
+# site_dir must sit OUTSIDE docs_dir, so it is one level up.
+docs_dir: .
+site_dir: ../site
+
+# Exclude broadly, then re-include ('!') only the exact pages the nav publishes, so --strict
+# validates just the navigated surface (not the ten source trees, the vectors, or GitHub-only
+# Markdown whose relative links resolve only on GitHub). .gitignore-style; later wins.
+exclude_docs: |
+  /site/
+  /GitHub/
+  /LICENSE.md
+  /impl/**
+  /harness/adapters/
+  /harness/runner/
+  /harness/scenarios/
+  /vectors/**
+  /scripts/
+  /tools/
+  /spec/
+  /schema/
+  /process/**
+  /_git_lock_cleanup/
+  /README.md
+  /CHANGELOG.md
+  /CONTRIBUTING.md
+  /CODE_OF_CONDUCT.md
+  /GOVERNANCE.md
+  /MAINTAINERS.md
+  /SECURITY.md
+  /TRADEMARKS.md
+  /LINEAGE.md
+  /NOTICE
+  /CLAUDE.md
+  /PLAN.md
+  /requirements.md
+  /design.md
+  /design-channels.md
+  /tasks.md
+  /ietf/README.md
+  /ietf/IANA.md
+  /ietf/SUBMISSION.md
+  /ietf/ISE-cover-letter.md
+  # Re-include the exact SDK pages the nav publishes (a file cannot be re-included if its
+  # parent directory itself is excluded, hence '/impl/**' above, not '/impl/'). All ten SDKs.
+  !/impl/go/QUICKSTART.md
+  !/impl/rust/QUICKSTART.md
+  !/impl/python/QUICKSTART.md
+  !/impl/typescript/QUICKSTART.md
+  !/impl/java/QUICKSTART.md
+  !/impl/kotlin/QUICKSTART.md
+  !/impl/csharp/QUICKSTART.md
+  !/impl/ruby/QUICKSTART.md
+  !/impl/php/QUICKSTART.md
+  !/impl/swift/QUICKSTART.md
+  !/harness/INSTRUCTIONS.md
+
+# --strict turns each `warn` into a hard error. omitted_files stays `info` (the repo
+# intentionally holds Markdown outside the nav); every other check fails the build.
+validation:
+  nav:
+    omitted_files: info
+    not_found: warn
+    absolute_links: warn
+  links:
+    not_found: warn
+    anchors: info
+    absolute_links: ignore
+    unrecognized_links: warn
+
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - same-dir
+  - search
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: docs/index.md
+  - Internet-Draft: ietf/draft-bubblefish-naalp-00.md
+  - Specification:
+      - Overview: docs/spec/overview.md
+      - Object model: docs/spec/object-model.md
+      - The twenty channels: docs/spec/channels.md
+      - Worked example: docs/examples/worked-object.md
+  - Registries: docs/registries.md
+  - Conformance:
+      - Overview: docs/conformance.md
+      - Adapter contract: harness/INSTRUCTIONS.md
+  - Implementations:
+      - Overview: docs/implementations/index.md
+      - Go: impl/go/QUICKSTART.md
+      - Rust: impl/rust/QUICKSTART.md
+      - Python: impl/python/QUICKSTART.md
+      - TypeScript: impl/typescript/QUICKSTART.md
+      - Java: impl/java/QUICKSTART.md
+      - Kotlin: impl/kotlin/QUICKSTART.md
+      - C#: impl/csharp/QUICKSTART.md
+      - Ruby: impl/ruby/QUICKSTART.md
+      - PHP: impl/php/QUICKSTART.md
+      - Swift: impl/swift/QUICKSTART.md
+  - Design decisions:
+      - Overview: docs/adr/index.md
+      - 0001 Record ADRs: docs/adr/0001-record-architecture-decisions.md
+      - 0002 Object not connection: docs/adr/0002-object-not-connection.md
+      - 0003 Post-quantum-first: docs/adr/0003-post-quantum-first.md
+      - 0004 Effect is authorization: docs/adr/0004-effect-is-authorization.md
+      - 0005 Carriage by class: docs/adr/0005-carriage-by-class.md
+      - 0006 Two-implementation parity: docs/adr/0006-two-implementation-byte-parity.md
+  - IETF submission: docs/ietf.md

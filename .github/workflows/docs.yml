@@ -1,0 +1,68 @@
+# Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
+#
+# Build the MkDocs documentation site (mkdocs.yml + requirements-docs.txt) and deploy it to
+# GitHub Pages. The build runs `mkdocs build --strict`, which promotes every nav/link validation
+# warning to an error — so this workflow doubles as a link-integrity gate for the navigated
+# documentation surface, not just a publisher.
+#
+# NOTE: deployment succeeds only once GitHub Pages is enabled for the repository with "GitHub
+# Actions" as the source (Settings -> Pages -> Build and deployment -> Source: GitHub Actions).
+# Until then the build job still runs and gates links on every push; only the deploy job needs
+# Pages enabled.
+name: docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege: build needs only read; deploy additionally needs pages:write + id-token:write
+# for the OIDC-authenticated Pages deployment.
+permissions:
+  contents: read
+
+# Allow only one concurrent Pages deployment; do not cancel an in-progress run.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build (mkdocs build --strict)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install docs toolchain
+        run: python -m pip install -r requirements-docs.txt
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
+      # docs_dir is the repo root ('.'), so site_dir cannot live inside it; build to a directory
+      # under the runner temp, then hand that path to the uploader. --strict turns every
+      # nav/link validation warning into a build failure.
+      - name: Build site (strict)
+        env:
+          DISABLE_MKDOCS_2_WARNING: "true"
+        run: mkdocs build --strict --site-dir "${RUNNER_TEMP}/site"
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/site
+
+  deploy:
+    name: deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

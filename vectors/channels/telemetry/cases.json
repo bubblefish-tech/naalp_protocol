@@ -1,0 +1,26 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 10,
+  "name": "Telemetry",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "Metric",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "HealthReport",
+      "effect": 0,
+      "variable": false
+    }
+  ],
+  "states": [
+    "stateless"
+  ],
+  "transitions": [],
+  "errors": [
+    "MetricMalformed"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://naalp.bubblefish.sh/registries/protocols.schema.json",
+  "title": "N-AALP Carriage Protocol-Id Registry",
+  "description": "Schema for the JSON representation of vectors/registry/protocols.csv: an array of row objects, one per assigned carriage protocol-id. protocol_id is an 8-bit hex code point; class is the carriage class the protocol maps onto (JSONRPC/HTTP/MSG/STREAM/DOC/OPAQUE); range is the registration range (standards 0x01-0x0F Spec Required, experimental 0x10-0x7F, private 0x80-0xFF). Format/required/enum defects are caught here; DUPLICATE protocol_id values are caught by the companion scripts/validate_registries.py.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["protocol_id", "name", "class", "range", "reference"],
+    "properties": {
+      "protocol_id": { "type": "string", "pattern": "^0x[0-9A-Fa-f]{2}$", "description": "8-bit carriage protocol identifier, hex-prefixed, exactly 2 hex digits (e.g. 0x01)." },
+      "name": { "type": "string", "minLength": 1, "description": "Protocol name; MUST be non-empty (e.g. MCP)." },
+      "class": { "type": "string", "enum": ["JSONRPC", "HTTP", "MSG", "STREAM", "DOC", "OPAQUE"], "description": "The carriage class this protocol maps onto (ADR-0005)." },
+      "range": { "type": "string", "enum": ["standards", "experimental", "private"], "description": "Registration range: standards (0x01-0x0F, Specification Required), experimental (0x10-0x7F), or private (0x80-0xFF)." },
+      "reference": { "type": "string", "minLength": 1, "description": "Reference (e.g. design section 13.4); MUST be non-empty." }
+    }
+  }
+}

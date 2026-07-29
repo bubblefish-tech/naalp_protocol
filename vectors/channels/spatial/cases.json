@@ -1,0 +1,45 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 19,
+  "name": "Spatial",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "FrameDefine",
+      "effect": 1,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "Pose",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "StateUpdate",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 3,
+      "name": "SnapshotQuery",
+      "effect": 0,
+      "variable": false
+    }
+  ],
+  "states": [
+    "defined",
+    "observed"
+  ],
+  "transitions": [
+    {
+      "from": "defined",
+      "to": "observed"
+    }
+  ],
+  "errors": [
+    "FrameUnknown",
+    "TransformCycle"
+  ]
+}

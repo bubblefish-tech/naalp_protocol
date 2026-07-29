@@ -1,0 +1,5 @@
+name,code,role,status,reference
+sha2-256,0x12,multihash-hash,permanent,multiformats-multicodec
+ed25519-pub,0xed,signer-id-key-multicodec,draft,multiformats-multicodec
+mldsa-65-pub,0x1211,signer-id-key-multicodec,draft,multiformats-multicodec
+mldsa-87-pub,0x1212,signer-id-key-multicodec,draft,multiformats-multicodec

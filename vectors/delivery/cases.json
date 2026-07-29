@@ -1,0 +1,44 @@
+{
+  "source": "design \u00a79; delivery.update body {1:obj, 2:stage, 3:at}; four monotonic stages persisted_origin(0) -> accepted_relay(1) -> persisted_target(2) -> presented(3); content id in T1 framing multihash(0x20, SHA-384).",
+  "stages": [
+    {
+      "value": 0,
+      "name": "persisted_origin"
+    },
+    {
+      "value": 1,
+      "name": "accepted_relay"
+    },
+    {
+      "value": 2,
+      "name": "persisted_target"
+    },
+    {
+      "value": 3,
+      "name": "presented"
+    }
+  ],
+  "obj_content_id_hex": "20304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de",
+  "updates": [
+    {
+      "stage": 0,
+      "at": 100,
+      "body_hex": "a301583220304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de0200031864"
+    },
+    {
+      "stage": 1,
+      "at": 101,
+      "body_hex": "a301583220304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de0201031865"
+    },
+    {
+      "stage": 2,
+      "at": 102,
+      "body_hex": "a301583220304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de0202031866"
+    },
+    {
+      "stage": 3,
+      "at": 103,
+      "body_hex": "a301583220304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de0203031867"
+    }
+  ]
+}

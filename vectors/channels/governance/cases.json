@@ -1,0 +1,70 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 4,
+  "name": "Governance",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "PolicyPublish",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "Approval",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "ApprovalHeld",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 3,
+      "name": "Consume",
+      "effect": 2,
+      "variable": false
+    }
+  ],
+  "states": [
+    "requested",
+    "held",
+    "approved",
+    "consumed",
+    "expired"
+  ],
+  "transitions": [
+    {
+      "from": "requested",
+      "to": "held"
+    },
+    {
+      "from": "requested",
+      "to": "approved"
+    },
+    {
+      "from": "approved",
+      "to": "consumed"
+    },
+    {
+      "from": "held",
+      "to": "approved"
+    },
+    {
+      "from": "requested",
+      "to": "expired"
+    },
+    {
+      "from": "approved",
+      "to": "expired"
+    }
+  ],
+  "errors": [
+    "ApprovalRequired",
+    "ApprovalMismatch",
+    "AlreadyConsumed",
+    "EffectNotAuthorized"
+  ]
+}

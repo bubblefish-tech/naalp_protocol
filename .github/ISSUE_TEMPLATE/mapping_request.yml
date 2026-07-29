@@ -1,0 +1,61 @@
+# Issue form: request that a foreign agent protocol be carried by N-AALP (C12 carriage).
+# Adding a carriage protocol_id / class mapping is `design`-level (a registry entry) per
+# CONTRIBUTING.md; a NEW carriage class is wire-breaking and needs a wider consensus call.
+name: "Carriage mapping request"
+description: "Request that N-AALP carry a foreign agent protocol by class (a protocol_id assignment and optional thin mapping)."
+title: "[carriage]: "
+labels: ["carriage-mapping", "needs-discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        N-AALP carries a foreign protocol octet-for-octet inside a signed carriage object,
+        interpreted by a **carriage class** (JSONRPC, HTTP, MSG, STREAM, DOC, or the
+        universal OPAQUE). Any protocol is already carriable **today** under OPAQUE on an
+        experimental `protocol_id` (0x10-0x7F) with zero new specification — file this only
+        to request a **standards-range** assignment (0x01-0x0F) or a dedicated thin mapping.
+  - type: input
+    id: protocol
+    attributes:
+      label: Foreign protocol
+      description: "Name + version + a link to its specification."
+      placeholder: "e.g. MCP 2025-06-18, https://modelcontextprotocol.io/specification"
+    validations:
+      required: true
+  - type: dropdown
+    id: class
+    attributes:
+      label: Best-fit carriage class
+      options:
+        - "JSONRPC"
+        - "HTTP"
+        - "MSG (a discrete message / performative)"
+        - "STREAM (an event stream)"
+        - "DOC (an agent card / document)"
+        - "OPAQUE (none of the above)"
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Why a standards-range assignment (vs OPAQUE today)
+      description: "What ecosystem need justifies a fixed protocol_id / a thin mapping rather than OPAQUE on an experimental id."
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: A sample foreign message (hex or verbatim)
+      description: "One representative message, so a round-trip octet-exactness vector can be built."
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight
+      options:
+        - label: "I confirmed the protocol is not already assigned in vectors/registry/protocols.csv."
+          required: true
+        - label: "I understand OPAQUE already carries this protocol today with no new spec; this requests a standards-range assignment."
+          required: false

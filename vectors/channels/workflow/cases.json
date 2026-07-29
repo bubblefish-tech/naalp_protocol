@@ -1,0 +1,82 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 17,
+  "name": "Workflow",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "TaskCreate",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "TaskInput",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "TaskCancel",
+      "effect": 3,
+      "variable": false
+    },
+    {
+      "code": 3,
+      "name": "TaskResult",
+      "effect": 2,
+      "variable": false
+    }
+  ],
+  "states": [
+    "created",
+    "awaiting-input",
+    "awaiting-approval",
+    "running",
+    "result",
+    "cancelled"
+  ],
+  "transitions": [
+    {
+      "from": "created",
+      "to": "awaiting-input"
+    },
+    {
+      "from": "created",
+      "to": "awaiting-approval"
+    },
+    {
+      "from": "awaiting-input",
+      "to": "running"
+    },
+    {
+      "from": "awaiting-approval",
+      "to": "running"
+    },
+    {
+      "from": "running",
+      "to": "result"
+    },
+    {
+      "from": "created",
+      "to": "cancelled"
+    },
+    {
+      "from": "awaiting-input",
+      "to": "cancelled"
+    },
+    {
+      "from": "awaiting-approval",
+      "to": "cancelled"
+    },
+    {
+      "from": "running",
+      "to": "cancelled"
+    }
+  ],
+  "errors": [
+    "TaskStateError",
+    "InputGateBypass",
+    "ApprovalRequired"
+  ]
+}

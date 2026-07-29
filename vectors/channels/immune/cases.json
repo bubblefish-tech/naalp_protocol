@@ -1,0 +1,48 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 5,
+  "name": "Immune",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "AnomalyReport",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "Quarantine",
+      "effect": 3,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "QuarantineLift",
+      "effect": 2,
+      "variable": false
+    }
+  ],
+  "states": [
+    "normal",
+    "quarantined",
+    "lifted",
+    "permanent"
+  ],
+  "transitions": [
+    {
+      "from": "normal",
+      "to": "quarantined"
+    },
+    {
+      "from": "quarantined",
+      "to": "lifted"
+    },
+    {
+      "from": "quarantined",
+      "to": "permanent"
+    }
+  ],
+  "errors": [
+    "AccessDenied"
+  ]
+}

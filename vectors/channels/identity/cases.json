@@ -1,0 +1,59 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 3,
+  "name": "Identity",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "Rotation",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "Revocation",
+      "effect": 3,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "ForeignLink",
+      "effect": 1,
+      "variable": false
+    },
+    {
+      "code": 3,
+      "name": "KeyAnnounce",
+      "effect": 0,
+      "variable": false
+    }
+  ],
+  "states": [
+    "active",
+    "rotated",
+    "revoked"
+  ],
+  "transitions": [
+    {
+      "from": "active",
+      "to": "rotated"
+    },
+    {
+      "from": "rotated",
+      "to": "rotated"
+    },
+    {
+      "from": "active",
+      "to": "revoked"
+    },
+    {
+      "from": "rotated",
+      "to": "revoked"
+    }
+  ],
+  "errors": [
+    "RotationUnauthorized",
+    "KeyRevoked",
+    "SignerMismatch"
+  ]
+}

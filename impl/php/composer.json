@@ -1,0 +1,30 @@
+{
+    "name": "bubblefish/naalp",
+    "description": "Reference implementation of N-AALP (Native Agentic Application Layer Protocol), draft-bubblefish-naalp-00 — PHP port: the signed object envelope (deterministic CBOR + COSE_Sign1), self-certifying identity, the effect/authorization lattice, the spine record bodies, causal + federation ordering, and the twenty-channel registry. Pure surface + Ed25519 (RFC 8032), verifiable offline over any transport.",
+    "type": "library",
+    "keywords": ["naalp", "n-aalp", "agents", "agentic", "protocol", "post-quantum", "cbor", "cose", "ed25519"],
+    "homepage": "https://github.com/bubblefish-tech/naalp_protocol",
+    "license": "Apache-2.0",
+    "version": "0.1.0",
+    "authors": [
+        {
+            "name": "Shawn Sammartano",
+            "homepage": "https://bubblefish.sh"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/bubblefish-tech/naalp_protocol/issues",
+        "source": "https://github.com/bubblefish-tech/naalp_protocol"
+    },
+    "require": {
+        "php": ">=8.1",
+        "ext-sodium": "*",
+        "ext-intl": "*"
+    },
+    "autoload": {
+        "classmap": ["src/"]
+    },
+    "autoload-dev": {
+        "classmap": ["test/"]
+    }
+}

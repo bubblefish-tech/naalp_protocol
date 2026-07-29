@@ -1,0 +1,364 @@
+; N-AALP wire format — the byte-level authority (design.md §3.2).
+; draft-bubblefish-naalp-00 — Native Agentic Application Layer Protocol.
+; Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
+;
+; This module is complete (draft-00): the C1 object body, the effect/profile/channel
+; vocabularies, the C2 COSE_Sign1 / COSE_Sign wrapper (RFC 9052 §4), the C3 protected header,
+; the C4 identity records, the C5 safety label, the C6 approval/consume records, the C7 receipt,
+; the C8 delivery.update, the C9 stream objects, the C12 carriage body, the C10 channel-registry
+; note, and the T13 federated-reconcile record — all reachable from the `naalp-artifact` root.
+; It is machine-validated: the Bormann `cddl` tool confirms well-formedness and validates the
+; committed conformance vectors against their production (scripts/cddl_check.sh, run by
+; harness/run.sh in CI).
+;
+; All instances are deterministic CBOR per RFC 8949 §4.2.1 (shortest heads, map keys
+; ascending by encoded bytes, no indefinite lengths, no duplicate keys). A non-canonical
+; encoding of any production here is rejected (R-3.1, R-3.4).
+
+; ---- Collected root ---------------------------------------------------------------------
+; The set of top-level N-AALP artifacts this module defines, as a single reachable root so a
+; CDDL tool sees no unreferenced rule. Each concrete instance is validated against the specific
+; production for its kind (the conformance harness targets the rule per construction), not against
+; this union; the union exists only for reachability.
+naalp-artifact = naalp-object
+  / naalp-signed-object / naalp-protected-header
+  / naalp-rotation / naalp-revocation / naalp-foreign-link / naalp-safety-label
+  / naalp-approval / naalp-approval-held / naalp-consume-entry
+  / naalp-receipt / naalp-delivery-update
+  / naalp-stream-open / naalp-stream-commit / naalp-stream-checkpoint
+  / naalp-carriage-body / naalp-reconcile
+
+; The object body — the map that is signed as the COSE_Sign1 payload (design.md §2.1).
+naalp-object = {
+  1 : bstr,                  ; id      — content id: multihash(0x20, SHA-384(body-without-1)) (§2.3)
+  2 : uint,                  ; kind    — object kind code (per channel surface, C10)
+  3 : channel-id,           ; channel — N-PAMP channel id
+  4 : uint,                  ; tier    — channel capability tier (0 = baseline) (§0, R-15A)
+  5 : bstr,                  ; signer  — self-certifying signer id (§5.1)
+  6 : uint,                  ; created — signer's claimed creation time, epoch ms (advisory, §2.4)
+  7 : effect,                ; effect  — closed effect value (§6.1)
+  8 : [* bstr],              ; causes  — content ids of causing objects (§8.2); may be empty
+  9 : profile,               ; profile — crypto profile (§4.4)
+  10 : any,                  ; body    — kind-specific body, validated by the channel surface
+  ? 11 : { * uint => any },  ; ext     — non-critical extensions; unknown keys ignored (R-2.5)
+  ? 12 : { * uint => any },  ; cext    — critical extensions; any unknown key => reject (R-2.5)
+}
+
+; Closed effect vocabulary, aligned 1:1 with the N-PAMP Bridge SafetyLabel (design.md §6.1).
+; An unrecognized effect is treated as destructive, never fail-open (R-6.2).
+effect = &(
+  read_only:            0,
+  idempotent_write:     1,
+  non_idempotent_write: 2,
+  destructive:          3,
+)
+
+; Crypto profiles — one wire, per-profile row (design.md §4.4, R-15.1).
+profile = &(
+  public:     1,
+  enterprise: 2,
+  sovereign:  3,
+)
+
+; N-PAMP channel ids 0x0000..0x0013 — the twenty channels (PLAN.md §4, design-channels.md).
+channel-id = 0..19
+
+; ---- C2: COSE signing wrapper (RFC 9052) — added by T2 (design.md §4) ----------------
+; On the wire, an N-AALP object is a tagged COSE structure whose payload is the
+; deterministic-CBOR `naalp-object` body above. A single signature uses COSE_Sign1
+; (tag 18); the optional Ed25519+ML-DSA hybrid uses COSE_Sign (tag 98) and is accepted
+; only if both signatures verify (R-4.4). Signing is the FIPS 204 deterministic variant
+; (rnd = 0) so two implementations produce byte-identical signatures (R-2.2, R-16.2).
+
+naalp-signed-object = COSE_Sign1_Tagged / COSE_Sign_Tagged
+
+COSE_Sign1_Tagged = #6.18(COSE_Sign1)
+COSE_Sign1 = [
+  protected   : bstr,          ; serialized protected header {1 => cose-alg}; empty => zero-length bstr
+  unprotected : cose-header,
+  payload     : bstr,          ; the deterministic-CBOR naalp-object body (the signed payload)
+  signature   : bstr,
+]
+
+COSE_Sign_Tagged = #6.98(COSE_Sign)   ; optional hybrid (Ed25519 + ML-DSA)
+COSE_Sign = [
+  protected   : bstr,          ; body protected header (empty for the N-AALP hybrid)
+  unprotected : cose-header,
+  payload     : bstr,
+  signatures  : [+ COSE_Signature],
+]
+COSE_Signature = [
+  protected   : bstr,          ; serialized per-signer header {1 => cose-alg}
+  unprotected : cose-header,
+  signature   : bstr,
+]
+
+cose-header = { * (int / tstr) => any }
+
+; COSE algorithm ids (design.md §4.1; machine-readable source vectors/registry/signatures.csv).
+; ML-DSA from RFC 9964; Ed25519 from RFC 9864. SLH-DSA (FIPS 205) is reserved (R-4.5),
+; addable with no envelope change once its COSE code point is assigned.
+cose-alg = &(
+  ml-dsa-65: -49,   ; NIST level 3 — Public / Enterprise default
+  ml-dsa-87: -50,   ; NIST level 5 — Sovereign default / mandate
+  ed25519:   -19,   ; classical, hybrid leg only
+)
+
+; ---- C3: object envelope protected header (design.md §2.1, §2.5) — added by T3 ---------
+; A COSE_Sign1 over an N-AALP object uses this protected header: the COSE `alg` plus a
+; pre-parse routing copy of the signer, profile, and naalp-version, carried under a
+; text-string label ("naalp"). A tstr label cannot collide with any integer-labeled
+; standard COSE header parameter (RFC 9052 §3.1). A verifier MUST reject an object whose
+; header signer/profile copies disagree with the body's field 5 / field 9
+; (HeaderBodyMismatch, §2.6). An empty protected header is a zero-length bstr (RFC 9052
+; §3); the N-AALP object header is never empty (it always carries alg + "naalp").
+naalp-protected-header = {
+  1 : cose-alg,             ; COSE algorithm id
+  "naalp" : naalp-header-meta,
+}
+naalp-header-meta = {
+  1 : bstr,                 ; signer  — copy of object body field 5 (§5.1)
+  2 : profile,              ; profile — copy of object body field 9 (§4.4)
+  3 : uint,                 ; naalp-version (this draft: 1)
+}
+
+; ---- C4: identity + key lifecycle (design.md §5) — added by T4 ------------------------
+; The signer id (envelope field 5) is a self-certifying multibase string, identical in
+; form to the N-PAMP PeerHandle:
+;   signer = multibase(base32, multihash(0x12, SHA-256(multicodec(mc, pubkey))))
+; mc is a multiformats key-type code: 0xed (ed25519-pub), 0x1211 (mldsa-65-pub),
+; 0x1212 (mldsa-87-pub) — all draft status; 0x12 (sha2-256) is permanent. The
+; machine-readable source is vectors/registry/multicodec.csv. base32 is RFC 4648
+; lowercase without padding (multibase prefix "b"). A verifier recomputes the id from the
+; key and rejects a mismatch (SignerMismatch, §5.5); no CA.
+;
+; Identity-channel (0x0003) lifecycle record bodies (carried in envelope field 10 by C10):
+naalp-rotation = {          ; co-signed by BOTH the old and new key (§5.2)
+  1 : tstr,                 ; old  — prior signer id
+  2 : tstr,                 ; new  — successor signer id
+  3 : uint,                 ; not_before (epoch ms)
+}
+naalp-revocation = {        ; signed by the key it revokes (or a recovery key) (§5.3)
+  1 : tstr,                 ; key — the signer id being revoked
+  2 : uint,                 ; not_after (epoch ms)
+}
+naalp-foreign-link = {      ; cross-signed by the FOREIGN identity's key (§5.4)
+  1 : tstr,                 ; controls   — the N-AALP signer id
+  2 : tstr,                 ; foreign_id — foreign identifier; MUST be NFC (else NonNFC)
+  3 : uint,                 ; not_after (epoch ms)
+}
+
+; ---- C5: effect authorization + safety label (design.md §6) — added by T5 --------------
+; The effect (object body field 7) is the closed four-value set defined above
+; (read_only/idempotent_write/non_idempotent_write/destructive), aligned 1:1 with the
+; N-PAMP Bridge SafetyLabel u8 (NPAMP draft-01 10_bridge_framework §7): 0x00..0x03, an
+; identity map, so carriage over the Bridge is loss-free. The values form a LATTICE with
+; destructive at the top.
+;
+; The effect is an AUTHORIZATION INPUT (R-6.3), not a hint — closing the gap N-PAMP names
+; and leaves open ("describes intent and does not replace authorization"). An endpoint
+; grants a maximum effect (a capability) to an AUTHENTICATED signer id, and an object is
+; authorized iff effect <= granted (the §6.1 lattice); otherwise it is denied
+; (EffectNotAuthorized). An effect value the evaluator does not recognize is treated as
+; destructive and MUST NOT fail open (R-6.2). No layer authorizes from transport metadata,
+; a foreign header, or a client-supplied name (R-6.5, UnauthenticatedPrincipal). This is
+; endpoint policy, not a wire production: the wire carries only the effect value (field 7).
+;
+; The OPTIONAL safety label (R-6.4) is a signed, non-critical ext entry under ext key 1
+; (object body field 11). It is attributable to the object's signer and auditable; it is
+; an ACCOUNTABLE CLAIM, NOT a guarantee that the content is safe.
+naalp-safety-label = {      ; ext[1] (design.md §6.4)
+  1 : tstr,                 ; risk  — an accountable risk claim (e.g. "elevated")
+  2 : tstr,                 ; scope — what the object affects (e.g. "billing-records")
+}
+
+; ---- C6: approval + single-use consume ledger (design.md §7) — added by T6 --------------
+; An Approval binds, UNDER SIGNATURE, the content id of the exact canonical argument object
+; it approves (§7.1). Because the args are named by content id, mutating any argument changes
+; that id and the approval no longer matches (ApprovalMismatch). The approval is not valid
+; across sessions/contexts (it carries a nonce) nor after not_after (ApprovalExpired), and
+; once consumed it is dead (§7.3). These record bodies are signed with the C2 crypto over
+; deterministic CBOR; wrapping them as Governance-channel (0x0004) objects is T12.
+naalp-approval = {
+  1 : bstr,                 ; approves   — content id of the exact args object (§7.1)
+  2 : tstr,                 ; approver   — approver signer id
+  3 : effect,              ; grant      — the granted effect class (C5)
+  4 : bstr,                 ; nonce      — anti-replay nonce (§7.3)
+  5 : uint,                 ; not_after  — expiry, epoch ms (§7.3)
+}
+; A held outcome — approval required but not yet granted — is a DISTINCT signed non-success
+; result, never a silent success or denial (§7.4).
+naalp-approval-held = {
+  1 : bstr,                 ; approves   — content id of the args whose approval is pending
+  2 : tstr,                 ; reason     — accountable explanation
+}
+; The consume ledger is a durable, hash-chained set keyed by the approval content id (§7.2).
+; Consume is an atomic compare-and-set: the first append for an approval id wins; a second is
+; rejected (AlreadyConsumed). The head after an entry is SHA-384(entry); the entry carries the
+; prior head in field 2, so editing any entry breaks the next entry's linkage (LedgerCorrupt
+; on replay). The genesis head is 48 zero bytes. Atomicity = the store's write-ahead log
+; (persist-before-acknowledge) + a single-writer-per-approval-id discipline.
+naalp-consume-entry = {
+  1 : uint,                 ; seq         — ledger sequence position
+  2 : bstr,                 ; prev        — prior chain head (48 bytes; genesis = zero)
+  3 : bstr,                 ; approval_id — the approval content id being consumed
+  4 : tstr,                 ; by          — consumer signer id
+}
+
+; ---- C7: audit chain + causal graph + tiered ordering (design.md §8) — added by T7 -----
+; An ordering authority records each accepted object by appending a signed Receipt, signed by
+; the authority with the C2 crypto over the deterministic-CBOR body (§8.1). The chain is
+; tamper-evident: the head after a receipt is SHA-384(receipt body), the genesis prev is 48
+; zero bytes, and the body carries the prior head in field 1 — so any reorder, omission, or
+; substitution breaks a `prev` link (ChainBroken) or duplicates a `seq`. The authority NEVER
+; mutates the origin object to order it; ordering is an outer signed layer and the object's own
+; signature stays valid (§8.2). `at` is the authority's time anchor, evidence a verifier checks
+; independently of the signer's clock (R-8.4). An independent auditor detects equivocation —
+; two receipts by one authority at one `seq` naming different objects — from the signed receipts
+; alone (§8.5, ForkProof). Wrapping receipts as Audit-channel (0x0005) objects is T12; the
+; federation (higher) tier that reconciles multiple authorities over the shared causal graph is
+; T13 — both tiers order the identical signed objects, so federation needs no wire change (§8.4).
+naalp-receipt = {
+  1 : bstr,                 ; prev  — hash of the previous receipt body (48 bytes; genesis = zero)
+  2 : bstr,                 ; obj   — content id of the accepted object (never the object itself)
+  3 : uint,                 ; seq   — monotonic sequence position within this authority's chain
+  4 : uint,                 ; at    — authority time anchor, epoch ms (R-8.4)
+}
+; The causal graph (§8.2) is not a distinct wire object: an edge "A causes B" is carried by B's
+; object body field 8 (`causes`, an array of content ids) and proven by B's own signature. It is
+; a signed partial order, checkable offline with no ordering authority present; a total order is
+; a policy layered over it. A cause an effect could not have seen — a present cause at a later
+; ordering position, or a cycle — is rejected (CausalViolation, §8.3, R-12.3).
+
+; ---- C8: delivery stages + persist-before-ack + switchboard (design.md §9) — added by T8 --
+; Delivery is four distinct, monotonic, separately-observable stages — there is no single
+; "sent" boolean (§9.1). Each stage is a signed delivery.update naming the target object's
+; content id and the stage reached. Stages advance in order; observing a stage earlier than the
+; one already reached is StageOutOfOrder (§9.4). An endpoint MUST durably persist an object
+; (write-ahead log fsync) BEFORE emitting the acknowledgment that advances its stage, so a crash
+; immediately after an acknowledgment loses nothing (§9.2, persist-before-ack). The live
+; switchboard (two connections held open, objects passed through both directions concurrently,
+; §9.3) and the content-free relay (a relay holding objects only in transit still writes a valid
+; audit trail over content ids, §9.4 / R-9.4) are behavioural properties of an endpoint/relay,
+; not additional wire objects. Wrapping delivery.update as a Delivery-channel object is T12.
+delivery-stage = &(
+  persisted_origin: 0,      ; object durably persisted at the origin
+  accepted_relay:   1,      ; accepted by a relay in transit
+  persisted_target: 2,      ; durably persisted at the target
+  presented:        3,      ; presented to the target application
+)
+naalp-delivery-update = {
+  1 : bstr,                 ; obj   — content id of the object whose delivery this reports
+  2 : delivery-stage,      ; stage — the stage reached (0..3)
+  3 : uint,                 ; at    — observer time, epoch ms
+}
+
+; ---- C9: native streaming + per-stream commitment (design.md §10) — added by T9 ----------
+; A native stream runs on the N-PAMP Stream channel 0x000C (§10.1), distinct from foreign
+; streamed carriage (§13, 0x000D) — N-AALP never carries a foreign protocol on 0x000C (R-10.6).
+; The chunks are raw data frames the transport AEAD already authenticates; they are NOT signed
+; individually (per-chunk ML-DSA would be ruinous, R-10.2). Instead three signed objects govern
+; the stream. StreamOpen binds the stream's identity, effect, and — where it causes an effect —
+; its approval; a stream whose effect is not authorized is refused BEFORE any chunk (§10.2,
+; R-10.3). StreamCommit carries a single rolling SHA-384 over the chunks in absolute-offset
+; order (a bare 48-octet digest), making the whole stream non-repudiable with one signature, not
+; N (§10.2); altering any delivered byte invalidates it (StreamDigestMismatch, §10.5). Optional
+; StreamCheckpoints let a verifier confirm a prefix (digest_so_far = SHA-384 of the prefix
+; through that offset) without waiting for the end. The same three objects map onto QUIC / WS /
+; HTTP native streaming and the commitment verifies identically (R-10.4). Full-duplex is inherent
+; (R-10.5). Wrapping these as Stream-channel objects is T12.
+naalp-stream-open = {
+  1 : bstr,                 ; stream_id
+  2 : effect,              ; effect  — the stream's effect class (C5)
+  ? 3 : bstr,               ; approval — content id of the approval binding (present iff effecting)
+  4 : uint,                 ; substream — NPAMP-STREAM sub-stream id
+}
+naalp-stream-commit = {
+  1 : bstr,                 ; stream_id
+  2 : bstr,                 ; digest — rolling SHA-384 over the complete ordered stream (48 octets)
+}
+naalp-stream-checkpoint = {
+  1 : bstr,                 ; stream_id
+  2 : uint,                 ; through_offset — absolute offset the prefix ends at
+  3 : bstr,                 ; digest_so_far — SHA-384 over the prefix through_offset (48 octets)
+}
+
+; ---- C11: transport bindings (design.md §12) — added by T10 -----------------------------
+; A transport binding adds NO new wire object: it carries exactly one signed N-AALP object
+; (any production above) as one message unit, byte-for-byte, over N-PAMP / QUIC / WebSocket /
+; HTTP, with identical object semantics (R-13.1). The media type is `application/naalp+cbor`
+; (one object per representation), registered in the IANA considerations (T15). The object is
+; self-secured (§2-§8); the binding adds only framing and, from the transport, confidentiality
+; and connection authentication (R-13.2). The confidentiality boundary is NORMATIVE (§12.3): an
+; object marked sensitive MUST NOT be emitted in cleartext over a non-confidential transport —
+; the binding refuses it (ConfidentialTransportRequired) and directs the deployment to a
+; confidential transport (N-PAMP is the reference confidential transport). A transport lacking
+; peer authentication where policy requires it is refused (PeerUnauthenticated). These are
+; endpoint behaviours, not wire productions.
+
+; ---- C12: foreign carriage by class (design.md §13) — added by T11 ----------------------
+; N-AALP carries a foreign protocol by wrapping its message, octet-for-octet, in a signed
+; N-AALP carriage object interpreted by a carriage CLASS (R-14.1). The carriage body is a normal
+; N-AALP object body (envelope field 10): signed, effect-labeled, identity-bound, audited
+; (R-14.2). The `foreign` field is carried VERBATIM and MUST NOT be re-serialized, canonicalized,
+; summarized, or rewritten (R-14.4); N-AALP metadata is carried around it, never inside it. The
+; carriage object's signer remains the authority — a foreign identity NEVER becomes an N-AALP
+; authorization identity (R-14.6). The OPAQUE class carries any protocol, including an undefined
+; one, on an experimental protocol id with no registration (R-18.6). protocol_id ranges
+; (§13.4): standards 0x01-0x0F (Specification Required), experimental 0x10-0x7F (no registration),
+; private 0x80-0xFF; machine-readable source vectors/registry/protocols.csv. Over N-PAMP the raw
+; `foreign` octets ride an N-PAMP Bridge frame of the matching class byte-exact (R-14.3).
+naalp-carriage-class = &(
+  jsonrpc: 0,               ; any JSON-RPC 2.0 protocol (MCP, A2A core)
+  http:    1,               ; any HTTP-semantics protocol
+  msg:     2,               ; any message-passing / performative protocol
+  stream:  3,               ; any event/streaming foreign reply
+  doc:     4,               ; capability/schema documents (agent cards, tool catalogs)
+  opaque:  5,               ; any declared-content-type payload, incl. undefined protocols
+)
+naalp-carriage-body = {
+  1 : uint,                 ; protocol_id  — N-AALP registry (§13.4)
+  2 : naalp-carriage-class, ; class        — 0 JSONRPC .. 5 OPAQUE
+  3 : uint,                 ; content_type — foreign encoding
+  4 : bstr,                 ; correlation  — exchange correlation token
+  5 : tstr,                 ; method       — advisory routing key (foreign op name)
+  6 : bstr,                 ; foreign      — the foreign message, carried octet-for-octet
+}
+
+; ---- C10: the twenty channel surfaces, baseline tier (design-channels.md) — added by T12 --
+; A channel surface adds NO new encoding, signature, or identity (R-11.3): it only assigns
+; `kind` codes (object body field 2), each scoped by the `channel` id (field 3), and binds each
+; kind to a declared `effect` (field 7). All twenty channels (0x0000..0x0013) and their baseline
+; kinds are enumerated in the machine-readable registry vectors/registry/channels.csv (65 kinds;
+; the prose is generated from it, R-18.3). A fixed-effect kind's object MUST carry exactly its
+; declared effect (EffectDeclarationMismatch otherwise); a variable-effect kind (Stream
+; StreamOpen §10, Bridge Carriage §13) takes the carried/stream action's effect, authorized at
+; run time by C5. An object on an unregistered (channel, kind) is rejected (UnknownKind). Each
+; channel's baseline body is a spine production already defined above — Identity rotation/
+; revocation/foreign-link (C4), Governance approval/held/consume (C6), Audit receipt/fork-proof
+; (C7), delivery-update (C8), Stream open/commit/checkpoint (C9), Bridge carriage (C12) — or a
+; thin channel-specific body carried in object body field 10; the surface introduces no new wire
+; production, only the kind/effect/state vocabulary. Higher tiers (tier 1+) are T13.
+
+; ---- Higher tiers: federated ordering + the tier model (design §8.4, §0) — added by T13 -----
+; The channel tier is envelope field 4; tier = 0 is the frozen baseline (all twenty channels).
+; A higher tier (tier 1+) adds capability WITHOUT changing the baseline envelope, effect
+; vocabulary, identity model, or audit chain (R-15A.2): a baseline-tier verifier accepts a
+; higher-tier object's spine and IGNORES an unknown higher-tier NON-critical extension (field 11),
+; while an unknown CRITICAL extension (field 12) it cannot honor is rejected fail-closed
+; (UnknownCriticalExt) — the same field-11/field-12 mechanism defined at C3. No new wire field is
+; introduced for tiering.
+;
+; Federated ordering (the Federation channel higher tier, tier 1; design §8.4, R-8.6): multiple
+; independent authorities each issue baseline receipts (C7) over their own scope, and a signed
+; Reconcile object records a DETERMINISTIC merge of their receipt chains over the shared causal
+; graph — a topological linearization of the union causal DAG (§8.2) tie-broken by object content
+; id (bytewise ascending). Because the order depends only on the causal graph, any split of the
+; same objects across authorities reconciles to the same order, so moving from single-authority
+; to federated ordering requires NO envelope or object change (R-8.6). ScopeOverlapConflict (an
+; object claimed by two authorities) is an operator error at baseline and is resolved by the merge
+; at tier 1 (the object is ordered once).
+naalp-reconcile = {
+  1 : [+ tstr],             ; authorities — the ordering authorities' signer ids reconciled
+  2 : [+ bstr],             ; order       — the deterministic total order, object content ids
+}

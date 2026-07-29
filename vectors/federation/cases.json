@@ -1,0 +1,60 @@
+{
+  "source": "design \u00a78.4 / design-channels \u00a77; reconcile = deterministic topological sort of the union causal DAG, tie-broken by content id (bytewise); scope-independent so federated ordering needs no wire change (R-8.6).",
+  "nodes": [
+    {
+      "name": "A",
+      "id_hex": "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41",
+      "causes_hex": []
+    },
+    {
+      "name": "B",
+      "id_hex": "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567",
+      "causes_hex": [
+        "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41"
+      ]
+    },
+    {
+      "name": "C",
+      "id_hex": "2030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df",
+      "causes_hex": [
+        "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41"
+      ]
+    },
+    {
+      "name": "D",
+      "id_hex": "2030f7869553f389a0e67c5cad8756688228328d28be2d6d7f2a21dcc3d6fe8142550ee0da002bca1705028a0e2c8bc06953",
+      "causes_hex": [
+        "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567",
+        "2030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df"
+      ]
+    },
+    {
+      "name": "E",
+      "id_hex": "2030de1b3cdb7ae6946d2ea6d41ae00d393a2266845919273e9d9fe2696737df5f24bba69090ac2be8a5f60cbde4ff2fe4a1",
+      "causes_hex": [
+        "2030f7869553f389a0e67c5cad8756688228328d28be2d6d7f2a21dcc3d6fe8142550ee0da002bca1705028a0e2c8bc06953"
+      ]
+    }
+  ],
+  "reconcile_order_hex": [
+    "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41",
+    "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567",
+    "2030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df",
+    "2030f7869553f389a0e67c5cad8756688228328d28be2d6d7f2a21dcc3d6fe8142550ee0da002bca1705028a0e2c8bc06953",
+    "2030de1b3cdb7ae6946d2ea6d41ae00d393a2266845919273e9d9fe2696737df5f24bba69090ac2be8a5f60cbde4ff2fe4a1"
+  ],
+  "reconcile_order_causally_valid": true,
+  "naive_content_id_sort_hex": [
+    "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567",
+    "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41",
+    "2030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df",
+    "2030de1b3cdb7ae6946d2ea6d41ae00d393a2266845919273e9d9fe2696737df5f24bba69090ac2be8a5f60cbde4ff2fe4a1",
+    "2030f7869553f389a0e67c5cad8756688228328d28be2d6d7f2a21dcc3d6fe8142550ee0da002bca1705028a0e2c8bc06953"
+  ],
+  "naive_causally_valid": false,
+  "authorities": [
+    "bauthority-x",
+    "bauthority-y"
+  ],
+  "record_hex": "a201826c62617574686f726974792d786c62617574686f726974792d79028558322030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc415832203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a6056758322030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df58322030f7869553f389a0e67c5cad8756688228328d28be2d6d7f2a21dcc3d6fe8142550ee0da002bca1705028a0e2c8bc0695358322030de1b3cdb7ae6946d2ea6d41ae00d393a2266845919273e9d9fe2696737df5f24bba69090ac2be8a5f60cbde4ff2fe4a1"
+}

@@ -1,0 +1,66 @@
+# Issue form: a defect in a reference implementation (impl/<lang>) or the harness/tooling,
+# with no claimed spec effect. A defect that turns out to have a spec effect is relabelled
+# `design` and produces an ADR (CONTRIBUTING.md).
+name: "Reference-implementation bug"
+description: "A defect in a reference SDK (impl/<lang>), an oracle (tools/), or the conformance harness — not a spec ambiguity."
+title: "[bug]: "
+labels: ["sdk", "needs-discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For an interoperability disagreement about what the wire SHOULD be, file a
+        **Specification issue** instead. For a failing conformance case, use the
+        **Conformance failure** form. This form is for a bug in the code, not the spec.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - "impl/go"
+        - "impl/rust"
+        - "impl/python"
+        - "impl/typescript"
+        - "impl/java"
+        - "impl/kotlin"
+        - "impl/ruby"
+        - "impl/php"
+        - "impl/csharp"
+        - "impl/swift"
+        - "tools/ (an oracle)"
+        - "harness/ (runner or adapter)"
+        - "scripts/ (a validator)"
+        - "other"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: "The defect, and what you expected instead."
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: "Exact commands, from the repo root."
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "e.g. windows 11 x86_64, python 3.14, node 24"
+    validations:
+      required: false
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight
+      options:
+        - label: "The defect reproduces at the current head of this repository."
+          required: true
+        - label: "This is a code bug, not a disagreement about what the spec requires."
+          required: true

@@ -1,0 +1,40 @@
+{
+  "source": "design \u00a710; commitment = rolling SHA-384 over chunks in absolute-offset order; StreamOpen {1:stream_id,2:effect,3:approval?,4:substream}; StreamCommit {1:stream_id,2:digest}; StreamCheckpoint {1:stream_id,2:through_offset,3:digest_so_far}.",
+  "stream_id_hex": "00112233445566778899aabbccddeeff",
+  "substream": 3,
+  "effect": 1,
+  "approval_hex": "20309cc4a94c8921a5227f80843618ad7a04b4ae95751906e58145b372b8ed88e1c773a4fc55ae4aab39a8311d6a502ae4fe",
+  "chunks": [
+    {
+      "offset": 0,
+      "data_hex": "68656c6c6f20"
+    },
+    {
+      "offset": 6,
+      "data_hex": "73747265616d696e6720"
+    },
+    {
+      "offset": 16,
+      "data_hex": "776f726c64"
+    }
+  ],
+  "final_digest_hex": "6efe34a0d48a61b3aa21604c42229a5c8f1105e155abc9c1628ce636480cfe253fe26f8e548cbfc237e4e1096e7f4081",
+  "checkpoints": [
+    {
+      "through_offset": 6,
+      "digest_so_far_hex": "50e3cab9dbf35f2640c8b5806ec1191da961ebc9212f5c5baa16d6566c7aa3393a3322165b58a90d66ac334a1d0da10d"
+    },
+    {
+      "through_offset": 16,
+      "digest_so_far_hex": "952ed52b6cdf2486057294bc708833624a6c7466f39c7ee237e00653307b30c6ef8e91d02a6ff5105351e25cacd048cf"
+    }
+  ],
+  "open_body_hex": "a4015000112233445566778899aabbccddeeff020103583220309cc4a94c8921a5227f80843618ad7a04b4ae95751906e58145b372b8ed88e1c773a4fc55ae4aab39a8311d6a502ae4fe0403",
+  "commit_body_hex": "a2015000112233445566778899aabbccddeeff0258306efe34a0d48a61b3aa21604c42229a5c8f1105e155abc9c1628ce636480cfe253fe26f8e548cbfc237e4e1096e7f4081",
+  "checkpoint_body_hex": "a3015000112233445566778899aabbccddeeff020603583050e3cab9dbf35f2640c8b5806ec1191da961ebc9212f5c5baa16d6566c7aa3393a3322165b58a90d66ac334a1d0da10d",
+  "tamper": {
+    "chunk_index": 1,
+    "flipped_data_hex": "72747265616d696e6720",
+    "digest_hex": "aa29e7b86901d1fd4aa06a63dabbb37e8412e3129c643244a309fb9a88749de1815dd8be911c2aec9f32f084c31c761f"
+  }
+}

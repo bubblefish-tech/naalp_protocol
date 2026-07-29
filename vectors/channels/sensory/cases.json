@@ -1,0 +1,38 @@
+{
+  "source": "design-channels.md \u00a71..\u00a720; a surface adds only kind codes + declared effects over the spine (R-11.3).",
+  "channel_id": 9,
+  "name": "Sensory",
+  "kinds": [
+    {
+      "code": 0,
+      "name": "Observation",
+      "effect": 0,
+      "variable": false
+    },
+    {
+      "code": 1,
+      "name": "Subscribe",
+      "effect": 1,
+      "variable": false
+    },
+    {
+      "code": 2,
+      "name": "Unsubscribe",
+      "effect": 1,
+      "variable": false
+    }
+  ],
+  "states": [
+    "active",
+    "cancelled"
+  ],
+  "transitions": [
+    {
+      "from": "active",
+      "to": "cancelled"
+    }
+  ],
+  "errors": [
+    "SubscriptionUnknown"
+  ]
+}

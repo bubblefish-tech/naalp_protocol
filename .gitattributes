@@ -1,0 +1,26 @@
+# N-AALP line-ending policy. The conformance vectors and the CDDL are the byte-level
+# authority; a hash-pinned vector gate (T14 / CI) must see a stable, platform-independent
+# byte stream, so every text and generated artifact is stored and checked out LF-only.
+# This overrides a developer's core.autocrlf on this repo's files.
+
+# Default: treat as text, normalize to LF in the repo and on checkout.
+* text=auto eol=lf
+
+# Generated / graded artifacts and specs — LF is load-bearing (never CRLF).
+*.json   text eol=lf
+*.cddl   text eol=lf
+*.csv    text eol=lf
+
+# Source and scripts.
+*.go     text eol=lf
+*.rs     text eol=lf
+*.py     text eol=lf
+*.ts     text eol=lf
+*.sh     text eol=lf
+*.ps1    text eol=lf
+*.md     text eol=lf
+Makefile text eol=lf
+
+# Lockfiles are text, LF.
+go.sum      text eol=lf
+Cargo.lock  text eol=lf

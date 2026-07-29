@@ -1,0 +1,4088 @@
+{
+  "algorithm": "N-AALP",
+  "schemaVersion": 1,
+  "specRevision": "draft-bubblefish-naalp-00",
+  "note": "Op-replay conformance corpus assembled from the per-family non-circular oracles (tools/*_oracle.py). Every expected value traces to an RFC/FIPS/NIST vector or a from-scratch constructor, never to an implementation under test (F3). Driven through each SDK adapter by harness/runner (naalp-conform). cose.sign1 is graded by the crypto-consensus gate, not here.",
+  "testGroups": [
+    {
+      "op": "sha384",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-16.1/sha384-kat",
+          "comment": "FIPS 180-4 SHA-384('abc')",
+          "in": {
+            "msg_hex": "616263"
+          },
+          "result": "valid",
+          "expected": {
+            "digest_hex": "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7"
+          }
+        }
+      ]
+    },
+    {
+      "op": "cbor.encode",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-3.1/deterministic-cbor",
+          "comment": "encode 'minimal' body",
+          "in": {
+            "value": [
+              "map",
+              [
+                [
+                  [
+                    "u",
+                    2
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    3
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    4
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    5
+                  ],
+                  [
+                    "b",
+                    "5349474e45525f41"
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    6
+                  ],
+                  [
+                    "u",
+                    1785000000000
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    7
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    8
+                  ],
+                  [
+                    "arr",
+                    []
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    9
+                  ],
+                  [
+                    "u",
+                    1
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    10
+                  ],
+                  [
+                    "s",
+                    "hello"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "result": "valid",
+          "expected": {
+            "bytes_hex": "a902000300040005485349474e45525f41061b0000019f9a4a7a000700088009010a6568656c6c6f"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-3.1/deterministic-cbor",
+          "comment": "encode 'nested' body",
+          "in": {
+            "value": [
+              "map",
+              [
+                [
+                  [
+                    "u",
+                    2
+                  ],
+                  [
+                    "u",
+                    1
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    3
+                  ],
+                  [
+                    "u",
+                    4
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    4
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    5
+                  ],
+                  [
+                    "b",
+                    "5349474e45525f42"
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    6
+                  ],
+                  [
+                    "u",
+                    1785000123456
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    7
+                  ],
+                  [
+                    "u",
+                    2
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    8
+                  ],
+                  [
+                    "arr",
+                    [
+                      [
+                        "b",
+                        "2030450ceccc1d43b1c9bd098530ca64cb1b1c458d7244972dfca49a824b4290f05bca3d8dd65f43ed6c5204ee8e76f402fc"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    9
+                  ],
+                  [
+                    "u",
+                    3
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    10
+                  ],
+                  [
+                    "map",
+                    [
+                      [
+                        [
+                          "u",
+                          1
+                        ],
+                        [
+                          "s",
+                          "world"
+                        ]
+                      ],
+                      [
+                        [
+                          "u",
+                          2
+                        ],
+                        [
+                          "u",
+                          42
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    11
+                  ],
+                  [
+                    "map",
+                    [
+                      [
+                        [
+                          "u",
+                          100
+                        ],
+                        [
+                          "u",
+                          7
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          },
+          "result": "valid",
+          "expected": {
+            "bytes_hex": "aa02010304040005485349474e45525f42061b0000019f9a4c5c400702088158322030450ceccc1d43b1c9bd098530ca64cb1b1c458d7244972dfca49a824b4290f05bca3d8dd65f43ed6c5204ee8e76f402fc09030aa20165776f726c6402182a0ba1186407"
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-3.1/deterministic-cbor",
+          "comment": "encode 'absent_ext' body",
+          "in": {
+            "value": [
+              "map",
+              [
+                [
+                  [
+                    "u",
+                    2
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    3
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    4
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    5
+                  ],
+                  [
+                    "b",
+                    "5349474e45525f43"
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    6
+                  ],
+                  [
+                    "u",
+                    1785000200000
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    7
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    8
+                  ],
+                  [
+                    "arr",
+                    []
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    9
+                  ],
+                  [
+                    "u",
+                    1
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    10
+                  ],
+                  [
+                    "s",
+                    "x"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "result": "valid",
+          "expected": {
+            "bytes_hex": "a902000300040005485349474e45525f43061b0000019f9a4d87400700088009010a6178"
+          }
+        },
+        {
+          "tcId": 4,
+          "requirement": "R-3.1/deterministic-cbor",
+          "comment": "encode 'empty_ext' body",
+          "in": {
+            "value": [
+              "map",
+              [
+                [
+                  [
+                    "u",
+                    2
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    3
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    4
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    5
+                  ],
+                  [
+                    "b",
+                    "5349474e45525f43"
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    6
+                  ],
+                  [
+                    "u",
+                    1785000200000
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    7
+                  ],
+                  [
+                    "u",
+                    0
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    8
+                  ],
+                  [
+                    "arr",
+                    []
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    9
+                  ],
+                  [
+                    "u",
+                    1
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    10
+                  ],
+                  [
+                    "s",
+                    "x"
+                  ]
+                ],
+                [
+                  [
+                    "u",
+                    11
+                  ],
+                  [
+                    "map",
+                    []
+                  ]
+                ]
+              ]
+            ]
+          },
+          "result": "valid",
+          "expected": {
+            "bytes_hex": "aa02000300040005485349474e45525f43061b0000019f9a4d87400700088009010a61780ba0"
+          }
+        }
+      ]
+    },
+    {
+      "op": "content.id",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-2.3/content-id",
+          "comment": "content-id of 'minimal'",
+          "in": {
+            "body_hex": "a902000300040005485349474e45525f41061b0000019f9a4a7a000700088009010a6568656c6c6f"
+          },
+          "result": "valid",
+          "expected": {
+            "id_hex": "2030450ceccc1d43b1c9bd098530ca64cb1b1c458d7244972dfca49a824b4290f05bca3d8dd65f43ed6c5204ee8e76f402fc"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-2.3/content-id",
+          "comment": "content-id of 'nested'",
+          "in": {
+            "body_hex": "aa02010304040005485349474e45525f42061b0000019f9a4c5c400702088158322030450ceccc1d43b1c9bd098530ca64cb1b1c458d7244972dfca49a824b4290f05bca3d8dd65f43ed6c5204ee8e76f402fc09030aa20165776f726c6402182a0ba1186407"
+          },
+          "result": "valid",
+          "expected": {
+            "id_hex": "2030cecc1e3a6da26a7e09b319ed429cfc166fd38fc22ab5c94ccc6487aaf24b38bc996dc7d9aa72271ec220c52a07c9dc8c"
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-2.3/content-id",
+          "comment": "content-id of 'absent_ext'",
+          "in": {
+            "body_hex": "a902000300040005485349474e45525f43061b0000019f9a4d87400700088009010a6178"
+          },
+          "result": "valid",
+          "expected": {
+            "id_hex": "203039c892bb15b8824d06f934f58c7da668310ad47ff0083f0c618771fdd42605c5370a894772189fbc6b4dd9967b5426de"
+          }
+        },
+        {
+          "tcId": 4,
+          "requirement": "R-2.3/content-id",
+          "comment": "content-id of 'empty_ext'",
+          "in": {
+            "body_hex": "aa02000300040005485349474e45525f43061b0000019f9a4d87400700088009010a61780ba0"
+          },
+          "result": "valid",
+          "expected": {
+            "id_hex": "2030e5096e10893e284825f623c0d1e31b9a0c1fc4f11c78789c8c44dda62de7e92907ec5642620e1b71271b47f9a5314bbb"
+          }
+        }
+      ]
+    },
+    {
+      "op": "cbor.decode",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-3.4/reject-non-canonical",
+          "comment": "key_order -> NonCanonical",
+          "in": {
+            "bytes_hex": "a202000100"
+          },
+          "result": "invalid",
+          "flags": [
+            "MustReject",
+            "NonCanonical"
+          ]
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-3.4/reject-non-canonical",
+          "comment": "int_notshortest -> NonCanonical",
+          "in": {
+            "bytes_hex": "1800"
+          },
+          "result": "invalid",
+          "flags": [
+            "MustReject",
+            "NonCanonical"
+          ]
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-3.4/reject-non-canonical",
+          "comment": "indefinite_arr -> NonCanonical",
+          "in": {
+            "bytes_hex": "9f00ff"
+          },
+          "result": "invalid",
+          "flags": [
+            "MustReject",
+            "NonCanonical"
+          ]
+        },
+        {
+          "tcId": 4,
+          "requirement": "R-3.4/reject-non-canonical",
+          "comment": "duplicate_key -> NonCanonical",
+          "in": {
+            "bytes_hex": "a201000101"
+          },
+          "result": "invalid",
+          "flags": [
+            "MustReject",
+            "NonCanonical"
+          ]
+        }
+      ]
+    },
+    {
+      "op": "cose.tbs",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-4.1/cose-tobesigned",
+          "comment": "sign1_alg-49",
+          "in": {
+            "protected_hex": "a1013830",
+            "payload_hex": "a10700"
+          },
+          "result": "valid",
+          "expected": {
+            "tobesigned_hex": "846a5369676e61747572653144a10138304043a10700"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-4.1/cose-tobesigned",
+          "comment": "sign1_alg-50",
+          "in": {
+            "protected_hex": "a1013831",
+            "payload_hex": "a10700"
+          },
+          "result": "valid",
+          "expected": {
+            "tobesigned_hex": "846a5369676e61747572653144a10138314043a10700"
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-4.1/cose-tobesigned",
+          "comment": "sign1_alg-19",
+          "in": {
+            "protected_hex": "a10132",
+            "payload_hex": "a10700"
+          },
+          "result": "valid",
+          "expected": {
+            "tobesigned_hex": "846a5369676e61747572653143a101324043a10700"
+          }
+        }
+      ]
+    },
+    {
+      "op": "mldsa.keygen",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-4.3/mldsa-keygen-nist",
+          "comment": "ML-DSA-65 NIST ACVP seed->pk",
+          "in": {
+            "param": "ML-DSA-65",
+            "seed_hex": "70cefb9aed5b68e018b079da8284b9d5cad5499ed9c265ff73588005d85c225c"
+          },
+          "result": "valid",
+          "expected": {
+            "pk_hex": "d2fd03f3a1b7f635af9f34d580a98f524c735bd5ba2355dc6e035bd21765580cbb111923f194a7cc8a7bb2ebc5c0e71aa637cc800e6103b850a539b2a39e1b6d713e5db8314c9ae1f8bf8a38f06afb9d73b161b0ffe3a4891706ae26d54ffb496df8dc0f1983509500c9abbd28e59b3fcdabbdadabd45ec31499378bde849e7c1f19b7044d67e05106d7136d95380d5605d4465d877557065df0a75d3c28542f40feed42ec7e280637b083d988bca5f6394e02396c4676184fb63318dafaf5bbdde00e308fe84019c2340a3f3e1c0865624970711283356ae14bd6b94d1c9ae188de1a8a2ca824a8eae2fe6afb38d83a2d99996ab21fe3e84c0be6b6da08879b677374fa7c691b13d40fa9d4cc26b2288d5a8c9a43724381004d61b0d57ff400314c8e30ee796af10f7ee21bf13d08180465abc72eddb080c6a07184e3eedc47c19aa7f09d1f3309e183a2bd9b0573dde474a81ba4f78d0c523d0c04f90060fd571a35c037e079c5e210d7390df568f2e2f03ce44420c82f3fe69eb9b48ee90962d6b0f24440648f71edb241ee6566fc1a64cabf66be6fecbcb1387c82a7bc202d9e367998e2a291af0cd1570677fe8d63a3285a2ea6eb29af9dc1aec1c36c4706b12baa20839692f286a6e0321468f7479345c4d52fbdb2f06725b554b89e2492612681acebc6c7bada9225818dbc35d64c22c48bff80a730d0716dfac99dfd5b8992611d0c93ee90bdb260022afe25d913e06effb59cb1f8a60cbfa5ab2f459a16f467e989525e0a37ebe56e833fde55db9d1530adcf45846df281e47caa1e0a27efde2107d354cea0f6a454692f04cd838ebdd46e191e5d9c11839a2c3f488a4fc7cd265a7b5d32b08cbdbfab9d2ccd76222c8ee37ddcbd2aa063ed861473a6454caea377850b1a2b9ddbbcb374fab5b12f351c8e5888872e5cd1f60a4fae1ff837d192c22beb41ee6fa392fcdf4550ff46b5ce906d017ef3077df132300d8bbfa9bb03c75e79e2f04c284ad06a44399649c3e2a2a8d1efe9b7a4e0c271047ab75908bff7df9e30eca547745bae23a86ff9a8b58c2538b88b866401076902dc5f0bd761687b49eafe36d350cbedfdd36c121cf23786bfcf7e47076496eab6bbda774049c2ebabe2de99c4c24f2db73684015b373977496760cf9ac23d8b623133db2de10d73fa6ad1c6dac8434f28c6e251ce7293cff3f3b61efcb5a435123670f29846a13df3ee712604461f1bab8f4ebc836de058978ae734396a98081b35cc98188a86949c99270d4709854c5b35b17f48a373134c814cc8a0f3e2fa807f2a918530907864778282d75e03a41b2504eed816a417a3ac6ba16080c39b7310192002a728f7f20395009a9e16767ce1971f5de7d229a50613369e4382045a8e81901f4dba8102f3d413fe35b326a874f233b719a7137600d35d33aeb6b7259624083aa968730c8f78292ad28f14eeabe660835984fe69ef23dec8c327c0eb0b882d587e1ec433da85c9fd1e0a34994dea240c854452d18c30f496e49ec904b602e0f5062edcda03280a53b4313574cc2c0d5471bc9613bdfd6641f5bd127bab5b5eb3d499a33114048220e819f8ee12ca922c8f17d9c9f51ad5bd6883b10e6aa2483ba49dc547da7686151344f4e9099b38e430b5226b059832cf03db48fb02dba4e61593dc4576360491890e53ec0e6ac73cf32b25d823b38456e286505a541e5aeee96b1914f5f76687ce2b0160227abed77993594bcd831366206d75714082f1c46f1f4439ac81a57af31c81c555307a070ffa94e0479b784bbd88a60cd4c7cfd94e6afe02f6b21f72af0dcd6609d40c965c14e5f2389183e53de930f7de1d44215cf49144844e8b87f78a7f132aefe22be80b4e3a05ee3a68ccf609ef44047402e4493046e6f9c767ff8a75e28b3ce077fde7e7eed313b5bf7e460127ca8182e9bc794c0dfa730fb920080575a751b5caec85a109b4422ba266743f0d032bda8f1ca6248cdb917530df1302a5f8c18dc642d52478c98c12a3f16ef2b62b4f59ea1bb58de7b65b3c7153ce6da5e4950746f80e087a0e3586d097791bf36def865d68591d39d0903773eea962147f34704138b54df7924cdd8c333db5e1a409ccb2b34e2c3c8c7fdd3fd8d012cbf382aaa85e83a12f235a2d147d035b7b28b34b6f57949f322482a7d4d3b15045c420d5addc7f0e69b4dc1cba58b01d872480b06a260d827d891b13c4c5ca50c748de3c771be61e9aa170165cb01f4bf5da27a7791d3ad3f6267b4cb4e61b28fa1708418d932dfc4161880c5d3b17a9663a9061fa8f1804315850fe4e7306c882b38227e867f80872cdc1944d472615ea4900ef7d270b881d4130f56c5cc980d92a47ada6657eb6f37a385d2d8cc993e1442eb05281853636991e34aadc68954d04e7adef76bf880f059b0cbb55d915a4b123e2f1339a073cbfbc409beff6400ae096d5ae18ec42cffad5b4980fa35bf03413adb5d7e6876ac355d1c9ed70ca2b973954d12b3cdd76ac6835db96003ed8c4e288b71fd77dbaa7635720e12ae0a317de808c664e317f55275791f3245ca4fe5d4d41077fc150a6e403d5a208e46eadbe8f2cfb8af472f4a0ceac015219478e6b86c958cf86525b7485c1734c7ef00e90683fff5dbd0a7d413a855021026a1b32013a4616cbcd3700acbc705be3efba625c69a025267bce9d135e3f5b5cc8c43956407e84b6663103e29c242035551ae797f56c6374be0c798c0cf398f1ed"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-4.3/mldsa-keygen-nist",
+          "comment": "ML-DSA-87 NIST ACVP seed->pk",
+          "in": {
+            "param": "ML-DSA-87",
+            "seed_hex": "38359fbcd79582cffe609e137ee2efe8a8dbcbad18ba92bb433ab4f09b49299d"
+          },
+          "result": "valid",
+          "expected": {
+            "pk_hex": "6924bb4257a7b9aff095c30bb35c6ae4198263120f8039aa4e78e174a786ce008301e666f59d3ec5044de456788fde19eb39677b5f9fe14150da463a706f3baf715b95336b2d685a7cd7880713e4587bf7d857bf7e315696b8d0d9d49e142918bf0974e7f43237d4be3ad394599e3d39bb7649932553447e5d5acc3499930176ecd3a844a425f50d0511c9226c4b9a24f2a011cd88d32308e0312a0c87cc34a995823c65f4f0f98e50c37788ce38dc28fb8b9bfaafa904b541ee712f6a041e0611374f6bf17eac0bd56f3b6bf336da9242070c2469a20c4d1616149a6159252011d299f93f986d875dd30b38a22549174570138c2bb3aa9cbea91974f3d89bf5ae32be9e58b854a2f8e86ff76780c03490f467db0651c20b1df60eb97a3c99d9bd664be6a5e4c8a8ad4cc36390d7004e4bb421daed654c357da4d68498933ec71777ad64c2ae013c73eb457c68ef9a745adeeb4fdfc879e774d03faf6b14aab10752e24b52d0f2d94d540a1ebe10f597e514442d6c13c2e2498e8af3017c52db233a90717df25b4d072b7d88ee8731d16824c95d1fb983c449deb466276060fee4c7ee381451f232c29c7c3220850c61d1c3c00db1cd9726a02a56609f3a65d3d164604588cd9b431412f1add914c5c2dabbc90467c0c4ea5f76e24aa618765f8b0636d7b065e1f4e6f622eae17152458c766586772d363fa99214f472b0db8a1e49d82d0278f2958b0aaa1586db134bdfd2438742495007e2fe5b60e246399226947a12ea17631caa534687cb75c060b4797eab8277cc4f8a7a20387606efe2dbd3e736249277d90fcab992a8c99e85ab03eb4cac5d88553958528af92974718135f1d0c793eb000ea0aec3ec1858fdd18688d1da27278debf2ca8110ba4a204f7930e1c8ceecafb73f75ddb34c5c55968a7933058426b55d039f7292ac43f64584f6df187a1d6b003f514cc13b26c2f348195aa321de6a27ec11348de50d825a2964c631992e4b0b425b1beb4f9600e3adc4431cf2e88b4223d2db663c3ce70ef85ddd56a9baf138a9d7edd894131c3a8f41a04ef9f86752b72181fabb37c86b877e61d60eed95eeffabe6376e14aca817c5f41961af8a7849bac094917b2d132276b6b3486aff950d23d4aadc24ce98a5269e1c69917960a31ee09a527c358175caa0cb1b018e9526d93534eadbacb52b273d735e22dd0d5c28fa3e47cfe90b5215ae24f146c3464bfeaf01d28daa553c1e94428a104a9d78aec762591e8879f76851cfb4648566721b0cac1f14fe16149a9d8210cc8f2f50def7b46c843be93bd8d55602493350ab560ea5ba17716423be0eb8360ab109d8fb18bfea040847b7335145d4f200d19cf6fe7bac917f426c9b3d39a9ca4329818f240e7da382761072f4a6505ea8e76c1e446feb6625e38ddbcd3cda81e83bf768f3e01d9d263b367303ae156c0b7183364a1e7941a09298a3adf7bd231e6114b9dce7952b113f78163138b9266f843f1ed97d9c2b163a6e8bd4c1ab4e179367c5ac96cecf5050fe821fdfa44e9e680b61c6018932df717811459af2542e2cde77178c2e9880f011e405eafa59c8cbbed76e5a1941104b1b9d3a60491c954755e02e894103f1f4977475e9ea36609fd67c9de318eda2370dccdbb9cef7ae6360905ec220838c9769823441cdd0da8ef0abe5f2d1d76e2fe08fef53de1d6166ab1a92b1ac093e5abf7658c4b57287f2d1fd7b82dedaf8d5a4fbac4b35d58231694e162497578abd7aa7c8fe7b3541a7f18e54e8b7f08764c5e68449df655901549832d628fa63d2b2c5a150933994a9863317ad40d778d9d2c05c7898850b90173223c7a0af890fd7e66221b6f06318b2ed5e199cb424885ab841e7a4726faba2f9bb53bc3236434c35fbbe4b1a0f93f50c37896c29f8e302ad31ed3331d620e3b629455101a1f1cc7ba5e46e68ed4a8ccc87b4dc75bc0162b6330f833fba2575dfaf5b5f28bc54ff2ba81e7a47313c15482b605e66bb38c6198f1392104080fbe78b86b1bc9a6fb881f5c7820147e6ba14b81accf20cae96641094c216902ea5c125f6c935a150d7c9acc5d9e2e5d90e38c0503aa9426017c76aafcd5261b506274ec13a9679fb09796027a4bb759d928279b94d841a097393bf7e5bd69a496cc3decd2b0f07f83392aade33dc51b2a84f6a07635dc0ef57a9ad5959b6a50b7ba509ad5b11fad26b419f9f1e3f9c7329b5a953d7cc87b2de210611cf52a639ef2b3908012cb88e1d6f57625079cb103d6c98101a11bd2233b65602ca3049bd320520419f76b061e3598de38152c88767d1a24fbd02bb10c38eacae317de6bb287b4d2cae5da0214965d8773778626e9b972859d8482b8d0547e4f56dff87681d5bc5120f613fbbd91e1f14e6defe672e2a7eabcbbb9b11082c5e700aa0b1f7c1785fced19a93afe7c59fa2519bcdeb494c3d13b2125f385323b816c68f8f5628c7c2abfd0278a337073da74d16099698c4b114e8a8ce344e0a15d0fc7ed497b001d53d4c96dc3954d3b4b956cb9d2a272c51f1559b22904b40cc8531e40cc412c68cb6eea4a4090b38e2797329985467e818a524d3228eacae7825d3dad2eaa422fdc77aed71a205da7838d945e7fec37e4dca67e504ce35e5b045f56f1e8d7529ebd6f1af7b6e939e2b7ab4027d37a5135d172da1af9ca2f728a6f37de60dd23d97d11e75ab1fd51f8e9a1397e5822159db583802b32eebb4567ece3746d1ae33314785643dd2a0741e7f1bf2d261f22124e8ddd08c640a48b54717517c21cd325328bc239ca028b2630d063c8cc20be9bdb48502dadde73ffed5963816533e020aed1208536255b1cce985433127ff4f04d5b1e2f2108704b8b966588c0156afc2ae192986fbec443baef6cb85a6f29c7792405a24114710ae1c746444fdf5fb659e5e346826207b8c54463a0617ce17ff33e40f931fe576715c932ef29fd76b04a69b58e0303d8ef25678c8b70af12e9045591c04e8b77106940415177e868593a09c7e14619a4b332f9adc3a658b86017f32656c5429c115e110037a8cc7e544677d2dd239a59d54d0f3c7460ec15208346ba56df5086c5dbcc41e0c95fcb6861c2c0c32aaf3454efee2ffba214b430ef248a59b32444d8d0d3db87c9d4b1536d157728ee7585ef532776a003a023c0ab0e9ff557108c390684d565a665063266ae6670ed53b0faf8ff67829bb737825b153a9338cbe3df1a462849b93a81f84ed07be6d6240003274737f618dcb26e48252ce4204dd3139ff6876f43b305d835620fedf79aa67433dc25287320e9917967b70b2d866d17b698bfff2b3ab9514949e58b57c68a45412c1fc421c768bf5ee8a10c8aef56926f51ec62c11569f31aa517868e5cad89e958066eb9edd7271b31cb4b1d6ce211225aeb5b57f749719da07ecbefe03881dde3d81e4135f2dc81af779776c1b8057162a6c982fbb4da6a9ad284ab10c70022044f46d400bf6ad7182d197789983be99227979a1334ba149d869ba1c4088123435bf978541356daf171f33adb1c97907a0fb5845074a85d26f546135aed0f91be4539c12bf9411e4b556f687d069db6b21fe2b7f321887448cea55db19fbb8b0482a55aec16738d74cd265093836be99d4fb53e9b014b037cdbfe9"
+          }
+        }
+      ]
+    },
+    {
+      "op": "ed25519.sign",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-4.6/ed25519-rfc8032",
+          "comment": "RFC 8032 \u00a77.1 test 1",
+          "in": {
+            "sk_hex": "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+            "msg_hex": ""
+          },
+          "result": "valid",
+          "expected": {
+            "sig_hex": "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b"
+          }
+        }
+      ]
+    },
+    {
+      "op": "cose.sign1",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-4.1/cose-sign1-deterministic",
+          "comment": "sign1_alg-49 deterministic COSE_Sign1",
+          "in": {
+            "alg": -49,
+            "seed_hex": "70cefb9aed5b68e018b079da8284b9d5cad5499ed9c265ff73588005d85c225c",
+            "protected_hex": "a1013830",
+            "payload_hex": "a10700"
+          },
+          "result": "acceptable",
+          "flags": [
+            "crypto",
+            "consensus-graded"
+          ]
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-4.1/cose-sign1-deterministic",
+          "comment": "sign1_alg-50 deterministic COSE_Sign1",
+          "in": {
+            "alg": -50,
+            "seed_hex": "38359fbcd79582cffe609e137ee2efe8a8dbcbad18ba92bb433ab4f09b49299d",
+            "protected_hex": "a1013831",
+            "payload_hex": "a10700"
+          },
+          "result": "acceptable",
+          "flags": [
+            "crypto",
+            "consensus-graded"
+          ]
+        }
+      ]
+    },
+    {
+      "op": "signerid",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-5.1/signer-id",
+          "comment": "ML-DSA-65",
+          "in": {
+            "alg": -49,
+            "pubkey_hex": "d2fd03f3a1b7f635af9f34d580a98f524c735bd5ba2355dc6e035bd21765580cbb111923f194a7cc8a7bb2ebc5c0e71aa637cc800e6103b850a539b2a39e1b6d713e5db8314c9ae1f8bf8a38f06afb9d73b161b0ffe3a4891706ae26d54ffb496df8dc0f1983509500c9abbd28e59b3fcdabbdadabd45ec31499378bde849e7c1f19b7044d67e05106d7136d95380d5605d4465d877557065df0a75d3c28542f40feed42ec7e280637b083d988bca5f6394e02396c4676184fb63318dafaf5bbdde00e308fe84019c2340a3f3e1c0865624970711283356ae14bd6b94d1c9ae188de1a8a2ca824a8eae2fe6afb38d83a2d99996ab21fe3e84c0be6b6da08879b677374fa7c691b13d40fa9d4cc26b2288d5a8c9a43724381004d61b0d57ff400314c8e30ee796af10f7ee21bf13d08180465abc72eddb080c6a07184e3eedc47c19aa7f09d1f3309e183a2bd9b0573dde474a81ba4f78d0c523d0c04f90060fd571a35c037e079c5e210d7390df568f2e2f03ce44420c82f3fe69eb9b48ee90962d6b0f24440648f71edb241ee6566fc1a64cabf66be6fecbcb1387c82a7bc202d9e367998e2a291af0cd1570677fe8d63a3285a2ea6eb29af9dc1aec1c36c4706b12baa20839692f286a6e0321468f7479345c4d52fbdb2f06725b554b89e2492612681acebc6c7bada9225818dbc35d64c22c48bff80a730d0716dfac99dfd5b8992611d0c93ee90bdb260022afe25d913e06effb59cb1f8a60cbfa5ab2f459a16f467e989525e0a37ebe56e833fde55db9d1530adcf45846df281e47caa1e0a27efde2107d354cea0f6a454692f04cd838ebdd46e191e5d9c11839a2c3f488a4fc7cd265a7b5d32b08cbdbfab9d2ccd76222c8ee37ddcbd2aa063ed861473a6454caea377850b1a2b9ddbbcb374fab5b12f351c8e5888872e5cd1f60a4fae1ff837d192c22beb41ee6fa392fcdf4550ff46b5ce906d017ef3077df132300d8bbfa9bb03c75e79e2f04c284ad06a44399649c3e2a2a8d1efe9b7a4e0c271047ab75908bff7df9e30eca547745bae23a86ff9a8b58c2538b88b866401076902dc5f0bd761687b49eafe36d350cbedfdd36c121cf23786bfcf7e47076496eab6bbda774049c2ebabe2de99c4c24f2db73684015b373977496760cf9ac23d8b623133db2de10d73fa6ad1c6dac8434f28c6e251ce7293cff3f3b61efcb5a435123670f29846a13df3ee712604461f1bab8f4ebc836de058978ae734396a98081b35cc98188a86949c99270d4709854c5b35b17f48a373134c814cc8a0f3e2fa807f2a918530907864778282d75e03a41b2504eed816a417a3ac6ba16080c39b7310192002a728f7f20395009a9e16767ce1971f5de7d229a50613369e4382045a8e81901f4dba8102f3d413fe35b326a874f233b719a7137600d35d33aeb6b7259624083aa968730c8f78292ad28f14eeabe660835984fe69ef23dec8c327c0eb0b882d587e1ec433da85c9fd1e0a34994dea240c854452d18c30f496e49ec904b602e0f5062edcda03280a53b4313574cc2c0d5471bc9613bdfd6641f5bd127bab5b5eb3d499a33114048220e819f8ee12ca922c8f17d9c9f51ad5bd6883b10e6aa2483ba49dc547da7686151344f4e9099b38e430b5226b059832cf03db48fb02dba4e61593dc4576360491890e53ec0e6ac73cf32b25d823b38456e286505a541e5aeee96b1914f5f76687ce2b0160227abed77993594bcd831366206d75714082f1c46f1f4439ac81a57af31c81c555307a070ffa94e0479b784bbd88a60cd4c7cfd94e6afe02f6b21f72af0dcd6609d40c965c14e5f2389183e53de930f7de1d44215cf49144844e8b87f78a7f132aefe22be80b4e3a05ee3a68ccf609ef44047402e4493046e6f9c767ff8a75e28b3ce077fde7e7eed313b5bf7e460127ca8182e9bc794c0dfa730fb920080575a751b5caec85a109b4422ba266743f0d032bda8f1ca6248cdb917530df1302a5f8c18dc642d52478c98c12a3f16ef2b62b4f59ea1bb58de7b65b3c7153ce6da5e4950746f80e087a0e3586d097791bf36def865d68591d39d0903773eea962147f34704138b54df7924cdd8c333db5e1a409ccb2b34e2c3c8c7fdd3fd8d012cbf382aaa85e83a12f235a2d147d035b7b28b34b6f57949f322482a7d4d3b15045c420d5addc7f0e69b4dc1cba58b01d872480b06a260d827d891b13c4c5ca50c748de3c771be61e9aa170165cb01f4bf5da27a7791d3ad3f6267b4cb4e61b28fa1708418d932dfc4161880c5d3b17a9663a9061fa8f1804315850fe4e7306c882b38227e867f80872cdc1944d472615ea4900ef7d270b881d4130f56c5cc980d92a47ada6657eb6f37a385d2d8cc993e1442eb05281853636991e34aadc68954d04e7adef76bf880f059b0cbb55d915a4b123e2f1339a073cbfbc409beff6400ae096d5ae18ec42cffad5b4980fa35bf03413adb5d7e6876ac355d1c9ed70ca2b973954d12b3cdd76ac6835db96003ed8c4e288b71fd77dbaa7635720e12ae0a317de808c664e317f55275791f3245ca4fe5d4d41077fc150a6e403d5a208e46eadbe8f2cfb8af472f4a0ceac015219478e6b86c958cf86525b7485c1734c7ef00e90683fff5dbd0a7d413a855021026a1b32013a4616cbcd3700acbc705be3efba625c69a025267bce9d135e3f5b5cc8c43956407e84b6663103e29c242035551ae797f56c6374be0c798c0cf398f1ed"
+          },
+          "result": "valid",
+          "expected": {
+            "signer_id": "bciqid2nxywfacr2jaqmyzmkix5kca447hzwtrq5ys5iczm5ufd5k3qy"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-5.1/signer-id",
+          "comment": "ML-DSA-87",
+          "in": {
+            "alg": -50,
+            "pubkey_hex": "6924bb4257a7b9aff095c30bb35c6ae4198263120f8039aa4e78e174a786ce008301e666f59d3ec5044de456788fde19eb39677b5f9fe14150da463a706f3baf715b95336b2d685a7cd7880713e4587bf7d857bf7e315696b8d0d9d49e142918bf0974e7f43237d4be3ad394599e3d39bb7649932553447e5d5acc3499930176ecd3a844a425f50d0511c9226c4b9a24f2a011cd88d32308e0312a0c87cc34a995823c65f4f0f98e50c37788ce38dc28fb8b9bfaafa904b541ee712f6a041e0611374f6bf17eac0bd56f3b6bf336da9242070c2469a20c4d1616149a6159252011d299f93f986d875dd30b38a22549174570138c2bb3aa9cbea91974f3d89bf5ae32be9e58b854a2f8e86ff76780c03490f467db0651c20b1df60eb97a3c99d9bd664be6a5e4c8a8ad4cc36390d7004e4bb421daed654c357da4d68498933ec71777ad64c2ae013c73eb457c68ef9a745adeeb4fdfc879e774d03faf6b14aab10752e24b52d0f2d94d540a1ebe10f597e514442d6c13c2e2498e8af3017c52db233a90717df25b4d072b7d88ee8731d16824c95d1fb983c449deb466276060fee4c7ee381451f232c29c7c3220850c61d1c3c00db1cd9726a02a56609f3a65d3d164604588cd9b431412f1add914c5c2dabbc90467c0c4ea5f76e24aa618765f8b0636d7b065e1f4e6f622eae17152458c766586772d363fa99214f472b0db8a1e49d82d0278f2958b0aaa1586db134bdfd2438742495007e2fe5b60e246399226947a12ea17631caa534687cb75c060b4797eab8277cc4f8a7a20387606efe2dbd3e736249277d90fcab992a8c99e85ab03eb4cac5d88553958528af92974718135f1d0c793eb000ea0aec3ec1858fdd18688d1da27278debf2ca8110ba4a204f7930e1c8ceecafb73f75ddb34c5c55968a7933058426b55d039f7292ac43f64584f6df187a1d6b003f514cc13b26c2f348195aa321de6a27ec11348de50d825a2964c631992e4b0b425b1beb4f9600e3adc4431cf2e88b4223d2db663c3ce70ef85ddd56a9baf138a9d7edd894131c3a8f41a04ef9f86752b72181fabb37c86b877e61d60eed95eeffabe6376e14aca817c5f41961af8a7849bac094917b2d132276b6b3486aff950d23d4aadc24ce98a5269e1c69917960a31ee09a527c358175caa0cb1b018e9526d93534eadbacb52b273d735e22dd0d5c28fa3e47cfe90b5215ae24f146c3464bfeaf01d28daa553c1e94428a104a9d78aec762591e8879f76851cfb4648566721b0cac1f14fe16149a9d8210cc8f2f50def7b46c843be93bd8d55602493350ab560ea5ba17716423be0eb8360ab109d8fb18bfea040847b7335145d4f200d19cf6fe7bac917f426c9b3d39a9ca4329818f240e7da382761072f4a6505ea8e76c1e446feb6625e38ddbcd3cda81e83bf768f3e01d9d263b367303ae156c0b7183364a1e7941a09298a3adf7bd231e6114b9dce7952b113f78163138b9266f843f1ed97d9c2b163a6e8bd4c1ab4e179367c5ac96cecf5050fe821fdfa44e9e680b61c6018932df717811459af2542e2cde77178c2e9880f011e405eafa59c8cbbed76e5a1941104b1b9d3a60491c954755e02e894103f1f4977475e9ea36609fd67c9de318eda2370dccdbb9cef7ae6360905ec220838c9769823441cdd0da8ef0abe5f2d1d76e2fe08fef53de1d6166ab1a92b1ac093e5abf7658c4b57287f2d1fd7b82dedaf8d5a4fbac4b35d58231694e162497578abd7aa7c8fe7b3541a7f18e54e8b7f08764c5e68449df655901549832d628fa63d2b2c5a150933994a9863317ad40d778d9d2c05c7898850b90173223c7a0af890fd7e66221b6f06318b2ed5e199cb424885ab841e7a4726faba2f9bb53bc3236434c35fbbe4b1a0f93f50c37896c29f8e302ad31ed3331d620e3b629455101a1f1cc7ba5e46e68ed4a8ccc87b4dc75bc0162b6330f833fba2575dfaf5b5f28bc54ff2ba81e7a47313c15482b605e66bb38c6198f1392104080fbe78b86b1bc9a6fb881f5c7820147e6ba14b81accf20cae96641094c216902ea5c125f6c935a150d7c9acc5d9e2e5d90e38c0503aa9426017c76aafcd5261b506274ec13a9679fb09796027a4bb759d928279b94d841a097393bf7e5bd69a496cc3decd2b0f07f83392aade33dc51b2a84f6a07635dc0ef57a9ad5959b6a50b7ba509ad5b11fad26b419f9f1e3f9c7329b5a953d7cc87b2de210611cf52a639ef2b3908012cb88e1d6f57625079cb103d6c98101a11bd2233b65602ca3049bd320520419f76b061e3598de38152c88767d1a24fbd02bb10c38eacae317de6bb287b4d2cae5da0214965d8773778626e9b972859d8482b8d0547e4f56dff87681d5bc5120f613fbbd91e1f14e6defe672e2a7eabcbbb9b11082c5e700aa0b1f7c1785fced19a93afe7c59fa2519bcdeb494c3d13b2125f385323b816c68f8f5628c7c2abfd0278a337073da74d16099698c4b114e8a8ce344e0a15d0fc7ed497b001d53d4c96dc3954d3b4b956cb9d2a272c51f1559b22904b40cc8531e40cc412c68cb6eea4a4090b38e2797329985467e818a524d3228eacae7825d3dad2eaa422fdc77aed71a205da7838d945e7fec37e4dca67e504ce35e5b045f56f1e8d7529ebd6f1af7b6e939e2b7ab4027d37a5135d172da1af9ca2f728a6f37de60dd23d97d11e75ab1fd51f8e9a1397e5822159db583802b32eebb4567ece3746d1ae33314785643dd2a0741e7f1bf2d261f22124e8ddd08c640a48b54717517c21cd325328bc239ca028b2630d063c8cc20be9bdb48502dadde73ffed5963816533e020aed1208536255b1cce985433127ff4f04d5b1e2f2108704b8b966588c0156afc2ae192986fbec443baef6cb85a6f29c7792405a24114710ae1c746444fdf5fb659e5e346826207b8c54463a0617ce17ff33e40f931fe576715c932ef29fd76b04a69b58e0303d8ef25678c8b70af12e9045591c04e8b77106940415177e868593a09c7e14619a4b332f9adc3a658b86017f32656c5429c115e110037a8cc7e544677d2dd239a59d54d0f3c7460ec15208346ba56df5086c5dbcc41e0c95fcb6861c2c0c32aaf3454efee2ffba214b430ef248a59b32444d8d0d3db87c9d4b1536d157728ee7585ef532776a003a023c0ab0e9ff557108c390684d565a665063266ae6670ed53b0faf8ff67829bb737825b153a9338cbe3df1a462849b93a81f84ed07be6d6240003274737f618dcb26e48252ce4204dd3139ff6876f43b305d835620fedf79aa67433dc25287320e9917967b70b2d866d17b698bfff2b3ab9514949e58b57c68a45412c1fc421c768bf5ee8a10c8aef56926f51ec62c11569f31aa517868e5cad89e958066eb9edd7271b31cb4b1d6ce211225aeb5b57f749719da07ecbefe03881dde3d81e4135f2dc81af779776c1b8057162a6c982fbb4da6a9ad284ab10c70022044f46d400bf6ad7182d197789983be99227979a1334ba149d869ba1c4088123435bf978541356daf171f33adb1c97907a0fb5845074a85d26f546135aed0f91be4539c12bf9411e4b556f687d069db6b21fe2b7f321887448cea55db19fbb8b0482a55aec16738d74cd265093836be99d4fb53e9b014b037cdbfe9"
+          },
+          "result": "valid",
+          "expected": {
+            "signer_id": "bciqcisyqtiryqvkn5grxdtbctcqtfomcg7jdpdkv3bw7ssdpodpns6a"
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-5.1/signer-id",
+          "comment": "Ed25519",
+          "in": {
+            "alg": -19,
+            "pubkey_hex": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
+          },
+          "result": "valid",
+          "expected": {
+            "signer_id": "bciqn3e4opqx2aihkydyc7c6uif5vn3odubjjhe6rsc5fpdltyr4aizy"
+          }
+        }
+      ]
+    },
+    {
+      "op": "nfc.check",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-3.3/nfc-accept",
+          "comment": "NFC 'caf\u00e9' accepted",
+          "in": {
+            "utf8_hex": "636166c3a9"
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-3.3/nfc-reject",
+          "comment": "NFD 'caf\u00e9' rejected",
+          "in": {
+            "utf8_hex": "63616665cc81"
+          },
+          "result": "invalid",
+          "flags": [
+            "MustReject",
+            "NonNFC"
+          ]
+        }
+      ]
+    },
+    {
+      "op": "effect.normalize",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-6.1/effect-normalize",
+          "comment": "read_only",
+          "in": {
+            "value": 0
+          },
+          "result": "valid",
+          "expected": {
+            "effect": 0
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-6.1/effect-normalize",
+          "comment": "idempotent_write",
+          "in": {
+            "value": 1
+          },
+          "result": "valid",
+          "expected": {
+            "effect": 1
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-6.1/effect-normalize",
+          "comment": "non_idempotent_write",
+          "in": {
+            "value": 2
+          },
+          "result": "valid",
+          "expected": {
+            "effect": 2
+          }
+        },
+        {
+          "tcId": 4,
+          "requirement": "R-6.1/effect-normalize",
+          "comment": "destructive",
+          "in": {
+            "value": 3
+          },
+          "result": "valid",
+          "expected": {
+            "effect": 3
+          }
+        },
+        {
+          "tcId": 5,
+          "requirement": "R-6.2/unknown-fails-closed",
+          "comment": "unknown 4 -> 3 (destructive)",
+          "in": {
+            "value": 4
+          },
+          "result": "valid",
+          "expected": {
+            "effect": 3
+          }
+        },
+        {
+          "tcId": 6,
+          "requirement": "R-6.2/unknown-fails-closed",
+          "comment": "unknown 5 -> 3 (destructive)",
+          "in": {
+            "value": 5
+          },
+          "result": "valid",
+          "expected": {
+            "effect": 3
+          }
+        },
+        {
+          "tcId": 7,
+          "requirement": "R-6.2/unknown-fails-closed",
+          "comment": "unknown 99 -> 3 (destructive)",
+          "in": {
+            "value": 99
+          },
+          "result": "valid",
+          "expected": {
+            "effect": 3
+          }
+        },
+        {
+          "tcId": 8,
+          "requirement": "R-6.2/unknown-fails-closed",
+          "comment": "unknown 255 -> 3 (destructive)",
+          "in": {
+            "value": 255
+          },
+          "result": "valid",
+          "expected": {
+            "effect": 3
+          }
+        },
+        {
+          "tcId": 9,
+          "requirement": "R-6.2/unknown-fails-closed",
+          "comment": "unknown 256 -> 3 (destructive)",
+          "in": {
+            "value": 256
+          },
+          "result": "valid",
+          "expected": {
+            "effect": 3
+          }
+        },
+        {
+          "tcId": 10,
+          "requirement": "R-6.2/unknown-fails-closed",
+          "comment": "unknown 65535 -> 3 (destructive)",
+          "in": {
+            "value": 65535
+          },
+          "result": "valid",
+          "expected": {
+            "effect": 3
+          }
+        }
+      ]
+    },
+    {
+      "op": "effect.authorize",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 0 vs effect 0",
+          "in": {
+            "granted": 0,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "allow": true
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 0 vs effect 1",
+          "in": {
+            "granted": 0,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "allow": false
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 0 vs effect 2",
+          "in": {
+            "granted": 0,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "allow": false
+          }
+        },
+        {
+          "tcId": 4,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 0 vs effect 3",
+          "in": {
+            "granted": 0,
+            "effect": 3
+          },
+          "result": "valid",
+          "expected": {
+            "allow": false
+          }
+        },
+        {
+          "tcId": 5,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 1 vs effect 0",
+          "in": {
+            "granted": 1,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "allow": true
+          }
+        },
+        {
+          "tcId": 6,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 1 vs effect 1",
+          "in": {
+            "granted": 1,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "allow": true
+          }
+        },
+        {
+          "tcId": 7,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 1 vs effect 2",
+          "in": {
+            "granted": 1,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "allow": false
+          }
+        },
+        {
+          "tcId": 8,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 1 vs effect 3",
+          "in": {
+            "granted": 1,
+            "effect": 3
+          },
+          "result": "valid",
+          "expected": {
+            "allow": false
+          }
+        },
+        {
+          "tcId": 9,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 2 vs effect 0",
+          "in": {
+            "granted": 2,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "allow": true
+          }
+        },
+        {
+          "tcId": 10,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 2 vs effect 1",
+          "in": {
+            "granted": 2,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "allow": true
+          }
+        },
+        {
+          "tcId": 11,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 2 vs effect 2",
+          "in": {
+            "granted": 2,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "allow": true
+          }
+        },
+        {
+          "tcId": 12,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 2 vs effect 3",
+          "in": {
+            "granted": 2,
+            "effect": 3
+          },
+          "result": "valid",
+          "expected": {
+            "allow": false
+          }
+        },
+        {
+          "tcId": 13,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 3 vs effect 0",
+          "in": {
+            "granted": 3,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "allow": true
+          }
+        },
+        {
+          "tcId": 14,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 3 vs effect 1",
+          "in": {
+            "granted": 3,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "allow": true
+          }
+        },
+        {
+          "tcId": 15,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 3 vs effect 2",
+          "in": {
+            "granted": 3,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "allow": true
+          }
+        },
+        {
+          "tcId": 16,
+          "requirement": "R-6.1/effect-authorize",
+          "comment": "grant 3 vs effect 3",
+          "in": {
+            "granted": 3,
+            "effect": 3
+          },
+          "result": "valid",
+          "expected": {
+            "allow": true
+          }
+        }
+      ]
+    },
+    {
+      "op": "effect.safety_label",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-6.4/safety-label-cbor",
+          "comment": "signed safety label bytes",
+          "in": {
+            "risk": "elevated",
+            "scope": "billing-records"
+          },
+          "result": "valid",
+          "expected": {
+            "cbor_hex": "a20168656c657661746564026f62696c6c696e672d7265636f726473"
+          }
+        }
+      ]
+    },
+    {
+      "op": "approval.body",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-7.1/approval-body",
+          "comment": "A",
+          "in": {
+            "approves_hex": "20304e8abef02897dcc39231d926feb79b34534c6d474cd49a5b4dec2cc2cce90d251eef7418782006d829bd7f30ae8626ff",
+            "approver": "bciqid2nxywfacr2jaqmyzmkix5kca447hzwtrq5ys5iczm5ufd5k3qy",
+            "grant": 2,
+            "nonce_hex": "01010101010101010101010101010101",
+            "not_after": 1000
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a501583220304e8abef02897dcc39231d926feb79b34534c6d474cd49a5b4dec2cc2cce90d251eef7418782006d829bd7f30ae8626ff027838626369716964326e78797766616372326a61716d797a6d6b6978356b6361343437687a777472713579733569637a6d35756664356b3371790302045001010101010101010101010101010101051903e8"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-7.1/approval-body",
+          "comment": "B",
+          "in": {
+            "approves_hex": "20304e8abef02897dcc39231d926feb79b34534c6d474cd49a5b4dec2cc2cce90d251eef7418782006d829bd7f30ae8626ff",
+            "approver": "bciqid2nxywfacr2jaqmyzmkix5kca447hzwtrq5ys5iczm5ufd5k3qy",
+            "grant": 2,
+            "nonce_hex": "02020202020202020202020202020202",
+            "not_after": 1000
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a501583220304e8abef02897dcc39231d926feb79b34534c6d474cd49a5b4dec2cc2cce90d251eef7418782006d829bd7f30ae8626ff027838626369716964326e78797766616372326a61716d797a6d6b6978356b6361343437687a777472713579733569637a6d35756664356b3371790302045002020202020202020202020202020202051903e8"
+          }
+        }
+      ]
+    },
+    {
+      "op": "approval.id",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-7.1/approval-id",
+          "comment": "A",
+          "in": {
+            "approves_hex": "20304e8abef02897dcc39231d926feb79b34534c6d474cd49a5b4dec2cc2cce90d251eef7418782006d829bd7f30ae8626ff",
+            "approver": "bciqid2nxywfacr2jaqmyzmkix5kca447hzwtrq5ys5iczm5ufd5k3qy",
+            "grant": 2,
+            "nonce_hex": "01010101010101010101010101010101",
+            "not_after": 1000
+          },
+          "result": "valid",
+          "expected": {
+            "id_hex": "2030918e6d00173b64de4310620dee037aea611b5b01f52a6f556bf14f88131c88c3469a9361e05b6d8fbfa26e8610b61062"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-7.1/approval-id",
+          "comment": "B",
+          "in": {
+            "approves_hex": "20304e8abef02897dcc39231d926feb79b34534c6d474cd49a5b4dec2cc2cce90d251eef7418782006d829bd7f30ae8626ff",
+            "approver": "bciqid2nxywfacr2jaqmyzmkix5kca447hzwtrq5ys5iczm5ufd5k3qy",
+            "grant": 2,
+            "nonce_hex": "02020202020202020202020202020202",
+            "not_after": 1000
+          },
+          "result": "valid",
+          "expected": {
+            "id_hex": "20306c1d890f4c316788754c35d018d78e3d3ee11a30f0e4105065022873932615ea7899579af91e97d07541ab7267cd595e"
+          }
+        }
+      ]
+    },
+    {
+      "op": "ledger.entry",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-7.2/ledger-entry",
+          "comment": "consume seq 0",
+          "in": {
+            "seq": 0,
+            "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            "approval_id_hex": "2030918e6d00173b64de4310620dee037aea611b5b01f52a6f556bf14f88131c88c3469a9361e05b6d8fbfa26e8610b61062",
+            "by": "bciqid2nxywfacr2jaqmyzmkix5kca447hzwtrq5ys5iczm5ufd5k3qy"
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a401000258300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000358322030918e6d00173b64de4310620dee037aea611b5b01f52a6f556bf14f88131c88c3469a9361e05b6d8fbfa26e8610b61062047838626369716964326e78797766616372326a61716d797a6d6b6978356b6361343437687a777472713579733569637a6d35756664356b337179"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-7.2/ledger-entry",
+          "comment": "consume seq 1",
+          "in": {
+            "seq": 1,
+            "prev_hex": "3892e41050dcd3dbe9d86955d665b69ff7cf514f4ebe796a5f4e97aab3a947b498c8be342433b1415519bf1c99b18c1f",
+            "approval_id_hex": "20306c1d890f4c316788754c35d018d78e3d3ee11a30f0e4105065022873932615ea7899579af91e97d07541ab7267cd595e",
+            "by": "bciqid2nxywfacr2jaqmyzmkix5kca447hzwtrq5ys5iczm5ufd5k3qy"
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a401010258303892e41050dcd3dbe9d86955d665b69ff7cf514f4ebe796a5f4e97aab3a947b498c8be342433b1415519bf1c99b18c1f03583220306c1d890f4c316788754c35d018d78e3d3ee11a30f0e4105065022873932615ea7899579af91e97d07541ab7267cd595e047838626369716964326e78797766616372326a61716d797a6d6b6978356b6361343437687a777472713579733569637a6d35756664356b337179"
+          }
+        }
+      ]
+    },
+    {
+      "op": "receipt.body",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-8.1/receipt-body",
+          "comment": "receipt seq 0",
+          "in": {
+            "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            "obj_hex": "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41",
+            "seq": 0,
+            "at": 100
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a40158300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000258322030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc410300041864"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-8.1/receipt-body",
+          "comment": "receipt seq 1",
+          "in": {
+            "prev_hex": "dd58990198b5b9807df2969340cebd386bbd596d57c380d38fb362a7a99fbb5407ab52acb8ef6b0ae7380be3c59c250d",
+            "obj_hex": "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567",
+            "seq": 1,
+            "at": 101
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a4015830dd58990198b5b9807df2969340cebd386bbd596d57c380d38fb362a7a99fbb5407ab52acb8ef6b0ae7380be3c59c250d025832203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a605670301041865"
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-8.1/receipt-body",
+          "comment": "receipt seq 2",
+          "in": {
+            "prev_hex": "5460f857e8c488369cda92d4fcc62a04238e4b1ee028840c6edfff51c233853092cdf446117706cc9f1e3bb5e856bfcf",
+            "obj_hex": "2030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df",
+            "seq": 2,
+            "at": 102
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a40158305460f857e8c488369cda92d4fcc62a04238e4b1ee028840c6edfff51c233853092cdf446117706cc9f1e3bb5e856bfcf0258322030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df0302041866"
+          }
+        }
+      ]
+    },
+    {
+      "op": "receipt.head",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-8.1/receipt-head",
+          "comment": "head after seq 0",
+          "in": {
+            "body_hex": "a40158300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000258322030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc410300041864"
+          },
+          "result": "valid",
+          "expected": {
+            "head_hex": "dd58990198b5b9807df2969340cebd386bbd596d57c380d38fb362a7a99fbb5407ab52acb8ef6b0ae7380be3c59c250d"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-8.1/receipt-head",
+          "comment": "head after seq 1",
+          "in": {
+            "body_hex": "a4015830dd58990198b5b9807df2969340cebd386bbd596d57c380d38fb362a7a99fbb5407ab52acb8ef6b0ae7380be3c59c250d025832203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a605670301041865"
+          },
+          "result": "valid",
+          "expected": {
+            "head_hex": "5460f857e8c488369cda92d4fcc62a04238e4b1ee028840c6edfff51c233853092cdf446117706cc9f1e3bb5e856bfcf"
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-8.1/receipt-head",
+          "comment": "head after seq 2",
+          "in": {
+            "body_hex": "a40158305460f857e8c488369cda92d4fcc62a04238e4b1ee028840c6edfff51c233853092cdf446117706cc9f1e3bb5e856bfcf0258322030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df0302041866"
+          },
+          "result": "valid",
+          "expected": {
+            "head_hex": "5266711a67d01ae2ab2fbffc64cf57cfbabc1db306bdf2cb41cb27375107d87e9e7f94a5b052b2559a40b590ef149a65"
+          }
+        }
+      ]
+    },
+    {
+      "op": "causal.verify",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-8.5/causal-valid",
+          "comment": "acyclic DAG",
+          "in": {
+            "nodes": [
+              {
+                "id_hex": "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41",
+                "causes_hex": [],
+                "position": 0
+              },
+              {
+                "id_hex": "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567",
+                "causes_hex": [
+                  "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41"
+                ],
+                "position": 1
+              },
+              {
+                "id_hex": "2030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df",
+                "causes_hex": [
+                  "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41",
+                  "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567"
+                ],
+                "position": 2
+              }
+            ]
+          },
+          "result": "valid",
+          "expected": {
+            "valid": true
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-8.5/causal-cycle",
+          "comment": "cycle rejected",
+          "in": {
+            "nodes": [
+              {
+                "id_hex": "2030237cdb58e7dc7ef7a675b5d137bf6f711275d8d9619076037a9bee52096c5a7af3ba4846d5b397d9d3b2b1e1d910f194",
+                "causes_hex": [
+                  "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41"
+                ],
+                "position": 0
+              },
+              {
+                "id_hex": "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41",
+                "causes_hex": [
+                  "2030237cdb58e7dc7ef7a675b5d137bf6f711275d8d9619076037a9bee52096c5a7af3ba4846d5b397d9d3b2b1e1d910f194"
+                ],
+                "position": 0
+              }
+            ]
+          },
+          "result": "invalid",
+          "flags": [
+            "MustReject",
+            "CausalViolation"
+          ]
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-8.5/causal-future",
+          "comment": "future-cause rejected",
+          "in": {
+            "nodes": [
+              {
+                "id_hex": "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567",
+                "causes_hex": [
+                  "2030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df"
+                ],
+                "position": 1
+              },
+              {
+                "id_hex": "2030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df",
+                "causes_hex": [],
+                "position": 2
+              }
+            ]
+          },
+          "result": "invalid",
+          "flags": [
+            "MustReject",
+            "CausalViolation"
+          ]
+        }
+      ]
+    },
+    {
+      "op": "delivery.update",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-9.1/delivery-update",
+          "comment": "stage 0",
+          "in": {
+            "obj_hex": "20304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de",
+            "stage": 0,
+            "at": 100
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a301583220304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de0200031864"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-9.1/delivery-update",
+          "comment": "stage 1",
+          "in": {
+            "obj_hex": "20304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de",
+            "stage": 1,
+            "at": 101
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a301583220304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de0201031865"
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-9.1/delivery-update",
+          "comment": "stage 2",
+          "in": {
+            "obj_hex": "20304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de",
+            "stage": 2,
+            "at": 102
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a301583220304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de0202031866"
+          }
+        },
+        {
+          "tcId": 4,
+          "requirement": "R-9.1/delivery-update",
+          "comment": "stage 3",
+          "in": {
+            "obj_hex": "20304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de",
+            "stage": 3,
+            "at": 103
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a301583220304675b32549c813ad509897f1c0ce65e580c04394e93ae9629c49cfd9cc3ba177448d8e297f77968daeb3501b0fe214de0203031867"
+          }
+        }
+      ]
+    },
+    {
+      "op": "stream.digest",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-10.2/stream-commitment",
+          "comment": "rolling SHA-384 over offset-ordered chunks",
+          "in": {
+            "chunks": [
+              {
+                "offset": 0,
+                "data_hex": "68656c6c6f20"
+              },
+              {
+                "offset": 6,
+                "data_hex": "73747265616d696e6720"
+              },
+              {
+                "offset": 16,
+                "data_hex": "776f726c64"
+              }
+            ]
+          },
+          "result": "valid",
+          "expected": {
+            "digest_hex": "6efe34a0d48a61b3aa21604c42229a5c8f1105e155abc9c1628ce636480cfe253fe26f8e548cbfc237e4e1096e7f4081"
+          }
+        }
+      ]
+    },
+    {
+      "op": "stream.open",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-10.2/stream-open",
+          "comment": "StreamOpen body",
+          "in": {
+            "stream_id_hex": "00112233445566778899aabbccddeeff",
+            "effect": 1,
+            "substream": 3,
+            "approval_hex": "20309cc4a94c8921a5227f80843618ad7a04b4ae95751906e58145b372b8ed88e1c773a4fc55ae4aab39a8311d6a502ae4fe"
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a4015000112233445566778899aabbccddeeff020103583220309cc4a94c8921a5227f80843618ad7a04b4ae95751906e58145b372b8ed88e1c773a4fc55ae4aab39a8311d6a502ae4fe0403"
+          }
+        }
+      ]
+    },
+    {
+      "op": "stream.commit",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-10.2/stream-commit",
+          "comment": "StreamCommit body",
+          "in": {
+            "stream_id_hex": "00112233445566778899aabbccddeeff",
+            "digest_hex": "6efe34a0d48a61b3aa21604c42229a5c8f1105e155abc9c1628ce636480cfe253fe26f8e548cbfc237e4e1096e7f4081"
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a2015000112233445566778899aabbccddeeff0258306efe34a0d48a61b3aa21604c42229a5c8f1105e155abc9c1628ce636480cfe253fe26f8e548cbfc237e4e1096e7f4081"
+          }
+        }
+      ]
+    },
+    {
+      "op": "stream.checkpoint",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-10.2/stream-checkpoint",
+          "comment": "StreamCheckpoint body",
+          "in": {
+            "stream_id_hex": "00112233445566778899aabbccddeeff",
+            "through_offset": 6,
+            "digest_so_far_hex": "50e3cab9dbf35f2640c8b5806ec1191da961ebc9212f5c5baa16d6566c7aa3393a3322165b58a90d66ac334a1d0da10d"
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a3015000112233445566778899aabbccddeeff020603583050e3cab9dbf35f2640c8b5806ec1191da961ebc9212f5c5baa16d6566c7aa3393a3322165b58a90d66ac334a1d0da10d"
+          }
+        }
+      ]
+    },
+    {
+      "op": "transport.emit",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "npamp sensitive=False peer_auth=False",
+          "in": {
+            "transport": "npamp",
+            "sensitive": false,
+            "require_peer_auth": false
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "npamp sensitive=False peer_auth=True",
+          "in": {
+            "transport": "npamp",
+            "sensitive": false,
+            "require_peer_auth": true
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "npamp sensitive=True peer_auth=False",
+          "in": {
+            "transport": "npamp",
+            "sensitive": true,
+            "require_peer_auth": false
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 4,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "npamp sensitive=True peer_auth=True",
+          "in": {
+            "transport": "npamp",
+            "sensitive": true,
+            "require_peer_auth": true
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 5,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "quic sensitive=False peer_auth=False",
+          "in": {
+            "transport": "quic",
+            "sensitive": false,
+            "require_peer_auth": false
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 6,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "quic sensitive=False peer_auth=True",
+          "in": {
+            "transport": "quic",
+            "sensitive": false,
+            "require_peer_auth": true
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 7,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "quic sensitive=True peer_auth=False",
+          "in": {
+            "transport": "quic",
+            "sensitive": true,
+            "require_peer_auth": false
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 8,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "quic sensitive=True peer_auth=True",
+          "in": {
+            "transport": "quic",
+            "sensitive": true,
+            "require_peer_auth": true
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 9,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "websocket+wss sensitive=False peer_auth=False",
+          "in": {
+            "transport": "websocket+wss",
+            "sensitive": false,
+            "require_peer_auth": false
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 10,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "websocket+wss sensitive=False peer_auth=True",
+          "in": {
+            "transport": "websocket+wss",
+            "sensitive": false,
+            "require_peer_auth": true
+          },
+          "result": "valid",
+          "expected": {
+            "result": "PeerUnauthenticated"
+          }
+        },
+        {
+          "tcId": 11,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "websocket+wss sensitive=True peer_auth=False",
+          "in": {
+            "transport": "websocket+wss",
+            "sensitive": true,
+            "require_peer_auth": false
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 12,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "websocket+wss sensitive=True peer_auth=True",
+          "in": {
+            "transport": "websocket+wss",
+            "sensitive": true,
+            "require_peer_auth": true
+          },
+          "result": "valid",
+          "expected": {
+            "result": "PeerUnauthenticated"
+          }
+        },
+        {
+          "tcId": 13,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "websocket+ws sensitive=False peer_auth=False",
+          "in": {
+            "transport": "websocket+ws",
+            "sensitive": false,
+            "require_peer_auth": false
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 14,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "websocket+ws sensitive=False peer_auth=True",
+          "in": {
+            "transport": "websocket+ws",
+            "sensitive": false,
+            "require_peer_auth": true
+          },
+          "result": "valid",
+          "expected": {
+            "result": "PeerUnauthenticated"
+          }
+        },
+        {
+          "tcId": 15,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "websocket+ws sensitive=True peer_auth=False",
+          "in": {
+            "transport": "websocket+ws",
+            "sensitive": true,
+            "require_peer_auth": false
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ConfidentialTransportRequired"
+          }
+        },
+        {
+          "tcId": 16,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "websocket+ws sensitive=True peer_auth=True",
+          "in": {
+            "transport": "websocket+ws",
+            "sensitive": true,
+            "require_peer_auth": true
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ConfidentialTransportRequired"
+          }
+        },
+        {
+          "tcId": 17,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "https sensitive=False peer_auth=False",
+          "in": {
+            "transport": "https",
+            "sensitive": false,
+            "require_peer_auth": false
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 18,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "https sensitive=False peer_auth=True",
+          "in": {
+            "transport": "https",
+            "sensitive": false,
+            "require_peer_auth": true
+          },
+          "result": "valid",
+          "expected": {
+            "result": "PeerUnauthenticated"
+          }
+        },
+        {
+          "tcId": 19,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "https sensitive=True peer_auth=False",
+          "in": {
+            "transport": "https",
+            "sensitive": true,
+            "require_peer_auth": false
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 20,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "https sensitive=True peer_auth=True",
+          "in": {
+            "transport": "https",
+            "sensitive": true,
+            "require_peer_auth": true
+          },
+          "result": "valid",
+          "expected": {
+            "result": "PeerUnauthenticated"
+          }
+        },
+        {
+          "tcId": 21,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "http sensitive=False peer_auth=False",
+          "in": {
+            "transport": "http",
+            "sensitive": false,
+            "require_peer_auth": false
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ok"
+          }
+        },
+        {
+          "tcId": 22,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "http sensitive=False peer_auth=True",
+          "in": {
+            "transport": "http",
+            "sensitive": false,
+            "require_peer_auth": true
+          },
+          "result": "valid",
+          "expected": {
+            "result": "PeerUnauthenticated"
+          }
+        },
+        {
+          "tcId": 23,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "http sensitive=True peer_auth=False",
+          "in": {
+            "transport": "http",
+            "sensitive": true,
+            "require_peer_auth": false
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ConfidentialTransportRequired"
+          }
+        },
+        {
+          "tcId": 24,
+          "requirement": "R-13.4/transport-emit",
+          "comment": "http sensitive=True peer_auth=True",
+          "in": {
+            "transport": "http",
+            "sensitive": true,
+            "require_peer_auth": true
+          },
+          "result": "valid",
+          "expected": {
+            "result": "ConfidentialTransportRequired"
+          }
+        }
+      ]
+    },
+    {
+      "op": "carriage.body",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-14.4/carriage-body",
+          "comment": "carriage class doc",
+          "in": {
+            "protocol_id": 2,
+            "class": 4,
+            "content_type": 0,
+            "correlation_hex": "00000005",
+            "method": "AgentCard",
+            "foreign_hex": "7b226e616d65223a20224d794167656e74222c2022736b696c6c73223a205b22736561726368222c202273756d6d6172697a65225d7d"
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a601020204030004440000000505694167656e74436172640658367b226e616d65223a20224d794167656e74222c2022736b696c6c73223a205b22736561726368222c202273756d6d6172697a65225d7d"
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-14.4/carriage-body",
+          "comment": "carriage class http",
+          "in": {
+            "protocol_id": 3,
+            "class": 1,
+            "content_type": 2,
+            "correlation_hex": "00000002",
+            "method": "GET",
+            "foreign_hex": "474554202f6167656e7420485454502f312e310d0a486f73743a206578616d706c652e746573740d0a4163636570743a202a2f2a0d0a0d0a"
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a60103020103020444000000020563474554065838474554202f6167656e7420485454502f312e310d0a486f73743a206578616d706c652e746573740d0a4163636570743a202a2f2a0d0a0d0a"
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-14.4/carriage-body",
+          "comment": "carriage class jsonrpc",
+          "in": {
+            "protocol_id": 1,
+            "class": 0,
+            "content_type": 0,
+            "correlation_hex": "00000001",
+            "method": "tools/call",
+            "foreign_hex": "7b226a736f6e727063223a2022322e30222c20226964223a20312c20226d6574686f64223a2022746f6f6c732f63616c6c222c2022706172616d73223a207b226e616d65223a2022736561726368227d7d"
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a6010102000300044400000001056a746f6f6c732f63616c6c0658517b226a736f6e727063223a2022322e30222c20226964223a20312c20226d6574686f64223a2022746f6f6c732f63616c6c222c2022706172616d73223a207b226e616d65223a2022736561726368227d7d"
+          }
+        },
+        {
+          "tcId": 4,
+          "requirement": "R-14.4/carriage-body",
+          "comment": "carriage class msg",
+          "in": {
+            "protocol_id": 16,
+            "class": 2,
+            "content_type": 2,
+            "correlation_hex": "00000003",
+            "method": "request",
+            "foreign_hex": "2872657175657374203a73656e646572206167656e742d31203a7265636569766572206167656e742d32203a636f6e74656e742022646f2d782229"
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a601100202030204440000000305677265717565737406583b2872657175657374203a73656e646572206167656e742d31203a7265636569766572206167656e742d32203a636f6e74656e742022646f2d782229"
+          }
+        },
+        {
+          "tcId": 5,
+          "requirement": "R-14.4/carriage-body",
+          "comment": "carriage class opaque",
+          "in": {
+            "protocol_id": 17,
+            "class": 5,
+            "content_type": 1,
+            "correlation_hex": "00000006",
+            "method": "",
+            "foreign_hex": "000102fffe7f80"
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a601110205030104440000000605600647000102fffe7f80"
+          }
+        },
+        {
+          "tcId": 6,
+          "requirement": "R-14.4/carriage-body",
+          "comment": "carriage class stream",
+          "in": {
+            "protocol_id": 4,
+            "class": 3,
+            "content_type": 2,
+            "correlation_hex": "00000004",
+            "method": "event",
+            "foreign_hex": "646174613a207b226576656e74223a20227469636b222c2022736571223a20377d0a0a"
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a601040203030204440000000405656576656e74065823646174613a207b226576656e74223a20227469636b222c2022736571223a20377d0a0a"
+          }
+        }
+      ]
+    },
+    {
+      "op": "channels.lookup",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Audit.Receipt",
+          "in": {
+            "channel": 11,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Receipt",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Audit.AuditQuery",
+          "in": {
+            "channel": 11,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "AuditQuery",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Audit.ForkProof",
+          "in": {
+            "channel": 11,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "ForkProof",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 4,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Bridge.Carriage",
+          "in": {
+            "channel": 13,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Carriage",
+            "effect": 0,
+            "variable": true
+          }
+        },
+        {
+          "tcId": 5,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Capability.CapIssue",
+          "in": {
+            "channel": 2,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "CapIssue",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 6,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Capability.CapDelegate",
+          "in": {
+            "channel": 2,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "CapDelegate",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 7,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Capability.CapRevoke",
+          "in": {
+            "channel": 2,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "CapRevoke",
+            "effect": 3,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 8,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Capability.CapLookup",
+          "in": {
+            "channel": 2,
+            "kind": 3
+          },
+          "result": "valid",
+          "expected": {
+            "name": "CapLookup",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 9,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Commerce.Offer",
+          "in": {
+            "channel": 14,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Offer",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 10,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Commerce.Order",
+          "in": {
+            "channel": 14,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Order",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 11,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Commerce.Fulfil",
+          "in": {
+            "channel": 14,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Fulfil",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 12,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Commerce.Cancel",
+          "in": {
+            "channel": 14,
+            "kind": 3
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Cancel",
+            "effect": 3,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 13,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Compliance.ComplianceRecord",
+          "in": {
+            "channel": 8,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "ComplianceRecord",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 14,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Compliance.ComplianceQuery",
+          "in": {
+            "channel": 8,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "ComplianceQuery",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 15,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Compliance.ComplianceReport",
+          "in": {
+            "channel": 8,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "ComplianceReport",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 16,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Control.Hello",
+          "in": {
+            "channel": 0,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Hello",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 17,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Control.Bye",
+          "in": {
+            "channel": 0,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Bye",
+            "effect": 1,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 18,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Control.Ack",
+          "in": {
+            "channel": 0,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Ack",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 19,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Control.Error",
+          "in": {
+            "channel": 0,
+            "kind": 3
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Error",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 20,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Discovery.DiscoveryRecord",
+          "in": {
+            "channel": 16,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "DiscoveryRecord",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 21,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Discovery.DiscoveryQuery",
+          "in": {
+            "channel": 16,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "DiscoveryQuery",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 22,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Federation.AuthorityAnnounce",
+          "in": {
+            "channel": 6,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "AuthorityAnnounce",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 23,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Federation.ScopeReceipt",
+          "in": {
+            "channel": 6,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "ScopeReceipt",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 24,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Governance.PolicyPublish",
+          "in": {
+            "channel": 4,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "PolicyPublish",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 25,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Governance.Approval",
+          "in": {
+            "channel": 4,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Approval",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 26,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Governance.ApprovalHeld",
+          "in": {
+            "channel": 4,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "ApprovalHeld",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 27,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Governance.Consume",
+          "in": {
+            "channel": 4,
+            "kind": 3
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Consume",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 28,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Identity.Rotation",
+          "in": {
+            "channel": 3,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Rotation",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 29,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Identity.Revocation",
+          "in": {
+            "channel": 3,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Revocation",
+            "effect": 3,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 30,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Identity.ForeignLink",
+          "in": {
+            "channel": 3,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "ForeignLink",
+            "effect": 1,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 31,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Identity.KeyAnnounce",
+          "in": {
+            "channel": 3,
+            "kind": 3
+          },
+          "result": "valid",
+          "expected": {
+            "name": "KeyAnnounce",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 32,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Immune.AnomalyReport",
+          "in": {
+            "channel": 5,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "AnomalyReport",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 33,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Immune.Quarantine",
+          "in": {
+            "channel": 5,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Quarantine",
+            "effect": 3,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 34,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Immune.QuarantineLift",
+          "in": {
+            "channel": 5,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "QuarantineLift",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 35,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Interaction.Elicit",
+          "in": {
+            "channel": 15,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Elicit",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 36,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Interaction.Respond",
+          "in": {
+            "channel": 15,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Respond",
+            "effect": 1,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 37,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Interaction.Confirm",
+          "in": {
+            "channel": 15,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Confirm",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 38,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Knowledge.Assert",
+          "in": {
+            "channel": 18,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Assert",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 39,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Knowledge.Retract",
+          "in": {
+            "channel": 18,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Retract",
+            "effect": 3,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 40,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Knowledge.KnowledgeQuery",
+          "in": {
+            "channel": 18,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "KnowledgeQuery",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 41,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Memory.MemoryOffer",
+          "in": {
+            "channel": 1,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "MemoryOffer",
+            "effect": 1,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 42,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Memory.MemoryAccept",
+          "in": {
+            "channel": 1,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "MemoryAccept",
+            "effect": 1,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 43,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Memory.MemoryWrite",
+          "in": {
+            "channel": 1,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "MemoryWrite",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 44,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Memory.MemoryRead",
+          "in": {
+            "channel": 1,
+            "kind": 3
+          },
+          "result": "valid",
+          "expected": {
+            "name": "MemoryRead",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 45,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Memory.MemoryExpire",
+          "in": {
+            "channel": 1,
+            "kind": 4
+          },
+          "result": "valid",
+          "expected": {
+            "name": "MemoryExpire",
+            "effect": 3,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 46,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Memory.MemoryRevoke",
+          "in": {
+            "channel": 1,
+            "kind": 5
+          },
+          "result": "valid",
+          "expected": {
+            "name": "MemoryRevoke",
+            "effect": 3,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 47,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Sensory.Observation",
+          "in": {
+            "channel": 9,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Observation",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 48,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Sensory.Subscribe",
+          "in": {
+            "channel": 9,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Subscribe",
+            "effect": 1,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 49,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Sensory.Unsubscribe",
+          "in": {
+            "channel": 9,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Unsubscribe",
+            "effect": 1,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 50,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Settlement.SettleIntent",
+          "in": {
+            "channel": 7,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "SettleIntent",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 51,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Settlement.SettleReceipt",
+          "in": {
+            "channel": 7,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "SettleReceipt",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 52,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Settlement.SettleReject",
+          "in": {
+            "channel": 7,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "SettleReject",
+            "effect": 1,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 53,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Spatial.FrameDefine",
+          "in": {
+            "channel": 19,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "FrameDefine",
+            "effect": 1,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 54,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Spatial.Pose",
+          "in": {
+            "channel": 19,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Pose",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 55,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Spatial.StateUpdate",
+          "in": {
+            "channel": 19,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "StateUpdate",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 56,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Spatial.SnapshotQuery",
+          "in": {
+            "channel": 19,
+            "kind": 3
+          },
+          "result": "valid",
+          "expected": {
+            "name": "SnapshotQuery",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 57,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Stream.StreamOpen",
+          "in": {
+            "channel": 12,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "StreamOpen",
+            "effect": 0,
+            "variable": true
+          }
+        },
+        {
+          "tcId": 58,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Stream.StreamCommit",
+          "in": {
+            "channel": 12,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "StreamCommit",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 59,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Stream.StreamCheckpoint",
+          "in": {
+            "channel": 12,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "StreamCheckpoint",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 60,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Telemetry.Metric",
+          "in": {
+            "channel": 10,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "Metric",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 61,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Telemetry.HealthReport",
+          "in": {
+            "channel": 10,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "HealthReport",
+            "effect": 0,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 62,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Workflow.TaskCreate",
+          "in": {
+            "channel": 17,
+            "kind": 0
+          },
+          "result": "valid",
+          "expected": {
+            "name": "TaskCreate",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 63,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Workflow.TaskInput",
+          "in": {
+            "channel": 17,
+            "kind": 1
+          },
+          "result": "valid",
+          "expected": {
+            "name": "TaskInput",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 64,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Workflow.TaskCancel",
+          "in": {
+            "channel": 17,
+            "kind": 2
+          },
+          "result": "valid",
+          "expected": {
+            "name": "TaskCancel",
+            "effect": 3,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 65,
+          "requirement": "R-11.1/channel-lookup",
+          "comment": "Workflow.TaskResult",
+          "in": {
+            "channel": 17,
+            "kind": 3
+          },
+          "result": "valid",
+          "expected": {
+            "name": "TaskResult",
+            "effect": 2,
+            "variable": false
+          }
+        },
+        {
+          "tcId": 66,
+          "requirement": "R-11.1/unknown-kind",
+          "comment": "unregistered kind rejected",
+          "in": {
+            "channel": 0,
+            "kind": 9999
+          },
+          "result": "invalid",
+          "flags": [
+            "MustReject",
+            "UnknownKind"
+          ]
+        }
+      ]
+    },
+    {
+      "op": "channels.effect_check",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Audit.Receipt declared effect ok",
+          "in": {
+            "channel": 11,
+            "kind": 0,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 2,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Audit.AuditQuery declared effect ok",
+          "in": {
+            "channel": 11,
+            "kind": 1,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 3,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Audit.ForkProof declared effect ok",
+          "in": {
+            "channel": 11,
+            "kind": 2,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 4,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Bridge.Carriage declared effect ok",
+          "in": {
+            "channel": 13,
+            "kind": 0,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 5,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Capability.CapIssue declared effect ok",
+          "in": {
+            "channel": 2,
+            "kind": 0,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 6,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Capability.CapDelegate declared effect ok",
+          "in": {
+            "channel": 2,
+            "kind": 1,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 7,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Capability.CapRevoke declared effect ok",
+          "in": {
+            "channel": 2,
+            "kind": 2,
+            "effect": 3
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 8,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Capability.CapLookup declared effect ok",
+          "in": {
+            "channel": 2,
+            "kind": 3,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 9,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Commerce.Offer declared effect ok",
+          "in": {
+            "channel": 14,
+            "kind": 0,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 10,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Commerce.Order declared effect ok",
+          "in": {
+            "channel": 14,
+            "kind": 1,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 11,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Commerce.Fulfil declared effect ok",
+          "in": {
+            "channel": 14,
+            "kind": 2,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 12,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Commerce.Cancel declared effect ok",
+          "in": {
+            "channel": 14,
+            "kind": 3,
+            "effect": 3
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 13,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Compliance.ComplianceRecord declared effect ok",
+          "in": {
+            "channel": 8,
+            "kind": 0,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 14,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Compliance.ComplianceQuery declared effect ok",
+          "in": {
+            "channel": 8,
+            "kind": 1,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 15,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Compliance.ComplianceReport declared effect ok",
+          "in": {
+            "channel": 8,
+            "kind": 2,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 16,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Control.Hello declared effect ok",
+          "in": {
+            "channel": 0,
+            "kind": 0,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 17,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Control.Bye declared effect ok",
+          "in": {
+            "channel": 0,
+            "kind": 1,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 18,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Control.Ack declared effect ok",
+          "in": {
+            "channel": 0,
+            "kind": 2,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 19,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Control.Error declared effect ok",
+          "in": {
+            "channel": 0,
+            "kind": 3,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 20,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Discovery.DiscoveryRecord declared effect ok",
+          "in": {
+            "channel": 16,
+            "kind": 0,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 21,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Discovery.DiscoveryQuery declared effect ok",
+          "in": {
+            "channel": 16,
+            "kind": 1,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 22,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Federation.AuthorityAnnounce declared effect ok",
+          "in": {
+            "channel": 6,
+            "kind": 0,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 23,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Federation.ScopeReceipt declared effect ok",
+          "in": {
+            "channel": 6,
+            "kind": 1,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 24,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Governance.PolicyPublish declared effect ok",
+          "in": {
+            "channel": 4,
+            "kind": 0,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 25,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Governance.Approval declared effect ok",
+          "in": {
+            "channel": 4,
+            "kind": 1,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 26,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Governance.ApprovalHeld declared effect ok",
+          "in": {
+            "channel": 4,
+            "kind": 2,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 27,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Governance.Consume declared effect ok",
+          "in": {
+            "channel": 4,
+            "kind": 3,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 28,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Identity.Rotation declared effect ok",
+          "in": {
+            "channel": 3,
+            "kind": 0,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 29,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Identity.Revocation declared effect ok",
+          "in": {
+            "channel": 3,
+            "kind": 1,
+            "effect": 3
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 30,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Identity.ForeignLink declared effect ok",
+          "in": {
+            "channel": 3,
+            "kind": 2,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 31,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Identity.KeyAnnounce declared effect ok",
+          "in": {
+            "channel": 3,
+            "kind": 3,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 32,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Immune.AnomalyReport declared effect ok",
+          "in": {
+            "channel": 5,
+            "kind": 0,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 33,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Immune.Quarantine declared effect ok",
+          "in": {
+            "channel": 5,
+            "kind": 1,
+            "effect": 3
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 34,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Immune.QuarantineLift declared effect ok",
+          "in": {
+            "channel": 5,
+            "kind": 2,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 35,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Interaction.Elicit declared effect ok",
+          "in": {
+            "channel": 15,
+            "kind": 0,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 36,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Interaction.Respond declared effect ok",
+          "in": {
+            "channel": 15,
+            "kind": 1,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 37,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Interaction.Confirm declared effect ok",
+          "in": {
+            "channel": 15,
+            "kind": 2,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 38,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Knowledge.Assert declared effect ok",
+          "in": {
+            "channel": 18,
+            "kind": 0,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 39,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Knowledge.Retract declared effect ok",
+          "in": {
+            "channel": 18,
+            "kind": 1,
+            "effect": 3
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 40,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Knowledge.KnowledgeQuery declared effect ok",
+          "in": {
+            "channel": 18,
+            "kind": 2,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 41,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Memory.MemoryOffer declared effect ok",
+          "in": {
+            "channel": 1,
+            "kind": 0,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 42,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Memory.MemoryAccept declared effect ok",
+          "in": {
+            "channel": 1,
+            "kind": 1,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 43,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Memory.MemoryWrite declared effect ok",
+          "in": {
+            "channel": 1,
+            "kind": 2,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 44,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Memory.MemoryRead declared effect ok",
+          "in": {
+            "channel": 1,
+            "kind": 3,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 45,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Memory.MemoryExpire declared effect ok",
+          "in": {
+            "channel": 1,
+            "kind": 4,
+            "effect": 3
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 46,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Memory.MemoryRevoke declared effect ok",
+          "in": {
+            "channel": 1,
+            "kind": 5,
+            "effect": 3
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 47,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Sensory.Observation declared effect ok",
+          "in": {
+            "channel": 9,
+            "kind": 0,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 48,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Sensory.Subscribe declared effect ok",
+          "in": {
+            "channel": 9,
+            "kind": 1,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 49,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Sensory.Unsubscribe declared effect ok",
+          "in": {
+            "channel": 9,
+            "kind": 2,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 50,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Settlement.SettleIntent declared effect ok",
+          "in": {
+            "channel": 7,
+            "kind": 0,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 51,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Settlement.SettleReceipt declared effect ok",
+          "in": {
+            "channel": 7,
+            "kind": 1,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 52,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Settlement.SettleReject declared effect ok",
+          "in": {
+            "channel": 7,
+            "kind": 2,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 53,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Spatial.FrameDefine declared effect ok",
+          "in": {
+            "channel": 19,
+            "kind": 0,
+            "effect": 1
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 54,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Spatial.Pose declared effect ok",
+          "in": {
+            "channel": 19,
+            "kind": 1,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 55,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Spatial.StateUpdate declared effect ok",
+          "in": {
+            "channel": 19,
+            "kind": 2,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 56,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Spatial.SnapshotQuery declared effect ok",
+          "in": {
+            "channel": 19,
+            "kind": 3,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 57,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Stream.StreamOpen declared effect ok",
+          "in": {
+            "channel": 12,
+            "kind": 0,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 58,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Stream.StreamCommit declared effect ok",
+          "in": {
+            "channel": 12,
+            "kind": 1,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 59,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Stream.StreamCheckpoint declared effect ok",
+          "in": {
+            "channel": 12,
+            "kind": 2,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 60,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Telemetry.Metric declared effect ok",
+          "in": {
+            "channel": 10,
+            "kind": 0,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 61,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Telemetry.HealthReport declared effect ok",
+          "in": {
+            "channel": 10,
+            "kind": 1,
+            "effect": 0
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 62,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Workflow.TaskCreate declared effect ok",
+          "in": {
+            "channel": 17,
+            "kind": 0,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 63,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Workflow.TaskInput declared effect ok",
+          "in": {
+            "channel": 17,
+            "kind": 1,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 64,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Workflow.TaskCancel declared effect ok",
+          "in": {
+            "channel": 17,
+            "kind": 2,
+            "effect": 3
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        },
+        {
+          "tcId": 65,
+          "requirement": "R-11.3/effect-declaration",
+          "comment": "Workflow.TaskResult declared effect ok",
+          "in": {
+            "channel": 17,
+            "kind": 3,
+            "effect": 2
+          },
+          "result": "valid",
+          "expected": {
+            "ok": true
+          }
+        }
+      ]
+    },
+    {
+      "op": "federation.reconcile",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-8.6/reconcile-order",
+          "comment": "deterministic causal-merge order",
+          "in": {
+            "nodes": [
+              {
+                "id_hex": "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41",
+                "causes_hex": []
+              },
+              {
+                "id_hex": "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567",
+                "causes_hex": [
+                  "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41"
+                ]
+              },
+              {
+                "id_hex": "2030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df",
+                "causes_hex": [
+                  "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41"
+                ]
+              },
+              {
+                "id_hex": "2030f7869553f389a0e67c5cad8756688228328d28be2d6d7f2a21dcc3d6fe8142550ee0da002bca1705028a0e2c8bc06953",
+                "causes_hex": [
+                  "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567",
+                  "2030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df"
+                ]
+              },
+              {
+                "id_hex": "2030de1b3cdb7ae6946d2ea6d41ae00d393a2266845919273e9d9fe2696737df5f24bba69090ac2be8a5f60cbde4ff2fe4a1",
+                "causes_hex": [
+                  "2030f7869553f389a0e67c5cad8756688228328d28be2d6d7f2a21dcc3d6fe8142550ee0da002bca1705028a0e2c8bc06953"
+                ]
+              }
+            ]
+          },
+          "result": "valid",
+          "expected": {
+            "order": [
+              "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41",
+              "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567",
+              "2030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df",
+              "2030f7869553f389a0e67c5cad8756688228328d28be2d6d7f2a21dcc3d6fe8142550ee0da002bca1705028a0e2c8bc06953",
+              "2030de1b3cdb7ae6946d2ea6d41ae00d393a2266845919273e9d9fe2696737df5f24bba69090ac2be8a5f60cbde4ff2fe4a1"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "op": "federation.record",
+      "profile": "any",
+      "tests": [
+        {
+          "tcId": 1,
+          "requirement": "R-8.6/reconcile-record",
+          "comment": "Reconcile record body",
+          "in": {
+            "authorities": [
+              "bauthority-x",
+              "bauthority-y"
+            ],
+            "order": [
+              "2030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc41",
+              "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567",
+              "2030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df",
+              "2030f7869553f389a0e67c5cad8756688228328d28be2d6d7f2a21dcc3d6fe8142550ee0da002bca1705028a0e2c8bc06953",
+              "2030de1b3cdb7ae6946d2ea6d41ae00d393a2266845919273e9d9fe2696737df5f24bba69090ac2be8a5f60cbde4ff2fe4a1"
+            ]
+          },
+          "result": "valid",
+          "expected": {
+            "body_hex": "a201826c62617574686f726974792d786c62617574686f726974792d79028558322030bcb1113ccdfdc802321a7f62230c2bdc69eb548a6f067bd8db1bec5e85e42a41389f0025fd9d9bd1ab5f2564fb89bc415832203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a6056758322030daefe0c1c6b97b4b4a720c7067659528f6294a6221b2f7976a1aefbfebb777ed99e2d85660ba0db2a219df211463b3df58322030f7869553f389a0e67c5cad8756688228328d28be2d6d7f2a21dcc3d6fe8142550ee0da002bca1705028a0e2c8bc0695358322030de1b3cdb7ae6946d2ea6d41ae00d393a2266845919273e9d9fe2696737df5f24bba69090ac2be8a5f60cbde4ff2fe4a1"
+          }
+        }
+      ]
+    }
+  ]
+}
