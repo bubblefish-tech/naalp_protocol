@@ -15,6 +15,7 @@ import csv
 import glob
 import json
 import os
+import re
 import sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
@@ -64,7 +65,20 @@ def check_multicodec():
         check(key in rows, "%s key multicodec %s present" % (s["name"], key))
         if key in rows:
             check(rows[key] == s["multicodec"], "%s multicodec 0x%x == vector %d" % (s["name"], rows[key], s["multicodec"]))
-    check(rows.get("sha2-256") == 0x12, "sha2-256 = 0x12 (multihash-hash)")
+    # A6: every multihash HASH code point the CDDL mandates MUST be registered as a
+    # multihash-hash row, or a verifier cannot resolve the self-describing content-id/signer-id
+    # hash. The CDDL (spec/naalp-draft-00.cddl) is the authority: multihash(0x20, SHA-384(...))
+    # names the content id (§2.3) and multihash(0x12, SHA-256(...)) the signer id (§5.1). Scan
+    # those codes out of the CDDL and assert coverage, so a hash added to the wire cannot ship
+    # without a registry row. (0x20 = sha2-384, 0x12 = sha2-256 per the multiformats table.)
+    all_rows = load_csv("vectors/registry/multicodec.csv")
+    hash_codes = {int(r["code"], 16) for r in all_rows if r["role"] == "multihash-hash"}
+    cddl = open(os.path.join(ROOT, "spec/naalp-draft-00.cddl")).read()
+    cddl_hash_codes = sorted({int(m, 16) for m in re.findall(r"multihash\(0x([0-9a-fA-F]+)", cddl)})
+    check(len(cddl_hash_codes) > 0, "CDDL names at least one multihash hash code point")
+    for code in cddl_hash_codes:
+        check(code in hash_codes,
+              "CDDL multihash 0x%02x registered as multihash-hash in multicodec.csv" % code)
 
 
 def check_channels():

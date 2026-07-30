@@ -20,9 +20,13 @@ harness/adapters/**/bin/
 harness/adapters/**/obj/
 *.class
 *.jar
-# .NET SDK build outputs (impl/csharp is the only .NET project; adapters/**/bin|obj covered above)
-impl/csharp/bin/
-impl/csharp/obj/
+# .NET SDK build outputs (impl/csharp; bin/ + obj/ appear at the project root AND under test/)
+impl/csharp/**/bin/
+impl/csharp/**/obj/
+# Java (Maven) + Kotlin (Gradle) SDK build outputs (rebuilt by mvn / gradle + CI)
+impl/java/target/
+impl/kotlin/build/
+impl/kotlin/.gradle/
 impl/swift/.build/
 harness/adapters/swift_adapter/.build/
 # Stray local logs / scratch (not part of the build)
