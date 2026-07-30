@@ -29,7 +29,9 @@
   },
   "types": "./naalp/index.d.mts",
   "files": [
-    "naalp"
+    "naalp",
+    "LICENSE",
+    "NOTICE"
   ],
   "engines": {
     "node": ">=22"

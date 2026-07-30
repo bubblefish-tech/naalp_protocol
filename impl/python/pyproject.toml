@@ -10,6 +10,7 @@ description = "Reference SDK for N-AALP (Native Agentic Application Layer Protoc
 readme = "QUICKSTART.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "Shawn Sammartano", email = "naalp-editor@bubblefish.sh" }]
 keywords = ["naalp", "agents", "agentic", "post-quantum", "cbor", "cose", "ml-dsa", "protocol"]
 classifiers = [

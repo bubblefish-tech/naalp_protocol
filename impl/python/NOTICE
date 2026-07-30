@@ -1,0 +1,31 @@
+N-AALP: Native Agentic Application Layer Protocol
+Copyright 2026 BubbleFish Technologies, Inc.
+
+This product includes software and documentation developed by
+BubbleFish Technologies, Inc.
+
+It includes the open application-object layer of N-AALP (the deterministic-CBOR
+object model, the COSE_Sign1 cryptographic profiles, the identity, effect,
+approval, and audit objects, deterministic and federated ordering, delivery,
+streaming, the transport bindings, carriage-by-class with its registry and
+opaque class, and the twenty channel surfaces) and its ten reference SDKs. It
+implements draft-bubblefish-naalp-00. Standard cryptography only (deterministic
+CBOR per RFC 8949, COSE_Sign1 per RFC 9052, ML-DSA per FIPS 204, Ed25519 per
+RFC 8032).
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+----------------------------------------------------------------------
+
+The Internet-Draft contained in this repository
+(draft-bubblefish-naalp-NN) and any RFC that results from it are
+additionally subject to the IETF Trust's Legal Provisions Relating to
+IETF Documents (BCP 78, https://trustee.ietf.org/license-info). The
+draft declares this with the "ipr: trust200902" attribute in its front
+matter. The Apache License above governs the repository's code and
+original supporting content; it does not override the IETF Trust terms
+that apply to the Internet-Draft / RFC text.
