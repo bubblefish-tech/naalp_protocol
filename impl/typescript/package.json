@@ -39,7 +39,8 @@
   "scripts": {
     "test": "node --test \"test/**/*.test.mjs\"",
     "example": "node examples/sign-object.mjs",
-    "build:types": "tsc -p tsconfig.json",
+    "clean:types": "node scripts/clean-types.mjs",
+    "build:types": "npm run clean:types && tsc -p tsconfig.json",
     "prepack": "npm run build:types",
     "docs": "typedoc"
   },
