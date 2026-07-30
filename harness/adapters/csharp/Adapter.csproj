@@ -9,7 +9,10 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Real Unicode normalization (ICU) is REQUIRED: the nfc.check op relies on
+         String.IsNormalized, which is a no-op under globalization-invariant mode and would
+         silently accept non-NFC input. Keep invariant OFF so the NFC check actually runs. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
 

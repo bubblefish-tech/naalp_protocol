@@ -110,8 +110,31 @@ namespace Naalp
         }
 
         /// <summary>Reject an identity/scope string that is not Unicode NFC (§3.1, R-3.3).</summary>
+        /// <remarks>
+        /// Fails closed if the runtime cannot perform Unicode normalization. Under .NET
+        /// globalization-invariant mode ICU is disabled and <see cref="string.IsNormalized(NormalizationForm)"/>
+        /// degrades to a no-op that returns <c>true</c> for every input — which would silently accept
+        /// a non-NFC string (a fail-open on a security-relevant check). We first confirm real
+        /// normalization is available via a known decomposition (U+00C5 &lt;-&gt; "A" + U+030A); if that
+        /// round-trip is inert or throws, the runtime cannot enforce NFC and we reject.
+        /// </remarks>
         public static void RequireNfc(string s)
         {
+            bool normalizationWorks;
+            try
+            {
+                normalizationWorks = ("A" + (char)0x030A).Normalize(NormalizationForm.FormC) == ((char)0x00C5).ToString();
+            }
+            catch
+            {
+                normalizationWorks = false;
+            }
+            if (!normalizationWorks)
+            {
+                throw new NaalpException(
+                    "NonNFC",
+                    "Unicode normalization is unavailable (globalization-invariant runtime); cannot verify NFC");
+            }
             if (!s.IsNormalized(NormalizationForm.FormC))
             {
                 throw new NaalpException("NonNFC", "string is not Unicode NFC");

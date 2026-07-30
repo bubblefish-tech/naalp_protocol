@@ -95,11 +95,12 @@ if have dotnet && [ -f harness/adapters/csharp/Adapter.csproj ]; then
     echo "  (csharp: no usable .NET SDK — SKIP locally; CI grades via setup-dotnet)"
   fi
 fi
-# swift (SwiftPM; toolchain present only in CI. ML-DSA skip-tracked: SwiftDilithium 3.6.0 has no
-# seed-based keygen, so Swift grades the pure ops + Ed25519 and skips the ML-DSA leg like PHP.)
-if have swift && [ -f harness/adapters/swift/Package.swift ]; then
-  if swift build -c release --package-path harness/adapters/swift >/dev/null 2>&1; then
-    add swift "harness/adapters/swift/.build/release/naalp-adapter" 0
+# swift (SwiftPM. ML-DSA skip-tracked: SwiftDilithium 3.6.0 has no seed-based keygen, so Swift
+# grades the pure ops + Ed25519 and skips the ML-DSA leg like PHP. The adapter directory is named
+# swift_adapter, not swift, so its SwiftPM identity does not collide with the SDK dir impl/swift.)
+if have swift && [ -f harness/adapters/swift_adapter/Package.swift ]; then
+  if swift build -c release --package-path harness/adapters/swift_adapter >/dev/null 2>&1; then
+    add swift "harness/adapters/swift_adapter/.build/release/naalp-adapter" 0
   else
     echo "  (swift: build failed — SKIP)"
   fi

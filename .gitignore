@@ -4,6 +4,7 @@
 # Compiled binaries (runner + adapters + worked-example are built, never committed)
 *.exe
 harness/runner/naalp-conform
+harness/runner/naalp-conform-linux
 harness/adapters/go/naalp-adapter-go
 harness/adapters/rust/target/
 # Rust
@@ -19,8 +20,11 @@ harness/adapters/**/bin/
 harness/adapters/**/obj/
 *.class
 *.jar
+# .NET SDK build outputs (impl/csharp is the only .NET project; adapters/**/bin|obj covered above)
+impl/csharp/bin/
+impl/csharp/obj/
 impl/swift/.build/
-harness/adapters/swift/.build/
+harness/adapters/swift_adapter/.build/
 # Stray local logs / scratch (not part of the build)
 tracker.log
 **/tracker.log

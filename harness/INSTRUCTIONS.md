@@ -27,7 +27,7 @@ signature, is graded by the separate cross-language consensus gate (`tools/crypt
 | Kotlin     | `harness/adapters/kotlin/`          | planned |
 | PHP        | `harness/adapters/php/`             | planned |
 | Ruby       | `harness/adapters/ruby/`            | planned |
-| Swift      | `harness/adapters/swift/`           | planned |
+| Swift      | `harness/adapters/swift_adapter/`   | wired   |
 
 `wired` = the adapter exists, builds, and passes the corpus in CI. `planned` = the adapter and its
 SDK are built and graded under task #20. The authoritative `{language -> build + launch}` table is

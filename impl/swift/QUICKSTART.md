@@ -86,12 +86,13 @@ swift test            --package-path impl/swift                 # worked-example
 ```
 
 Cross-language conformance (the authoritative grade) runs the adapter through the shared harness.
-The Swift toolchain is provided in CI, where the adapter is built and graded against the shared
-corpus; the pure ops and Ed25519 are graded, and the ML-DSA crypto ops report an honest `skipped`
-(Unimplemented for Swift by design, like PHP — never a failure):
+Build the adapter, then grade it against the shared corpus; the pure ops and Ed25519 are graded,
+and the ML-DSA crypto ops report an honest `skipped` (Unimplemented for Swift by design, like PHP
+— never a failure). On Swift 6.3.3 / Ubuntu this grades `235 graded, 4 unimplemented/skipped`:
 
 ```sh
-./harness/runner/naalp-conform run --testee "harness/adapters/swift/.build/release/naalp-adapter"
+swift build -c release --package-path harness/adapters/swift_adapter
+./harness/runner/naalp-conform run --testee "harness/adapters/swift_adapter/.build/release/naalp-adapter"
 ```
 
 ## License

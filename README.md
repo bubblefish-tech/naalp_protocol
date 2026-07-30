@@ -87,7 +87,7 @@ Ten idiomatic reference implementations live under [`impl/`](impl/), co-located 
 | Ruby | [`impl/ruby/`](impl/ruby/) | [QUICKSTART](impl/ruby/QUICKSTART.md) | ML-DSA-65/-87 + Ed25519 | [`harness/adapters/ruby/`](harness/adapters/ruby/) |
 | C# | [`impl/csharp/`](impl/csharp/) | [source](impl/csharp/) | authored, CI-graded | [`harness/adapters/csharp/`](harness/adapters/csharp/) |
 | PHP *(pure-only)* | [`impl/php/`](impl/php/) | [QUICKSTART](impl/php/QUICKSTART.md) | Ed25519 (ML-DSA skip-tracked) | [`harness/adapters/php/`](harness/adapters/php/) |
-| Swift *(pure-only)* | [`impl/swift/`](impl/swift/) | [source](impl/swift/) | Ed25519 (ML-DSA skip-tracked) | [`harness/adapters/swift/`](harness/adapters/swift/) |
+| Swift *(pure-only)* | [`impl/swift/`](impl/swift/) | [source](impl/swift/) | Ed25519 (ML-DSA skip-tracked) | [`harness/adapters/swift_adapter/`](harness/adapters/swift_adapter/) |
 
 The Go module is `github.com/bubblefish-tech/naalp_protocol/impl/go`; the Rust crate is `naalp`. PHP and Swift are marked **pure-only**: their ecosystems lack a deterministic ML-DSA seed-keygen path, so they grade every non-crypto op plus Ed25519 and return an honest `skipped` for the ML-DSA ops (never a false green). The per-language ML-DSA library and its status are recorded in [`harness/adapters.json`](harness/adapters.json).
 
@@ -132,7 +132,7 @@ Copy a reference adapter from [`harness/adapters/`](harness/adapters/) and re-po
 | | | | | |
 |---|---|---|---|---|
 | [`adapters/go/`](harness/adapters/go/) | [`adapters/rust/`](harness/adapters/rust/) | [`adapters/python/`](harness/adapters/python/) | [`adapters/typescript/`](harness/adapters/typescript/) | [`adapters/csharp/`](harness/adapters/csharp/) |
-| [`adapters/swift/`](harness/adapters/swift/) | [`adapters/java/`](harness/adapters/java/) | [`adapters/kotlin/`](harness/adapters/kotlin/) | [`adapters/php/`](harness/adapters/php/) | [`adapters/ruby/`](harness/adapters/ruby/) |
+| [`adapters/swift_adapter/`](harness/adapters/swift_adapter/) | [`adapters/java/`](harness/adapters/java/) | [`adapters/kotlin/`](harness/adapters/kotlin/) | [`adapters/php/`](harness/adapters/php/) | [`adapters/ruby/`](harness/adapters/ruby/) |
 
 The adapter contract covers 31 operations — the pure spine ops (deterministic CBOR, content id, COSE ToBeSigned, signer id, effect, approval, audit, delivery, streaming, carriage, channels, federation) and the crypto ops (`mldsa.keygen`, `ed25519.sign`, `cose.sign1`, `cose.verify1`). Any op the SDK genuinely cannot do returns `{"skipped": "..."}` and is reported **Unimplemented**, not Fail — so a pure-only SDK is still fully graded on every spine op. Full detail in [`harness/INSTRUCTIONS.md`](harness/INSTRUCTIONS.md).
 

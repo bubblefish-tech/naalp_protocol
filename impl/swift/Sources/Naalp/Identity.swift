@@ -75,8 +75,13 @@ public enum Identity {
     }
 
     /// Reject an identity/scope string that is not Unicode NFC (§3.1, R-3.3).
+    ///
+    /// Swift `String` equality is canonical-equivalence-aware, so comparing a string to its own
+    /// precomposed (NFC) form with `!=`/`==` is ALWAYS "equal" — the check would never reject a
+    /// non-NFC (e.g. NFD) input. Compare the exact UTF-8 byte sequences instead, which are distinct
+    /// for a decomposed vs. composed form and correctly detect a non-NFC string.
     public static func requireNFC(_ s: String) throws {
-        if s.precomposedStringWithCanonicalMapping != s {
+        if Array(s.utf8) != Array(s.precomposedStringWithCanonicalMapping.utf8) {
             throw NaalpError("NonNFC", "string is not Unicode NFC")
         }
     }

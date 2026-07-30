@@ -54,10 +54,10 @@ private fun workedObject(): Triple<ByteArray, String, Envelope.Object> {
 private fun findVector(): File? {
     var d: File? = File(".").absoluteFile
     repeat(8) {
-        if (d == null) return null
-        val p = File(d, "vectors/worked/example.json")
+        val cur = d ?: return null
+        val p = File(cur, "vectors/worked/example.json")
         if (p.isFile) return p
-        d = d!!.parentFile
+        d = cur.parentFile
     }
     return null
 }

@@ -83,10 +83,10 @@
     },
     "swift": {
       "status": "wired",
-      "graded": "ci-only (no Swift toolchain on the dev box; authored + statically self-reviewed against the Python reference; graded in CI in a Swift container)",
-      "dir": "harness/adapters/swift",
-      "build": "swift build -c release --package-path harness/adapters/swift",
-      "launch": "harness/adapters/swift/.build/release/naalp-adapter",
+      "graded": "235 graded, 4 ML-DSA skip-tracked (built + graded on Swift 6.3.3 / Ubuntu 24.04 via WSL2; also graded in CI in a Swift container)",
+      "dir": "harness/adapters/swift_adapter",
+      "build": "swift build -c release --package-path harness/adapters/swift_adapter",
+      "launch": "harness/adapters/swift_adapter/.build/release/naalp-adapter",
       "sdk": "impl/swift",
       "mldsa": "pure-only — SwiftDilithium 3.6.0 has NO seed-based keygen (only random), so the corpus seed->pk / deterministic-sign path cannot be produced; grades all pure ops + Ed25519 (swift-crypto), skip-tracks the ML-DSA leg. Upgradable if a Swift ML-DSA lib adds seed keygen."
     }
