@@ -19,8 +19,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/bubblefish-tech/n-aalp/impl/go/cose"
-	"github.com/bubblefish-tech/n-aalp/impl/go/policy"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/policy"
 )
 
 // KindSpec is one baseline object kind of a channel: its code, name, and declared effect. A

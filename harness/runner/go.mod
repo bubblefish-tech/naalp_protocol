@@ -1,3 +1,3 @@
-module github.com/bubblefish-tech/n-aalp/harness/runner
+module github.com/bubblefish-tech/naalp_protocol/harness/runner
 
 go 1.24.0

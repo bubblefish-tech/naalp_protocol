@@ -12,7 +12,7 @@ package cose
 import (
 	"crypto/ed25519"
 
-	"github.com/bubblefish-tech/n-aalp/impl/go/cbor"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cbor"
 	"github.com/cloudflare/circl/sign/mldsa/mldsa65"
 	"github.com/cloudflare/circl/sign/mldsa/mldsa87"
 )

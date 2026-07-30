@@ -11,9 +11,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/bubblefish-tech/n-aalp/impl/go/audit"
-	"github.com/bubblefish-tech/n-aalp/impl/go/cose"
-	"github.com/bubblefish-tech/n-aalp/impl/go/delivery"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/audit"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/delivery"
 	"github.com/cloudflare/circl/sign/mldsa/mldsa65"
 )
 

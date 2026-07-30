@@ -72,6 +72,63 @@
           </execution>
         </executions>
       </plugin>
+      <!-- Maven Central REQUIRES a -javadoc.jar (as well as the -sources.jar above); attach it in
+           the normal build so `mvn verify` produces the full, Central-valid artifact set. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.6.3</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
+
+  <!-- The `release` profile (activated by `mvn -P release deploy` in .github/workflows/publish.yml)
+       adds the two things a Central deploy needs beyond the build artifacts: a detached GPG/PGP
+       signature per artifact, and the Central Portal publishing plugin. It is a separate profile so
+       an ordinary `mvn verify` (the CI dry-run) does not require a signing key. The central plugin
+       auto-generates the md5/sha1 checksums Central requires. Plugin versions are per Sonatype's
+       Central Portal Maven guide (central.sonatype.org, 2026-07-29); confirm the latest before an
+       actual deploy. The deploy itself is BLOCKED-EXTERNAL: it runs only when the operator supplies
+       the Central token + GPG key as CI secrets. -->
+  <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>3.2.4</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.7.0</version>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>central</publishingServerId>
+              <autoPublish>true</autoPublish>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

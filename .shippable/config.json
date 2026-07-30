@@ -1,0 +1,44 @@
+{
+  "_doc": "ESB project contract for the N-AALP public reference. gates[] are the executable acceptance gates a maintainer (and CI) runs; a required failure fails the build and writes honest evidence to .shippable/evidence/latest.json. Unlike a spec-only project, N-AALP grades its constructions by running code: two byte-identical reference implementations against independent non-circular oracles, the CDDL machine-validated, and ten SDKs graded against the shared conformance corpus. The spec-parity ledger (.shippable/spec-parity.json) records every construction and SDK with an honest status, owner, and gate.",
+  "max_evidence_age_hours": 24,
+  "source_globs": ["impl/**/*.go", "impl/**/*.rs", "impl/**/*.py", "impl/**/*.ts", "impl/**/*.mjs", "impl/**/*.java", "impl/**/*.kt", "impl/**/*.rb", "impl/**/*.php", "impl/**/*.cs", "impl/**/*.swift", "tools/**/*.py", "harness/**/*"],
+  "spec_parity_ledger": ".shippable/spec-parity.json",
+  "gates": [
+    {
+      "name": "pins",
+      "command": "python scripts/verify_pins.py",
+      "required": true,
+      "purpose": "The canonical draft, CDDL, registries, and full conformance corpus are provably the exact bytes recorded in PIN.json + MANIFEST.sha256 (no drift)."
+    },
+    {
+      "name": "two-implementation-parity",
+      "command": "bash scripts/verify.sh",
+      "required": true,
+      "purpose": "Go and Rust produce byte-identical CBOR, signed input, signatures, and digests, each cross-validated against the independent non-circular oracle; the committed vectors match the oracle output (no drift)."
+    },
+    {
+      "name": "cddl-conformance",
+      "command": "bash scripts/cddl_check.sh",
+      "required": true,
+      "purpose": "The full spec/naalp-draft-00.cddl is well-formed and validates the committed vectors against their production in the Bormann cddl tool (RFC 8610); cross-rule mismatches are rejected."
+    },
+    {
+      "name": "registry-drift",
+      "command": "python scripts/registry_drift.py",
+      "required": true,
+      "purpose": "The machine-readable registries (signatures/multicodec/channels/protocols) stay consistent with the graded vectors."
+    },
+    {
+      "name": "cross-language-conformance",
+      "command": "bash harness/cross_language.sh",
+      "required": true,
+      "purpose": "Every reference SDK adapter whose toolchain is present is graded against the shared op-replay corpus, and deterministic ML-DSA COSE_Sign1 is byte-identical across the crypto-capable languages. A present adapter that fails is a hard failure; an absent toolchain is an honest skip."
+    },
+    {
+      "name": "conformance-master",
+      "command": "bash harness/run.sh",
+      "required": true,
+      "purpose": "The single master gate composing the four above; the definition of 'the protocol is graded'."
+    }
+  ]
+}

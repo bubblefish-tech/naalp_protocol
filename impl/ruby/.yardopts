@@ -1,0 +1,5 @@
+--markup markdown
+--readme QUICKSTART.md
+--title "N-AALP Ruby SDK"
+--output-dir doc/api
+lib/**/*.rb

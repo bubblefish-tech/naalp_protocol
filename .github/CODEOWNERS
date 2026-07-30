@@ -1,0 +1,16 @@
+# Code owners for N-AALP.
+#
+# GitHub requests a review from the owner(s) below when a matching path changes, and (with the
+# "Require review from Code Owners" branch-protection rule enabled) enforces it. Replace the
+# placeholder team with the real maintainer handle or team before enabling that rule — until the
+# team/handle exists, GitHub treats this file as informational.
+#
+# Maintainers are listed in MAINTAINERS.md.
+
+* @bubblefish-tech/naalp-maintainers
+
+# The wire authority + conformance corpus are the most safety-sensitive surfaces.
+/spec/                       @bubblefish-tech/naalp-maintainers
+/vectors/                    @bubblefish-tech/naalp-maintainers
+/ietf/                       @bubblefish-tech/naalp-maintainers
+/harness/                    @bubblefish-tech/naalp-maintainers

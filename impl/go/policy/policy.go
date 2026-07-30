@@ -14,8 +14,8 @@
 package policy
 
 import (
-	"github.com/bubblefish-tech/n-aalp/impl/go/cbor"
-	"github.com/bubblefish-tech/n-aalp/impl/go/cose"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cbor"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
 )
 
 // Effect is one of the closed four-value N-AALP effect set (design.md §6.1).

@@ -21,8 +21,8 @@ import (
 	"bytes"
 	"crypto/sha512"
 
-	"github.com/bubblefish-tech/n-aalp/impl/go/cbor"
-	"github.com/bubblefish-tech/n-aalp/impl/go/cose"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cbor"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
 )
 
 // HeadSize is the width of a chain head / prev link (SHA-384 = 48 bytes). Genesis is zero.

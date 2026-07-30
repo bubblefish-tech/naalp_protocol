@@ -10,9 +10,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/bubblefish-tech/n-aalp/impl/go/cose"
-	"github.com/bubblefish-tech/n-aalp/impl/go/policy"
-	"github.com/bubblefish-tech/n-aalp/impl/go/streaming"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/policy"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/streaming"
 	"github.com/cloudflare/circl/sign/mldsa/mldsa65"
 )
 

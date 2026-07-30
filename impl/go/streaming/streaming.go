@@ -21,9 +21,9 @@ import (
 	"hash"
 	"sort"
 
-	"github.com/bubblefish-tech/n-aalp/impl/go/cbor"
-	"github.com/bubblefish-tech/n-aalp/impl/go/cose"
-	"github.com/bubblefish-tech/n-aalp/impl/go/policy"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cbor"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/policy"
 )
 
 // StreamChannel is the N-PAMP Stream channel native streams run on; foreign streamed carriage

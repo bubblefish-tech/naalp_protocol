@@ -6,7 +6,7 @@ authors:
   - family-names: Sammartano
     given-names: Shawn
     affiliation: "BubbleFish Technologies, Inc"
-repository-code: "https://github.com/bubblefish-tech/n-aalp_protocol"
+repository-code: "https://github.com/bubblefish-tech/naalp_protocol"
 url: "https://datatracker.ietf.org/doc/draft-bubblefish-naalp/"
 identifiers:
   - type: other

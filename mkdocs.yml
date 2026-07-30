@@ -175,6 +175,7 @@ nav:
       - Ruby: impl/ruby/QUICKSTART.md
       - PHP: impl/php/QUICKSTART.md
       - Swift: impl/swift/QUICKSTART.md
+  - API reference: docs/reference/index.md
   - Design decisions:
       - Overview: docs/adr/index.md
       - 0001 Record ADRs: docs/adr/0001-record-architecture-decisions.md

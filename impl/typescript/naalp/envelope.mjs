@@ -41,7 +41,21 @@ function asBigInt(v) {
 }
 
 export class Object_ {
-  // A decoded N-AALP object body. `id` is set by sign() (content id §2.3).
+  /**
+   * A decoded N-AALP object body. `id` is set by sign() (content id §2.3).
+   * @param {object} fields
+   * @param {bigint|number} fields.kind object kind (§2.1)
+   * @param {bigint|number} fields.channel channel id (§2.1)
+   * @param {Uint8Array|number[]} fields.signer signer-id bytes
+   * @param {bigint|number} fields.created creation time, epoch ms
+   * @param {bigint|number} fields.effect closed effect label (§6)
+   * @param {*} fields.body a CBOR value (e.g. new M([...]))
+   * @param {bigint|number} [fields.tier] tier (default 0)
+   * @param {bigint|number} [fields.profile] profile (default Public)
+   * @param {Array<Uint8Array|number[]>|null} [fields.causes] causal parents
+   * @param {*} [fields.ext] non-critical extensions map (field 11) or null
+   * @param {*} [fields.cext] critical extensions map (field 12) or null
+   */
   constructor({ kind, channel, signer, created, effect, body,
     tier = 0, profile = cose.PROFILE_PUBLIC, causes = null, ext = null, cext = null } = {}) {
     this.id = null;

@@ -24,9 +24,10 @@
     "url": "https://github.com/bubblefish-tech/naalp_protocol/issues"
   },
   "exports": {
-    ".": "./naalp/index.mjs",
-    "./*": "./naalp/*.mjs"
+    ".": { "types": "./naalp/index.d.mts", "import": "./naalp/index.mjs" },
+    "./*": { "types": "./naalp/*.d.mts", "import": "./naalp/*.mjs" }
   },
+  "types": "./naalp/index.d.mts",
   "files": [
     "naalp"
   ],
@@ -35,11 +36,18 @@
   },
   "scripts": {
     "test": "node --test \"test/**/*.test.mjs\"",
-    "example": "node examples/sign-object.mjs"
+    "example": "node examples/sign-object.mjs",
+    "build:types": "tsc -p tsconfig.json",
+    "prepack": "npm run build:types",
+    "docs": "typedoc"
   },
   "dependencies": {
     "@noble/curves": "^2.2.0",
     "@noble/hashes": "^2.2.0",
     "@noble/post-quantum": "^0.6.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "typedoc": "^0.27.0"
   }
 }

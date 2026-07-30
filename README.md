@@ -89,7 +89,7 @@ Ten idiomatic reference implementations live under [`impl/`](impl/), co-located 
 | PHP *(pure-only)* | [`impl/php/`](impl/php/) | [QUICKSTART](impl/php/QUICKSTART.md) | Ed25519 (ML-DSA skip-tracked) | [`harness/adapters/php/`](harness/adapters/php/) |
 | Swift *(pure-only)* | [`impl/swift/`](impl/swift/) | [source](impl/swift/) | Ed25519 (ML-DSA skip-tracked) | [`harness/adapters/swift/`](harness/adapters/swift/) |
 
-The Go module is `github.com/bubblefish-tech/n-aalp/impl/go`; the Rust crate is `naalp`. PHP and Swift are marked **pure-only**: their ecosystems lack a deterministic ML-DSA seed-keygen path, so they grade every non-crypto op plus Ed25519 and return an honest `skipped` for the ML-DSA ops (never a false green). The per-language ML-DSA library and its status are recorded in [`harness/adapters.json`](harness/adapters.json).
+The Go module is `github.com/bubblefish-tech/naalp_protocol/impl/go`; the Rust crate is `naalp`. PHP and Swift are marked **pure-only**: their ecosystems lack a deterministic ML-DSA seed-keygen path, so they grade every non-crypto op plus Ed25519 and return an honest `skipped` for the ML-DSA ops (never a false green). The per-language ML-DSA library and its status are recorded in [`harness/adapters.json`](harness/adapters.json).
 
 ### What every SDK gives you
 

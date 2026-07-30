@@ -4,9 +4,19 @@ version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
 description = "Reference implementation of N-AALP (draft-bubblefish-naalp-00)"
+readme = "QUICKSTART.md"
+repository = "https://github.com/bubblefish-tech/naalp_protocol"
+homepage = "https://github.com/bubblefish-tech/naalp_protocol"
+documentation = "https://docs.rs/naalp"
+keywords = ["naalp", "agents", "post-quantum", "cbor", "cose"]
+categories = ["cryptography", "encoding"]
 
 [lib]
 path = "src/lib.rs"
+
+# docs.rs auto-builds and hosts the rustdoc API reference on publish; build all features there.
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
 sha2 = "0.10"

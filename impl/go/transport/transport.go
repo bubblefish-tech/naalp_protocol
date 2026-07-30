@@ -14,7 +14,7 @@
 // PeerUnauthenticated (§12.4).
 package transport
 
-import "github.com/bubblefish-tech/n-aalp/impl/go/cose"
+import "github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
 
 // MediaType is the one-object-per-representation N-AALP media type (§12.1).
 const MediaType = "application/naalp+cbor"

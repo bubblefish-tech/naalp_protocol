@@ -11,6 +11,7 @@
 plugins {
     kotlin("jvm") version "2.4.0"
     `maven-publish`
+    signing
 }
 
 group = "sh.bubblefish"
@@ -51,11 +52,30 @@ tasks.named("check") {
     dependsOn("workedExampleKat", "primitivesSmoke")
 }
 
+// Maven Central REQUIRES a -sources.jar AND a -javadoc.jar for every published module; attach both.
+// (For a kotlin("jvm") project the javadoc jar is empty by default — apply the Dokka plugin for
+// rich Kotlin API docs; an empty javadoc jar still satisfies Central's mandatory-artifact rule.)
 java {
     withSourcesJar()
+    withJavadocJar()
 }
 
 publishing {
+    // Maven Central deploy target via the Central Portal's OSSRH Staging API (Sonatype provides no
+    // official Gradle plugin — see central.sonatype.org/publish/publish-portal-gradle; for a
+    // one-command Central release the operator may instead adopt a community plugin such as
+    // com.vanniktech.maven.publish, GradleUp/nmcp, or JReleaser). Credentials come from CI secrets;
+    // with none set, only `publishToMavenLocal` is usable, so the dry-run `gradle build` never needs them.
+    repositories {
+        maven {
+            name = "central"
+            url = uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
+            credentials {
+                username = System.getenv("MAVEN_CENTRAL_USERNAME")
+                password = System.getenv("MAVEN_CENTRAL_PASSWORD")
+            }
+        }
+    }
     publications {
         create<MavenPublication>("maven") {
             from(components["java"])
@@ -85,5 +105,17 @@ publishing {
                 }
             }
         }
+    }
+}
+
+// GPG-sign every published artifact (Central requires a detached .asc signature per file). The key
+// and passphrase come from CI secrets (MAVEN_GPG_PRIVATE_KEY / MAVEN_GPG_PASSPHRASE); the block is
+// guarded so the dry-run `gradle build` (no key present) does not attempt to sign.
+signing {
+    val signingKey = System.getenv("MAVEN_GPG_PRIVATE_KEY")
+    val signingPass = System.getenv("MAVEN_GPG_PASSPHRASE")
+    if (!signingKey.isNullOrBlank()) {
+        useInMemoryPgpKeys(signingKey, signingPass)
+        sign(publishing.publications["maven"])
     }
 }

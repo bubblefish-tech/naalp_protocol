@@ -58,8 +58,12 @@ jobs:
   python:
     name: python (PyPI)
     runs-on: ubuntu-latest
-    env:
-      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+    # id-token: write enables PyPI Trusted Publishing (OIDC, tokenless) with PEP 740 digital
+    # attestations — no long-lived API token. Inert until the operator (a) registers this repo +
+    # workflow as a Trusted Publisher on PyPI and (b) sets the PYPI_TRUSTED_PUBLISHING repo variable.
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -71,17 +75,22 @@ jobs:
         run: python -m build impl/python
       - name: Validate the built distributions
         run: twine check impl/python/dist/*
-      - name: Publish to PyPI (gated on PYPI_API_TOKEN)
-        if: ${{ env.PYPI_API_TOKEN != '' }}
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload impl/python/dist/*
+      - name: Publish to PyPI via Trusted Publishing (gated on the PYPI_TRUSTED_PUBLISHING variable)
+        if: ${{ vars.PYPI_TRUSTED_PUBLISHING == 'true' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: impl/python/dist/
+          attestations: true
 
   # ---- TypeScript -> npm -------------------------------------------------------------------------
   typescript:
     name: typescript (npm)
     runs-on: ubuntu-latest
+    # id-token: write lets `npm publish --provenance` mint a Sigstore-backed provenance
+    # attestation over OIDC (npm docs: provenance requires a supported CI + id-token).
+    permissions:
+      contents: read
+      id-token: write
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
@@ -93,12 +102,12 @@ jobs:
       - name: Pack (dry-run, always runs)
         working-directory: impl/typescript
         run: npm pack --dry-run
-      - name: Publish to npm (gated on NPM_TOKEN)
+      - name: Publish to npm with provenance (gated on NPM_TOKEN)
         if: ${{ env.NPM_TOKEN != '' }}
         working-directory: impl/typescript
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public
+        run: npm publish --provenance --access public
 
   # ---- Java -> Maven Central ---------------------------------------------------------------------
   java:
@@ -223,3 +232,42 @@ jobs:
         env:
           GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
         run: gem push naalp-0.1.0.gem
+
+  # ---- SBOM + artifact signing (supply-chain provenance) -----------------------------------------
+  # Generate a Software Bill of Materials in both standard formats (SPDX + CycloneDX) with Syft, and
+  # sign each keylessly with cosign (Sigstore/OIDC — no long-lived key). Always runs; the SBOMs +
+  # signatures upload as workflow artifacts. This is what OpenSSF Scorecard's SBOM and Signed-Releases
+  # checks look for. Action pins are current as of 2026-07-29 (confirm before relying on them).
+  sbom:
+    name: sbom + signing
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # cosign keyless signing over OIDC
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate SPDX SBOM (Syft)
+        uses: anchore/sbom-action@v0.22.0
+        with:
+          format: spdx-json
+          output-file: naalp.spdx.json
+      - name: Generate CycloneDX SBOM (Syft)
+        uses: anchore/sbom-action@v0.22.0
+        with:
+          format: cyclonedx-json
+          output-file: naalp.cdx.json
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.1.2
+      - name: Sign the SBOMs (keyless, Sigstore)
+        run: |
+          cosign sign-blob --yes --output-signature naalp.spdx.json.sig --output-certificate naalp.spdx.json.pem naalp.spdx.json
+          cosign sign-blob --yes --output-signature naalp.cdx.json.sig  --output-certificate naalp.cdx.json.pem  naalp.cdx.json
+      - name: Upload SBOMs + signatures
+        uses: actions/upload-artifact@v4
+        with:
+          name: naalp-sbom
+          path: |
+            naalp.spdx.json
+            naalp.cdx.json
+            naalp.*.sig
+            naalp.*.pem

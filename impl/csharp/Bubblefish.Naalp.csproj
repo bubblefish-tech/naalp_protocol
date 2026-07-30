@@ -27,7 +27,14 @@
     <RepositoryUrl>https://github.com/bubblefish-tech/naalp_protocol.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>naalp;agents;agentic;post-quantum;cbor;cose;ml-dsa;protocol</PackageTags>
+    <!-- NuGet renders this on the package page; the file is packed at the package root below. -->
+    <PackageReadmeFile>QUICKSTART.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <!-- Pack the quickstart as the NuGet readme (rendered on nuget.org). -->
+  <ItemGroup>
+    <None Include="QUICKSTART.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <!-- The library compiles only the SDK sources under impl/csharp; the tests and examples are
        separate projects (test/Bubblefish.Naalp.Tests.csproj, examples/) and must not be pulled

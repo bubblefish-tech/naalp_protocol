@@ -1,0 +1,18 @@
+{
+  "// note": "Type-declaration build for the N-AALP TypeScript SDK. The runtime is hand-written ESM (naalp/*.mjs); this config emits .d.mts declarations next to each module so TypeScript consumers get types instead of `any`. Run: npm run build:types",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "es2022",
+    "lib": ["es2022"],
+    "strict": false,
+    "skipLibCheck": true,
+    "noEmitOnError": false
+  },
+  "include": ["naalp/**/*.mjs"],
+  "exclude": ["node_modules", "naalp/**/*.d.mts"]
+}

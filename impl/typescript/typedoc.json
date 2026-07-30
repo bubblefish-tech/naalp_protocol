@@ -1,0 +1,9 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["naalp/index.mjs"],
+  "out": "doc/api",
+  "readme": "QUICKSTART.md",
+  "name": "N-AALP TypeScript SDK",
+  "excludePrivate": true,
+  "excludeInternal": true
+}

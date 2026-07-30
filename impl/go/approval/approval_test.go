@@ -12,8 +12,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/bubblefish-tech/n-aalp/impl/go/approval"
-	"github.com/bubblefish-tech/n-aalp/impl/go/cose"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/approval"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
 	"github.com/cloudflare/circl/sign/mldsa/mldsa65"
 )
 

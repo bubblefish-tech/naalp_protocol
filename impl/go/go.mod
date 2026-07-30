@@ -1,4 +1,4 @@
-module github.com/bubblefish-tech/n-aalp/impl/go
+module github.com/bubblefish-tech/naalp_protocol/impl/go
 
 go 1.24.0
 

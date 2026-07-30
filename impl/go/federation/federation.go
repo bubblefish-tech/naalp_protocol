@@ -18,9 +18,9 @@ package federation
 import (
 	"bytes"
 
-	"github.com/bubblefish-tech/n-aalp/impl/go/audit"
-	"github.com/bubblefish-tech/n-aalp/impl/go/cbor"
-	"github.com/bubblefish-tech/n-aalp/impl/go/cose"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/audit"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cbor"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
 )
 
 // ErrScopeOverlapConflict is Federation's named error: two authorities ordering the same scope.

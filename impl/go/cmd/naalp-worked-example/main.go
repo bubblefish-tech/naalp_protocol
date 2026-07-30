@@ -15,10 +15,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bubblefish-tech/n-aalp/impl/go/cbor"
-	"github.com/bubblefish-tech/n-aalp/impl/go/cose"
-	"github.com/bubblefish-tech/n-aalp/impl/go/envelope"
-	"github.com/bubblefish-tech/n-aalp/impl/go/identity"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cbor"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/envelope"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/identity"
 	"github.com/cloudflare/circl/sign/mldsa/mldsa65"
 )
 

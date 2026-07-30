@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bubblefish-tech/n-aalp/impl/go/channels"
-	"github.com/bubblefish-tech/n-aalp/impl/go/cose"
-	"github.com/bubblefish-tech/n-aalp/impl/go/envelope"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/channels"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/envelope"
 	"github.com/cloudflare/circl/sign/mldsa/mldsa65"
 )
 
