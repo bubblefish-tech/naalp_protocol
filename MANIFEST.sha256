@@ -1,5 +1,3 @@
-b6cc8f5324a7530a903f1abf079ae374cf5eea73f28d2e35101d61516f89a20e  ietf/draft-bubblefish-naalp-00.md
-b4da0ac0bd6079cc918e7c242b7d992ec8ea2b51834e805e078155be8b63b8aa  ietf/draft-bubblefish-naalp-00.xml
 dfdaf85efd55f28bb293f0d8a1cd5569275e2bf67fd3d12d36b7cbd92a2849d6  spec/naalp-draft-00.cddl
 1203d8f773d7ee767cd79cff8777c9691a03099578dba5672dbc66220f0b8ee5  vectors/registry/signatures.csv
 d4e406e7fdce921e736c68765cb0739f497236b052947fa9cd12ea987f9a4cdd  vectors/registry/multicodec.csv

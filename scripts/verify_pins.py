@@ -50,6 +50,8 @@ def main():
         ("canonical_draft", "canonical_draft_sha256"),
         ("conformance_corpus", "conformance_corpus_sha256"),
     ]:
+        if key_path not in pin:
+            continue  # optional pin (the Internet-Draft is externalized to the ISE stream)
         p = pin[key_path]
         if not os.path.isfile(p):
             failures.append(f"PIN.json {key_path}: MISSING {p}")

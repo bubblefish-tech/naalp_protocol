@@ -1,9 +1,7 @@
 {
-  "canonical_draft": "ietf/draft-bubblefish-naalp-00.md",
-  "canonical_draft_sha256": "b6cc8f5324a7530a903f1abf079ae374cf5eea73f28d2e35101d61516f89a20e",
   "conformance_corpus": "vectors/conformance/corpus.json",
   "conformance_corpus_sha256": "9831de0796881a35733fc0ea0da12c893f2220e76807b3e6104209a385e972ff",
   "manifest": "MANIFEST.sha256",
-  "manifest_sha256": "a6e993c07d64d258610fa097e58014ef613f2a0c3935a056df64cd0fd320b1a6",
-  "note": "The reference implementations and SDKs ride these exact bytes. MANIFEST.sha256 covers the canonical draft, the CDDL wire authority, the machine-readable registries, and the full conformance corpus (all per-family vectors + the embedded runner copy). Run scripts/verify_pins.py to recompute every pinned hash and compare; any drift exits non-zero. All pinned files are stored LF (.gitattributes eol=lf) so the hashes are platform-independent."
+  "manifest_sha256": "708813e7438b77b53739de8cbe1bf376a75ace9edfcc6372704375715a071160",
+  "note": "The reference implementations and SDKs ride these exact bytes. The Internet-Draft is published through the IETF Independent Submission stream and is not carried in this repository; MANIFEST.sha256 covers the in-repo artifacts (the CDDL wire authority, the machine-readable registries, and the full conformance corpus). Run scripts/verify_pins.py to recompute every pinned hash and compare; any drift exits non-zero. All pinned files are stored LF (.gitattributes eol=lf) so the hashes are platform-independent."
 }
