@@ -4,7 +4,7 @@
 
 The machine-readable registries under `vectors/registry/*.csv` are the source the prose and CDDL
 are generated from; a drift check (`scripts/registry_drift.py`) keeps them consistent with the
-graded conformance vectors, and the IANA considerations (see the [Internet-Draft](ietf.md)) request
+graded conformance vectors, and the IANA considerations (in the Internet-Draft) request
 each as an IANA registry.
 
 | registry | file | policy (IANA) | contents |

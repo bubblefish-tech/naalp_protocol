@@ -151,8 +151,8 @@ maintainer responsibility, not a nicety.
   match what ships, and confirm the parity, CDDL, and registry-drift gates exit
   zero.
 - **Coordinate IANA state.** Keep the `application/naalp+cbor` media-type
-  registration and the five N-AALP registry requests in
-  [`ietf/IANA.md`](ietf/IANA.md) accurate across revisions, and keep the reused
+  registration and the five N-AALP registry requests (in the Internet-Draft's
+  IANA Considerations) accurate across revisions, and keep the reused
   COSE algorithm and multicodec references correct.
 
 ### 5. Handling security reports

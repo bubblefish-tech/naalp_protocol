@@ -127,7 +127,7 @@ governed **outside** this project by IANA's own process:
 - The **media type** `application/naalp+cbor` is registered under **Specification
   Required / Expert Review** (RFC 6838, RFC 8126 §4.6), reviewed by the
   media-types Designated Expert via `media-types@iana.org`. The project supplies
-  the completed registration template ([`ietf/IANA.md`](ietf/IANA.md)); it does
+  the completed registration template (stated in the Internet-Draft's IANA Considerations); it does
   not appoint that expert and cannot register the value itself.
 - N-AALP **reuses** the existing IANA **COSE Algorithms** registry for its
   signature identifiers (ML-DSA per RFC 9964, Ed25519 per RFC 9864) and requests
@@ -326,7 +326,7 @@ record values N-AALP **reuses** from external authorities (the IANA COSE
 Algorithms registry and the multiformats multicodec table) rather than assigning
 itself; they are governed by their source registries, and this project only
 records the values it depends on. The submission-form registration package for
-all of the above is [`ietf/IANA.md`](ietf/IANA.md).
+all of the above is stated in the Internet-Draft's IANA Considerations.
 
 Two things are true at once and must not be confused:
 
@@ -392,7 +392,7 @@ passing build: a construction is graded only when **two independent
 implementations agree with an independent, non-circular oracle** and, where the
 construction has a wire production, **the CDDL validates its bytes**. The
 additional-language SDKs are graded against the same shared corpus. The
-conformance model is defined in [`design.md` §14](design.md); governance only
+conformance model is defined in the [conformance docs](docs/conformance.md); governance only
 states how it gates the project.
 
 ### 7.1 The grading surfaces

@@ -24,7 +24,7 @@
 
 - name: specification
   color: "c5def5"
-  description: "Concerns the normative Internet-Draft text (ietf/draft-bubblefish-naalp-00.md)."
+  description: "Concerns the normative Internet-Draft text."
 
 - name: conformance
   color: "1d76db"
@@ -40,11 +40,11 @@
 
 - name: channel
   color: "bfdadc"
-  description: "Concerns one of the twenty channel surfaces or its object kinds (design-channels.md)."
+  description: "Concerns one of the twenty channel surfaces or its object kinds."
 
 - name: iana
   color: "d4c5f9"
-  description: "Affects an IANA registration (media type or an N-AALP registry) — see ietf/IANA.md."
+  description: "Affects an IANA registration (media type or an N-AALP registry)."
 
 - name: security
   color: "b60205"

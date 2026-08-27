@@ -22,19 +22,17 @@ formatting, examples). Label them accordingly.
 
 ## Editing the draft
 
-The specification source is the kramdown-rfc Markdown file
-`ietf/draft-bubblefish-naalp-00.md`. Before opening a pull request:
+The prose specification is the Internet-Draft, maintained through the IETF Independent
+Submission stream; contributions in this repository target the byte-level wire authority
+`spec/naalp-draft-00.cddl`, the reference implementations, the conformance corpus, and the
+docs. When you change the wire grammar:
 
 1. Keep the source **ASCII-only**. Non-ASCII characters cause author-tool
    warnings; the only acceptable non-ASCII is what the renderer itself injects.
 2. Render and lint locally:
 
    ```sh
-   gem install kramdown-rfc
-   pip install xml2rfc
-   kramdown-rfc ietf/draft-bubblefish-naalp-00.md > draft-bubblefish-naalp-00.xml
-   xml2rfc draft-bubblefish-naalp-00.xml --text --html
-   idnits draft-bubblefish-naalp-00.txt
+   ./scripts/cddl_check.sh   # machine-validate spec/naalp-draft-00.cddl (RFC 8610)
    ```
 
    or use the hosted tools at <https://author-tools.ietf.org/>.

@@ -62,16 +62,6 @@ exclude_docs: |
   /TRADEMARKS.md
   /LINEAGE.md
   /NOTICE
-  /CLAUDE.md
-  /PLAN.md
-  /requirements.md
-  /design.md
-  /design-channels.md
-  /tasks.md
-  /ietf/README.md
-  /ietf/IANA.md
-  /ietf/SUBMISSION.md
-  /ietf/ISE-cover-letter.md
   # Re-include the exact SDK pages the nav publishes (a file cannot be re-included if its
   # parent directory itself is excluded, hence '/impl/**' above, not '/impl/'). All ten SDKs.
   !/impl/go/QUICKSTART.md
@@ -153,7 +143,6 @@ markdown_extensions:
 
 nav:
   - Home: docs/index.md
-  - Internet-Draft: ietf/draft-bubblefish-naalp-00.md
   - Specification:
       - Overview: docs/spec/overview.md
       - Object model: docs/spec/object-model.md
@@ -184,4 +173,3 @@ nav:
       - 0004 Effect is authorization: docs/adr/0004-effect-is-authorization.md
       - 0005 Carriage by class: docs/adr/0005-carriage-by-class.md
       - 0006 Two-implementation parity: docs/adr/0006-two-implementation-byte-parity.md
-  - IETF submission: docs/ietf.md

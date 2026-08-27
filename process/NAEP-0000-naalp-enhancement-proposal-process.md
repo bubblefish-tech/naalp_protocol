@@ -136,7 +136,7 @@ proposes and specifies one coherent change to N-AALP and carries it from idea to
 implemented, graded reality. A NAEP has one **Author** (who MAY be the document
 editor) and a single **Status** at any time. Its normative specification text,
 once the NAEP is `Accepted`, is merged into the governing document it targets (the
-Internet-Draft `ietf/draft-bubblefish-naalp-00.md`, the CDDL wire authority
+Internet-Draft, the CDDL wire authority
 [`spec/naalp-draft-00.cddl`](../spec/naalp-draft-00.cddl), or a registry under
 [`vectors/registry/`](../vectors/registry/)); the NAEP remains as the durable
 record of the proposal and its rationale.
@@ -189,7 +189,7 @@ following:
    [`multicodec.csv`](../vectors/registry/multicodec.csv), and
    [`protocols.csv`](../vectors/registry/protocols.csv), together with the
    effect-class and error-code registries defined in the draft, all collected in
-   [`ietf/IANA.md`](../ietf/IANA.md).
+   the Internet-Draft's IANA Considerations.
 
 This mirrors the Rust "substantial change" trigger and the KEP "non-trivial
 change" trigger: a NAEP is for changes that other implementers must reason about,
@@ -406,7 +406,7 @@ Supporting requirements for the Final gate:
    backwards-incompatible way (§2.3) additionally requires bumping the
    `naalp-version` protected-header field (key 3; this draft = 1) and, if
    warranted, registering a new media type alongside `application/naalp+cbor`
-   (RFC 6838) in [`ietf/IANA.md`](../ietf/IANA.md), per `CONTRIBUTING.md`
+   (RFC 6838) in the Internet-Draft's IANA Considerations, per `CONTRIBUTING.md`
    "Code-point stability". **N-AALP defines no ALPN identifier or other transport
    identifier of its own** — it carries the same meaning over any N-PAMP channel
    or any other transport ([ADR-0002](../docs/adr/0002-object-not-connection.md)),

@@ -21,7 +21,7 @@ things, explain how.
 - [ ] Affects object-level interoperability (envelope, CBOR profile, content-id, signer-id)
 - [ ] Affects a security property (identity, effect authorization, approval, audit, downgrade, replay)
 - [ ] Affects a code-point assignment (channel / kind / effect / carriage protocol-id)
-- [ ] Affects an IANA registration (ietf/IANA.md)
+- [ ] Affects an IANA registration
 - [ ] Other
 
 **Suggested resolution (optional)**

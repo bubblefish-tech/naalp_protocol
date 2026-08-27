@@ -2,11 +2,11 @@
 
 **N-AALP gives every agentic application object a signed, deterministic, post-quantum, offline-verifiable meaning — identity, effect, approval, and audit — over any transport.** N-AALP sits *above* the transport and makes the **object, not the connection, the unit of security and governance**: every message is a deterministically encoded CBOR structure signed with COSE that carries, under one signature, its content identity, its originating signer, a closed effect label that is an *authorization input rather than a hint*, optional approval and audit bindings, and its causal derivation — verifiable offline, on any wire.
 
-This repository is the **public reference home** of N-AALP: the Internet-Draft, the byte-level CDDL wire authority, ten reference implementations, a language-agnostic conformance corpus assembled from independent (non-circular) oracles, a cross-implementation test harness, machine-readable code-point registries, and the durable, per-decision record of *how the protocol was designed*. N-AALP is developed as its **own artifact** — consuming products vendor a reference implementation and pin the conformance corpus from here; they do not fork the protocol. Design, rationale, and conformance authority live in one place, with one history.
+This repository is the **public reference home** of N-AALP: the byte-level CDDL wire authority, ten reference implementations, a language-agnostic conformance corpus assembled from independent (non-circular) oracles, a cross-implementation test harness, machine-readable code-point registries, and the Architecture Decision Records that capture the load-bearing design choices. The Internet-Draft itself is published through the IETF [Independent Submission stream](https://www.rfc-editor.org/about/independent/). N-AALP is developed as its **own artifact** — consuming products vendor a reference implementation and pin the conformance corpus from here; they do not fork the protocol.
 
 | | |
 |---|---|
-| **Specification** | [`draft-bubblefish-naalp-00`](ietf/draft-bubblefish-naalp-00.md) (Internet-Draft, Independent Submission stream, Informational) |
+| **Specification** | Internet-Draft `draft-bubblefish-naalp-00` (IETF Independent Submission stream, Informational); byte-level wire authority [`spec/naalp-draft-00.cddl`](spec/naalp-draft-00.cddl) |
 | **License** | [Apache-2.0](LICENSE.md) (repository code + original content); the Internet-Draft additionally under IETF Trust BCP 78 |
 | **Reference implementations** | 10 languages (Go, Rust, Python, TypeScript, C#, Swift, Java, Kotlin, PHP, Ruby) |
 | **Conformance** | 239-case op-replay corpus (byte-identical Go == Rust == oracle) + a cross-language deterministic-ML-DSA consensus gate; every expected value anchored to an RFC / FIPS / NIST vector |
@@ -55,7 +55,7 @@ N-AALP is deliberately scoped as an **application layer**. Transport concerns �
 
 ### The 20 channels
 
-Every channel is a thin surface over the one spine, adding only `kind` codes and their bodies. Per-channel design lives in [`design-channels.md`](design-channels.md); the code points are in [`vectors/registry/channels.csv`](vectors/registry/channels.csv).
+Every channel is a thin surface over the one spine, adding only `kind` codes and their bodies. The code points are in [`vectors/registry/channels.csv`](vectors/registry/channels.csv); the design rationale is in the [Architecture Decision Records](docs/adr/).
 
 | Code | Channel | Code | Channel |
 |---|---|---|---|
@@ -181,7 +181,7 @@ N-AALP's Bridge channel (`0x000D`) carries other agent protocols as first-class,
 | `DOC` | capability & schema documents |
 | `OPAQUE` | any payload whose bytes are carried verbatim under the envelope, with no class-specific binding |
 
-The `OPAQUE` class is the catch-all: it lets N-AALP wrap a payload whose protocol has no dedicated class yet in the same signed, effect-labelled, auditable envelope, so nothing falls outside governance. Thin per-protocol mappings beyond the assigned four are added as registry entries, not new envelope machinery. The bridge design is `design.md` §13; the Bridge surface is [`design-channels.md`](design-channels.md) §14.
+The `OPAQUE` class is the catch-all: it lets N-AALP wrap a payload whose protocol has no dedicated class yet in the same signed, effect-labelled, auditable envelope, so nothing falls outside governance. Thin per-protocol mappings beyond the assigned four are added as registry entries, not new envelope machinery. The carriage-by-class rationale is recorded in [ADR-0005](docs/adr/0005-carriage-by-class.md); the Bridge channel code points are in [`vectors/registry/protocols.csv`](vectors/registry/protocols.csv).
 
 ---
 
@@ -189,18 +189,14 @@ The `OPAQUE` class is the catch-all: it lets N-AALP wrap a payload whose protoco
 
 | Path | Holds |
 |------|-------|
-| [`ietf/draft-bubblefish-naalp-00.md`](ietf/draft-bubblefish-naalp-00.md) | The Internet-Draft (single source of truth; kramdown-rfc source) + generated `.xml` / `.txt` / `.html` |
-| [`ietf/IANA.md`](ietf/IANA.md) | The IANA registration package: `application/naalp+cbor` media type + five N-AALP registries |
-| [`ietf/SUBMISSION.md`](ietf/SUBMISSION.md) · [`ietf/ISE-cover-letter.md`](ietf/ISE-cover-letter.md) | The ISE submission runbook and the cover letter to the Independent Submissions Editor |
-| [`spec/naalp-draft-00.cddl`](spec/naalp-draft-00.cddl) | The byte-level wire authority (CDDL, RFC 8610) — machine-validated in CI |
+| [`spec/naalp-draft-00.cddl`](spec/naalp-draft-00.cddl) | The byte-level wire authority (CDDL, RFC 8610) — machine-validated in CI. The prose specification is the Internet-Draft, published via the IETF Independent Submission stream. |
 | [`impl/`](impl/) | 10 multi-language reference implementations (Go + Rust primary, byte-identical) |
 | [`harness/`](harness/) | The cross-implementation conformance runner (`naalp-conform`) + 10 language adapters + the contract ([`INSTRUCTIONS.md`](harness/INSTRUCTIONS.md)) |
 | [`tools/`](tools/) | The independent Python oracles that build the corpus + the cross-language ML-DSA consensus gate |
 | [`vectors/`](vectors/) | The 239-case conformance corpus + per-family vectors |
 | [`vectors/registry/`](vectors/registry/) | 4 machine-readable code-point registries (CSV) |
 | [`scripts/`](scripts/) | Gate scripts: [`verify.sh`](scripts/verify.sh) / [`verify.ps1`](scripts/verify.ps1), [`cddl_check.sh`](scripts/cddl_check.sh), [`registry_drift.py`](scripts/registry_drift.py) |
-| [`docs/`](docs/) | The MkDocs Material documentation site, including [`docs/adr/`](docs/adr/) — 6 Architecture Decision Records |
-| [`design.md`](design.md) · [`design-channels.md`](design-channels.md) | The design documents: the spine design (object model, deterministic encoding, crypto profiles, the effect vocabulary) and the twenty channel surfaces |
+| [`docs/`](docs/) | The MkDocs Material documentation site, including [`docs/adr/`](docs/adr/) — 6 Architecture Decision Records recording the load-bearing design rationale |
 | [`.github/workflows/conformance.yml`](.github/workflows/conformance.yml) | The conformance CI workflow |
 
 ---
@@ -219,28 +215,16 @@ The `OPAQUE` class is the catch-all: it lets N-AALP wrap a payload whose protoco
 
 ## Reading the specification
 
-The normative specification is the Internet-Draft in this repository:
+The normative prose specification is the Internet-Draft `draft-bubblefish-naalp-00`, published through the IETF [Independent Submission stream](https://www.rfc-editor.org/about/independent/) (Informational).
 
-- [`ietf/draft-bubblefish-naalp-00.md`](ietf/draft-bubblefish-naalp-00.md) — kramdown-rfc source; the build emits `draft-bubblefish-naalp-00` in `.xml` / `.txt` / `.html`.
-
-Render it locally with the IETF author tools:
-
-```sh
-gem install kramdown-rfc
-pip install xml2rfc
-cd ietf
-kramdown-rfc draft-bubblefish-naalp-00.md > draft-bubblefish-naalp-00.xml
-xml2rfc draft-bubblefish-naalp-00.xml --text --html
-```
-
-…or use the hosted renderer at <https://author-tools.ietf.org/>. The byte-level wire authority is the CDDL in [`spec/naalp-draft-00.cddl`](spec/naalp-draft-00.cddl).
+The byte-level wire authority is the CDDL in [`spec/naalp-draft-00.cddl`](spec/naalp-draft-00.cddl) — maintained with the reference implementations and machine-validated in CI (Bormann `cddl` tool, RFC 8610).
 
 ---
 
 ## Getting started
 
-1. **Read the object model** — [`design.md`](design.md) §2–§6 for the signed envelope, deterministic encoding, crypto profiles, and the effect vocabulary.
-2. **Skim the channels** — [`design-channels.md`](design-channels.md) for the twenty application surfaces and their object kinds.
+1. **Read the object model** — the wire grammar in [`spec/naalp-draft-00.cddl`](spec/naalp-draft-00.cddl) for the signed envelope, deterministic encoding, crypto profiles, and the effect vocabulary; the [ADRs](docs/adr/) for the rationale.
+2. **Skim the channels** — the channel table above and [`vectors/registry/channels.csv`](vectors/registry/channels.csv) for the twenty application surfaces and their object kinds.
 3. **Pick a language** — start from that implementation's Quickstart (table above); Go and Rust are the primary references.
 4. **Prove conformance** — run your build against the `naalp-conform` harness with the corpus in [`vectors/conformance/`](vectors/conformance/).
 
@@ -254,7 +238,7 @@ This repository is the **open** N-AALP reference surface: the spine (determinist
 
 ## IANA registrations
 
-The registration package is [`ietf/IANA.md`](ietf/IANA.md); it is also stated in the IANA Considerations of the Internet-Draft:
+The registrations are stated in the IANA Considerations of the Internet-Draft, and mirrored by the machine-readable registries in [`vectors/registry/`](vectors/registry/):
 
 - **Media type `application/naalp+cbor`** ([RFC 6838](https://www.rfc-editor.org/rfc/rfc6838) / BCP 13) — the object encoding.
 - **Five new N-AALP registries** — under Specification Required / Expert Review / Experimental / Private Use policies ([RFC 8126](https://www.rfc-editor.org/rfc/rfc8126)), with Designated-Expert guidance, mirrored by the machine-readable CSVs in [`vectors/registry/`](vectors/registry/).

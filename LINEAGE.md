@@ -4,7 +4,7 @@ This file is the **public** narrative of how N-AALP reached
 `draft-bubblefish-naalp-00`. It records what is publishable and orients a reader in the
 version history; the authoritative rationale for each load-bearing choice lives in the linked
 ADRs under `docs/adr/`. It is descriptive, not normative — where it and the spec or ADRs differ,
-the spec (`ietf/draft-bubblefish-naalp-00.md`, `spec/naalp-draft-00.cddl`) and the ADRs govern.
+the spec (`spec/naalp-draft-00.cddl`, and the Internet-Draft) and the ADRs govern.
 
 ## Where N-AALP sits (positioning)
 
@@ -22,7 +22,7 @@ one application surface for each of N-PAMP's twenty channels.
 ## What this file does NOT contain (non-scope)
 
 - **This is not the normative specification.** The byte-level authority is
-  `spec/naalp-draft-00.cddl`; the prose authority is `ietf/draft-bubblefish-naalp-00.md`. This file
+  `spec/naalp-draft-00.cddl`; the prose authority is the Internet-Draft (IETF Independent Submission stream). This file
   narrates lineage only.
 - **Transport-layer concerns are out of scope by layering, not by policy.** The 1.5-RTT handshake,
   hybrid key establishment, and AEAD record protection belong to the substrate
@@ -55,7 +55,7 @@ Internet-Draft revision (`-NN`) advances independently with each published docum
 
 The public draft is the **first published** generation:
 
-1. **draft-00 (`N-AALP/1`)** — the first published generation: `ietf/draft-bubblefish-naalp-00.md`
+1. **draft-00 (`N-AALP/1`)** — the first published generation: the Internet-Draft
    + `spec/naalp-draft-00.cddl` + the reference implementations under `impl/`. Its public design
    decisions are indexed below.
 
@@ -119,5 +119,5 @@ prefix. Both counters, and their changes, are recorded in `CHANGELOG.md`.
 - `docs/adr/` — the full ADR log (ADR-0001 records the decision-recording process itself).
 - `README.md` — repository model and structure.
 - `CHANGELOG.md` — the object-major-version and Internet-Draft-revision counters.
-- `ietf/draft-bubblefish-naalp-00.md`, `spec/naalp-draft-00.cddl` — the normative protocol text and
+- `spec/naalp-draft-00.cddl` (and the Internet-Draft) — the normative protocol text and
   the byte-level wire authority.
