@@ -42,3 +42,10 @@ otherwise); an object on an unregistered (channel, kind) is `UnknownKind`.
 The Workflow channel's task input/approval gate is durable (persist-before-acknowledge): a task
 cannot reach `running` without passing the gate (`InputGateBypass`), and a crash recovers to the
 pre-gate status — proven by a crash test in both implementations.
+
+## Per-channel depth
+
+This page is the twenty-channel summary. Three channels currently have a dedicated deep-dive
+page: [Capability](../channels/capability.md), [Settlement](../channels/settlement.md), and
+[Interaction](../channels/interaction.md). Discovery's deeper signed-description mechanism is
+covered separately in [discovery](../reference/discovery.md).

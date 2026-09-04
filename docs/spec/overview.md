@@ -2,8 +2,9 @@
 
 # Specification overview
 
-The normative wire authority is the CDDL module `spec/naalp-draft-00.cddl`; the prose
-specification is the Internet-Draft (IETF Independent Submission stream). This page is an informative map.
+The normative wire authority is the CDDL module inlined in Appendix A of the
+Internet-Draft `ietf/draft-bubblefish-naalp-01.md`; `spec/naalp-draft-01.cddl` is a
+byte-identical mirror. This page is an informative map.
 
 ## Three layers, never conflated
 

@@ -49,5 +49,5 @@ test. `bash harness/run.sh` grades the whole protocol.
 - [Design decisions](adr/index.md).
 
 !!! note "Status"
-    N-AALP is an Independent Submission (`draft-bubblefish-naalp-00`). It does not represent IETF
+    N-AALP is an Independent Submission (`draft-bubblefish-naalp-01`). It does not represent IETF
     consensus and is not a standards-track document.

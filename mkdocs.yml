@@ -143,12 +143,24 @@ markdown_extensions:
 
 nav:
   - Home: docs/index.md
+  - Quickstart: docs/quickstart.md
+  - Cookbook: docs/cookbook.md
   - Specification:
       - Overview: docs/spec/overview.md
       - Object model: docs/spec/object-model.md
       - The twenty channels: docs/spec/channels.md
+      - Crypto agility and migration: docs/spec/crypto-agility.md
       - Worked example: docs/examples/worked-object.md
-  - Registries: docs/registries.md
+  - Channel surfaces:
+      - Capability: docs/channels/capability.md
+      - Settlement: docs/channels/settlement.md
+      - Interaction: docs/channels/interaction.md
+  - Protocol mappings:
+      - MCP (Model Context Protocol): docs/mappings/mcp.md
+      - A2A (Agent2Agent): docs/mappings/a2a.md
+  - Registries:
+      - Overview: docs/registries.md
+      - Error codes: docs/registries/error-codes.md
   - Conformance:
       - Overview: docs/conformance.md
       - Adapter contract: harness/INSTRUCTIONS.md
@@ -164,7 +176,10 @@ nav:
       - Ruby: impl/ruby/QUICKSTART.md
       - PHP: impl/php/QUICKSTART.md
       - Swift: impl/swift/QUICKSTART.md
-  - API reference: docs/reference/index.md
+  - Reference:
+      - API reference: docs/reference/index.md
+      - Signature algorithm and profile matrix: docs/reference/provider-matrix.md
+      - Discovery: docs/reference/discovery.md
   - Design decisions:
       - Overview: docs/adr/index.md
       - 0001 Record ADRs: docs/adr/0001-record-architecture-decisions.md

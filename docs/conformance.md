@@ -10,7 +10,7 @@ gates, each backed by an independent authority — never the code under test.
 1. **Two-implementation parity** (`scripts/verify.sh`): every non-circular oracle regenerates the
    committed corpus; Go and Rust both build/vet/test (`-race`) and produce **byte-identical**
    COSE_Sign1 and object-envelope bytes; no vector drift.
-2. **CDDL conformance** (`scripts/cddl_check.sh`): `spec/naalp-draft-00.cddl` is well-formed in the
+2. **CDDL conformance** (`scripts/cddl_check.sh`): `spec/naalp-draft-01.cddl` is well-formed in the
    Bormann `cddl` tool and **validates the committed vectors** against their production, rejecting
    cross-rule mismatches.
 3. **Registry drift** (`scripts/registry_drift.py`): the machine-readable registries stay
@@ -68,5 +68,30 @@ Swift are pure-only (no deterministic ML-DSA in their ecosystems); they build by
 objects around an externally-produced signature and honestly skip-track the signing leg. This table
 is produced by the consensus gate, not asserted by hand — re-run `harness/cross_language.sh` to
 regenerate it.
+
+## Clean-room grade (impl-independent)
+
+"Graded" above means two implementations agree with an independent oracle. It does not, by
+itself, answer the question an outside adopter asks: could a stranger reproduce and verify the
+wire from the **spec alone**, without reading our implementation? A grade that secretly depended
+on `impl/` would be self-graded. `scripts/cleanroom.py` runs each independent oracle in a
+subprocess whose file access **raises on any read under `impl/`**, then checks the regenerated
+vectors byte-match the committed corpus. A capability passes only if its expected values are
+reproducible from the spec + published standards with `impl/` denied.
+
+Current clean-room grade (re-runnable):
+
+| dimension | result |
+|---|---|
+| oracles that ran with `impl/` access denied | **26 / 26** |
+| committed vectors reproduced drift-free by those oracles | **yes** |
+| numbered spec defects (oracle read `impl/`, or vector drift) | **0** |
+| CDDL wire-validation (`scripts/cddl_check.sh`) | runs in CI (Linux + ruby/cddl/python) |
+
+The harness self-tests its own denial: a probe that reads `impl/go/go.mod` must be blocked, or
+the harness reports itself broken. This proves the grading path does not depend on our
+implementation. It is **not** the same as "independent interoperability" — that claim requires an
+implementation **authored independently** from the spec by an unrelated party (the clean-room
+build trial, Plan I Task 8.3), and remains a forbidden claim until that trial passes.
 
 See the harness overview in `harness/README.md`.
