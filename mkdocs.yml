@@ -62,6 +62,21 @@ exclude_docs: |
   /TRADEMARKS.md
   /LINEAGE.md
   /NOTICE
+  # Moat-side hardening (2026-09-04 classification policy): never publish design/build
+  # process artifacts even if a future sync step adds them. The curated, renamed derivatives
+  # under docs/engineering-rigor/ are NOT matched by these patterns (different filenames).
+  /build_plans/
+  /research/
+  /decisions/
+  /_*.md
+  */_*.md
+  **/DESIGN.md
+  **/APPROVAL-LOG.md
+  **/DECISIONS.md
+  **/RED-EVIDENCE.md
+  **/OPEN-ITEMS.md
+  **/*roadmap*.md
+  **/*scoping*.md
   # Re-include the exact SDK pages the nav publishes (a file cannot be re-included if its
   # parent directory itself is excluded, hence '/impl/**' above, not '/impl/'). All ten SDKs.
   !/impl/go/QUICKSTART.md
@@ -164,6 +179,28 @@ nav:
   - Conformance:
       - Overview: docs/conformance.md
       - Adapter contract: harness/INSTRUCTIONS.md
+  - Engineering rigor:
+      - Overview: docs/engineering-rigor/index.md
+      - A2A task-chain bridge: docs/engineering-rigor/naalp-a2a-bridge.md
+      - A2A framework-hook adapter: docs/engineering-rigor/naalp-a2a-hook.md
+      - ADK plugin adapter: docs/engineering-rigor/naalp-adk-plugin.md
+      - Go agent-pattern SDK: docs/engineering-rigor/naalp-agent-go.md
+      - Offline proof bundle: docs/engineering-rigor/naalp-bundle.md
+      - Deterministic-CBOR codec binding: docs/engineering-rigor/naalp-codec.md
+      - Evidentiality primitive: docs/engineering-rigor/naalp-evidentiality.md
+      - Signer-id fingerprint cache: docs/engineering-rigor/naalp-fingerprint-cache.md
+      - Governance chain verifier: docs/engineering-rigor/naalp-governance-verify.md
+      - Human-in-the-loop interceptor: docs/engineering-rigor/naalp-hitl.md
+      - MCP tool-integration bridge: docs/engineering-rigor/naalp-mcp-bridge.md
+      - MCP framework-hook adapter: docs/engineering-rigor/naalp-mcp-hook.md
+      - Mixed-mode HTTP discrimination SDK: docs/engineering-rigor/naalp-mixed-mode.md
+      - Multi-agent interaction shapes: docs/engineering-rigor/naalp-multiagent.md
+      - OPA/Rego policy integration: docs/engineering-rigor/naalp-opa-policy.md
+      - Plan-and-Execute orchestrator: docs/engineering-rigor/naalp-plan.md
+      - ReAct agent-pattern bridge: docs/engineering-rigor/naalp-react.md
+      - JSON-Schema to CDDL generator: docs/engineering-rigor/naalp-schemagen.md
+      - Semantic validator and firewall: docs/engineering-rigor/naalp-validator.md
+      - Verify-at-use guard: docs/engineering-rigor/naalp-verify-at-use.md
   - Implementations:
       - Overview: docs/implementations/index.md
       - Go: impl/go/QUICKSTART.md
