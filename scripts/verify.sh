@@ -62,6 +62,15 @@ if [ -f vectors/cose/cases.json ]; then
       exit 1
     fi
     echo "   envelope    Go == Rust (${#env_go} hex chars): ${env_go:0:32}..."
+    comp_go=$(cd impl/go && GOWORK=off go run ./cmd/naalp-composite "$seed")
+    comp_rs=$(cd impl/rust && cargo run --quiet --example naalp_composite -- "$seed")
+    if [ "$comp_go" != "$comp_rs" ]; then
+      echo "ERROR: Go and Rust produced different composite (LAMPS opt-in §4.2) object bytes" >&2
+      echo "   go:   ${comp_go:0:48}..." >&2
+      echo "   rust: ${comp_rs:0:48}..." >&2
+      exit 1
+    fi
+    echo "   composite   Go == Rust (${#comp_go} hex chars): ${comp_go:0:32}..."
   fi
 else
   echo "   (no COSE corpus yet — skipped)"
