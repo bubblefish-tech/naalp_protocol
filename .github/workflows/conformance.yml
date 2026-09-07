@@ -60,6 +60,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+      - name: Install the Python oracle deps (dilithium-py + cryptography)
+        run: python -m pip install -r harness/adapters/python/requirements.txt
       - name: Go == Rust byte parity + vector drift
         env:
           GOWORK: 'off'
