@@ -204,6 +204,7 @@ nav:
       - Overview: docs/conformance.md
       - Evidence matrix: docs/conformance-evidence.md
       - Adapter contract: harness/INSTRUCTIONS.md
+  - Engineering rigor: docs/engineering-rigor/index.md
   - Implementations:
       - Overview: docs/implementations/index.md
       - Go: impl/go/QUICKSTART.md
