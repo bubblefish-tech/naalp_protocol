@@ -162,7 +162,7 @@ func CarriageFromValue(v cbor.Value) (CarriageBody, error) {
 	return b, nil
 }
 
-// Protocol id ranges (design.md §13.4): standards 0x01-0x0F (Specification Required),
+// Protocol id ranges (design.md §13.4): standards 0x01-0x0F,
 // experimental 0x10-0x7F (no registration), private 0x80-0xFF. 0x00 is reserved.
 func ProtocolRange(id uint64) string {
 	switch {

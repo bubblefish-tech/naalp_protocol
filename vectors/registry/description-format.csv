@@ -1,0 +1,4 @@
+format_code,format_name,description
+1,a2a-agent-card,A2A Agent Card (imported as opaque foreign bytes; carriage-not-adoption)
+2,anp-agent-description,ANP Agent Description (imported as opaque foreign bytes; carriage-not-adoption)
+3,agntcy-agent-badge,AGNTCY Agent Badge (imported as opaque foreign bytes; carriage-not-adoption)

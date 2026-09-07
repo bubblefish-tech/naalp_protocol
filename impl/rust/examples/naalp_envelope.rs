@@ -23,6 +23,8 @@ fn main() {
     let (_, sk) = cose::mldsa65_keypair_from_seed(&seed);
 
     let mut o = Object {
+        audience: String::new(),
+        suite: 0,
         id: vec![],
         kind: 2,
         channel: 4,

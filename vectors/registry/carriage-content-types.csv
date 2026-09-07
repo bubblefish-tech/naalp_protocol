@@ -1,0 +1,4 @@
+content_type,name,range,description
+0,json,standards,UTF-8 JSON or JSON-RPC text (application/json family); carried by the JSONRPC and DOC carriage vectors
+1,octet-stream,standards,opaque binary payload with no declared text or JSON structure (application/octet-stream family); carried by the OPAQUE carriage vector
+2,text,standards,UTF-8 text that is not JSON -- line/token/event protocols such as HTTP/1.x wire text; FIPA-ACL performatives; SSE event streams (text/* family); carried by the HTTP / MSG / STREAM carriage vectors

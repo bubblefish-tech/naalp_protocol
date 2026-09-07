@@ -124,44 +124,27 @@ final class WorkedExampleTests: XCTestCase {
               let signedHex = want["signed_object_hex"] as? String else {
             throw XCTSkip("committed vector not present (standalone build)")
         }
-        // Flip a byte inside the payload's content-id field. This must be caught by the
-        // content-id recomputation BEFORE the signature step (a structural, crypto-free check).
-        var signed = Self.hexToBytes(signedHex)
-        // The content id sits early in the object; locate the first 0x30 marker of the id bstr
-        // header (58 32 ...) inside the assembled object and corrupt a payload byte deep enough
-        // to land in the content-id value. We corrupt the object at a fixed payload offset by
-        // re-assembling a tampered object instead, which is deterministic.
-        let (_, _, committedSig) = try Cose.parseSign1Raw(signed)
+        // Assemble the committed worked object (assembleSigned binds the content id from the
+        // body), then tamper ONE byte deep inside the payload — the low byte of the last body
+        // field's value (§2 field 10's inner map), which is neither the field-1 content id, the
+        // protected header, nor the signature. The body changes, so the id recomputed over the
+        // body-without-field-1 no longer equals the claimed field-1 id: verify must reject
+        // ContentIdMismatch, a structural, crypto-free failure raised BEFORE the ML-DSA signature
+        // step. Editing the last byte keeps the CBOR canonical (the value stays a shortest-form
+        // 8-byte uint), so the content-id check — not the decoder — is what fires.
+        let (_, _, committedSig) = try Cose.parseSign1Raw(Self.hexToBytes(signedHex))
         var obj = Self.workedObject()
-        obj.effect = 2
-        _ = try Envelope.assembleSigned(&obj, Cose.ALG_MLDSA65, committedSig)
-        // Now build a genuinely mismatched object: keep the committed id-bearing payload but
-        // change a body field so the recomputed id differs. Easiest deterministic route: mutate
-        // a raw payload byte in the assembled bytes within the body region and assert
-        // ContentIdMismatch.
-        // Corrupt the last byte of the payload's created field region by flipping a byte at a
-        // stable offset just after the content id (offset chosen to be within the body, not the
-        // signature). We instead assert via a rebuilt object below.
-        _ = signed  // (kept for clarity; direct-offset tampering is covered by the rebuild path)
+        let assembled = try Envelope.assembleSigned(&obj, Cose.ALG_MLDSA65, committedSig)
+        let (prot, payload, sig) = try Cose.parseSign1Raw(assembled)
+        var body = payload
+        body[body.count - 1] ^= 0x01  // flip the low byte of the last body field's value
+        let tampered = try Cose.assembleSign1Raw(prot, body, sig)
 
-        // Rebuild path: an object whose claimed id (committed) will not match a changed body.
-        // Assemble a DIFFERENT object with the committed signature; its recomputed id differs
-        // from the id embedded by assembleSigned? No — assembleSigned recomputes the id. So to
-        // force a mismatch we hand-craft bytes: take the committed object and flip one byte of
-        // the signer-id text inside the body (which changes the recomputed id but not the
-        // embedded claimed id, because we edit the raw bytes after assembly).
-        var tampered = try Envelope.assembleSigned(&obj, Cose.ALG_MLDSA65, committedSig)
-        // find the ascii 'b' of the first signer-id occurrence in the body (field 5) and flip it
-        if let idx = tampered.firstIndex(of: UInt8(ascii: "q")) {
-            tampered[idx] = UInt8(ascii: "r")
-        }
-        let pk = [UInt8](repeating: 0, count: 1952)
+        let pk = [UInt8](repeating: 0, count: 1952)  // ML-DSA-65 pk shape (unused: caught pre-crypto)
         XCTAssertThrowsError(
             try Envelope.verify(Cose.PROFILE_PUBLIC, Cose.ALG_MLDSA65, pk,
                                 { _, _ in true }, tampered)
         ) { error in
-            // Editing a body byte changes the recomputed content id while the embedded claimed
-            // id is unchanged -> ContentIdMismatch (a structural failure before any crypto).
             XCTAssertEqual((error as? NaalpError)?.kind, "ContentIdMismatch")
         }
     }

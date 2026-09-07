@@ -34,6 +34,8 @@ import (
 	"github.com/bubblefish-tech/naalp_protocol/impl/go/channels"
 	"github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
 	"github.com/bubblefish-tech/naalp_protocol/impl/go/delivery"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/envelope"
+	"github.com/bubblefish-tech/naalp_protocol/impl/go/naalperror"
 	"github.com/bubblefish-tech/naalp_protocol/impl/go/federation"
 	"github.com/bubblefish-tech/naalp_protocol/impl/go/identity"
 	"github.com/bubblefish-tech/naalp_protocol/impl/go/policy"
@@ -485,6 +487,79 @@ func handle(req request) response {
 		d := sha512.Sum384(body)
 		return out(map[string]interface{}{"head_hex": toHex(d[:])})
 
+	case "forkproof.preimage":
+		// The draft-01 fork-proof framing witness (signatures elided): rebuild the two conflicting
+		// receipts and encode the ForkProof body with empty sig fields. Graded against the oracle.
+		signer, err := hx(in, "signer_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		prev, err := hx(in, "prev_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		objA, err := hx(in, "obj_a_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		objB, err := hx(in, "obj_b_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		seq, at := u64(in, "seq"), u64(in, "at")
+		a := audit.Receipt{Prev: prev, Obj: objA, Seq: seq, At: at}
+		b := audit.Receipt{Prev: prev, Obj: objB, Seq: seq, At: at}
+		fp := audit.NewForkProof(signer, a, nil, b, nil, u64(in, "ext_counter"))
+		return out(map[string]interface{}{"preimage_hex": toHex(fp.Preimage())})
+
+	case "forkproof.body":
+		// The full draft-01 fork-proof body WITH the accused authority's two real (deterministic)
+		// signatures over body-a and body-b. Used for the cross-implementation byte-parity check on
+		// the complete signed object (Go == Rust); the deterministic ML-DSA sigs have no committed
+		// KAT (see cose.sign1), so the corpus marks this "acceptable" and consensus grades it.
+		seed, err := hx(in, "seed_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		signer, err := hx(in, "signer_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		prev, err := hx(in, "prev_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		objA, err := hx(in, "obj_a_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		objB, err := hx(in, "obj_b_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		seq, at := u64(in, "seq"), u64(in, "at")
+		a := audit.Receipt{Prev: prev, Obj: objA, Seq: seq, At: at}
+		b := audit.Receipt{Prev: prev, Obj: objB, Seq: seq, At: at}
+		signer1, _, err := mldsaKeyFromSeed(cose.AlgMLDSA65, seed)
+		if err != nil {
+			return errf("%v", err)
+		}
+		sigA, err := signer1.Sign(a.Bytes())
+		if err != nil {
+			return errf("%v", err)
+		}
+		sigB, err := signer1.Sign(b.Bytes())
+		if err != nil {
+			return errf("%v", err)
+		}
+		fp := audit.NewForkProof(signer, a, sigA, b, sigB, u64(in, "ext_counter"))
+		return out(map[string]interface{}{
+			"body_hex":     toHex(fp.Bytes()),
+			"preimage_hex": toHex(fp.Preimage()),
+			"sig_a_hex":    toHex(sigA),
+			"sig_b_hex":    toHex(sigB),
+		})
+
 	case "causal.verify":
 		nodes, err := nodesFrom(in)
 		if err != nil {
@@ -553,6 +628,171 @@ func handle(req request) response {
 		}
 		c := streaming.StreamCheckpoint{StreamID: sid, ThroughOffset: u64(in, "through_offset"), DigestSoFar: dg}
 		return out(map[string]interface{}{"body_hex": toHex(c.Bytes())})
+
+	case "stream.state":
+		// design.md §10 state table + § Timers (stream idle/commit timer): drive ONE stream
+		// through an ordered `events` list on a fresh Guard; report the LAST event's outcome
+		// plus the stream's final state. Graded against the independent, non-circular
+		// tools/streamstate_oracle.py (F3).
+		rawEvents, _ := in["events"].([]interface{})
+		g := streaming.NewGuard()
+		var lastErr error
+		var lastStream []byte
+		for _, re := range rawEvents {
+			em, ok := re.(map[string]interface{})
+			if !ok {
+				return errf("stream.state: event is not an object")
+			}
+			sid, err := hx(em, "stream_hex")
+			if err != nil {
+				return errf("%v", err)
+			}
+			lastStream = sid
+			switch str(em, "ev") {
+			case "open":
+				o := streaming.StreamOpen{StreamID: sid, Effect: u64(em, "effect"), SubStream: 0}
+				lastErr = g.Open(o, policy.Effect(u64(em, "granted")))
+			case "chunk":
+				lastErr = g.Chunk(sid)
+			case "checkpoint":
+				lastErr = g.Checkpoint(sid)
+			case "commit":
+				rawChunks, _ := em["chunks"].([]interface{})
+				chunks := make([]streaming.Chunk, 0, len(rawChunks))
+				for _, rc := range rawChunks {
+					cm, _ := rc.(map[string]interface{})
+					data, derr := hex.DecodeString(str(cm, "data_hex"))
+					if derr != nil {
+						return errf("%v", derr)
+					}
+					chunks = append(chunks, streaming.Chunk{Offset: u64(cm, "offset"), Data: data})
+				}
+				digest, err := hx(em, "digest_hex")
+				if err != nil {
+					return errf("%v", err)
+				}
+				lastErr = g.Commit(streaming.StreamCommit{StreamID: sid, Digest: digest}, chunks)
+			case "expire":
+				lastErr = g.Expire(sid)
+			default:
+				return errf("stream.state: unknown event %q", str(em, "ev"))
+			}
+		}
+		return out(map[string]interface{}{
+			"valid": lastErr == nil,
+			"error": errKind(lastErr),
+			"state": g.State(lastStream).String(),
+		})
+
+	case "delivery.state":
+		// ietf draft "## Delivery state machine" (# Object State Machines): drive ONE object
+		// through an ordered `events` list of signed delivery updates on a fresh WAL-backed
+		// Tracker; report the LAST event's outcome plus the object's final stage name. A
+		// rejected event (regress -> StageOutOfOrder) leaves the recorded stage unchanged.
+		// Graded against the independent, non-circular tools/delivery_state_oracle.py (F3).
+		rawEvents, _ := in["events"].([]interface{})
+		tf, terr := os.CreateTemp("", "naalp-delivery-state-*.wal")
+		if terr != nil {
+			return errf("%v", terr)
+		}
+		tf.Close()
+		defer os.Remove(tf.Name())
+		tr, terr := delivery.OpenTracker(tf.Name())
+		if terr != nil {
+			return errf("%v", terr)
+		}
+		defer tr.Close()
+		var lastErr error
+		var lastObj []byte
+		for _, re := range rawEvents {
+			em, ok := re.(map[string]interface{})
+			if !ok {
+				return errf("delivery.state: event is not an object")
+			}
+			obj, err := hx(em, "obj_hex")
+			if err != nil {
+				return errf("%v", err)
+			}
+			lastObj = obj
+			switch str(em, "ev") {
+			case "update":
+				_, lastErr = tr.Advance(obj, u64(em, "stage"), 0)
+			default:
+				return errf("delivery.state: unknown event %q", str(em, "ev"))
+			}
+		}
+		st, _ := tr.Stage(lastObj)
+		return out(map[string]interface{}{
+			"valid": lastErr == nil,
+			"error": errKind(lastErr),
+			"state": delivery.StageName(st),
+		})
+
+	case "approval.state":
+		// ietf draft "## Approval state machine" (# Object State Machines): build ONE signed approval,
+		// then drive it through an ordered `events` list of consume attempts through the REAL composed
+		// choke point approval.ConsumeApproval on a fresh single-use ledger; report the LAST event's
+		// {valid, error} plus the ledger length after it (the draft's "ledger left untouched by a
+		// rejected request", observable via Ledger.Len). Graded against the independent, non-circular
+		// tools/approval_state_oracle.py (F3). The approver key is a deterministic Ed25519 test key —
+		// the signature is verified, not graded (bytes are not compared across ports for this op).
+		am, ok := in["approval"].(map[string]interface{})
+		if !ok {
+			return errf("approval.state: missing approval object")
+		}
+		approves, err := hx(am, "approves_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		nonce, err := hx(am, "nonce_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		a := approval.ApprovalRecord{
+			Approves: approves, Approver: str(am, "approver"),
+			Grant: u64(am, "grant"), Nonce: nonce, NotAfter: u64(am, "not_after"),
+		}
+		seed := make([]byte, ed25519.SeedSize) // deterministic all-zero test approver seed
+		priv := ed25519.NewKeyFromSeed(seed)
+		verifier := cose.Ed25519Verifier{PK: priv.Public().(ed25519.PublicKey)}
+		sig := ed25519.Sign(priv, a.Bytes())
+
+		tf, terr := os.CreateTemp("", "naalp-approval-state-*.wal")
+		if terr != nil {
+			return errf("%v", terr)
+		}
+		tf.Close()
+		defer os.Remove(tf.Name())
+		ledger, terr := approval.OpenLedger(tf.Name())
+		if terr != nil {
+			return errf("%v", terr)
+		}
+		defer ledger.Close()
+
+		rawEvents, _ := in["events"].([]interface{})
+		var lastErr error
+		for _, re := range rawEvents {
+			em, ok := re.(map[string]interface{})
+			if !ok {
+				return errf("approval.state: event is not an object")
+			}
+			switch str(em, "ev") {
+			case "consume":
+				presentCID, err := hx(em, "present_cid_hex")
+				if err != nil {
+					return errf("%v", err)
+				}
+				_, lastErr = approval.ConsumeApproval(a, verifier, sig, presentCID,
+					u64(em, "pos_time"), policy.Effect(u64(em, "required_effect")), ledger, str(em, "by"))
+			default:
+				return errf("approval.state: unknown event %q", str(em, "ev"))
+			}
+		}
+		return out(map[string]interface{}{
+			"valid":      lastErr == nil,
+			"error":      errKind(lastErr),
+			"ledger_len": ledger.Len(),
+		})
 
 	case "transport.emit":
 		t, ok := transport.ByName(str(in, "transport"))
@@ -627,9 +867,367 @@ func handle(req request) response {
 		r := federation.ReconcileRecord{Authorities: auths, Order: order}
 		return out(map[string]interface{}{"body_hex": toHex(r.Bytes())})
 
+	case "reconcile.state":
+		// ietf draft "## Reconcile state machine" (# Object State Machines): drive the machine
+		// through ONE event (add-chain | linearize | verify) on fresh state and report
+		// {valid, error}. add-chain runs the draft's fixed VerifyChain-then-Observe pipeline
+		// (a `chain` that must independently pass VerifyChain, plus an optional `extra` receipt
+		// fed only to Observe — a chain array cannot itself carry a duplicate seq without
+		// independently tripping ChainBroken, so equivocation is exercised via the separate
+		// `extra` observation); linearize runs federation.Reconcile (which calls
+		// audit.VerifyCausal internally); verify runs federation.VerifyReconcileOrder, which MUST
+		// recompute via Reconcile (content-id tie-break), never audit.TopoOrder (position
+		// tie-break). Graded against the independent, non-circular
+		// tools/reconcile_state_oracle.py (F3). The authority key is a deterministic all-zero
+		// Ed25519 test seed — the signature is verified, not graded (bytes are not compared
+		// across ports for this op).
+		seed := make([]byte, ed25519.SeedSize) // deterministic all-zero test authority seed
+		priv := ed25519.NewKeyFromSeed(seed)
+		signerID := priv.Public().(ed25519.PublicKey)
+		verifier := cose.Ed25519Verifier{PK: signerID}
+
+		buildReceipt := func(rm map[string]interface{}) (audit.Receipt, error) {
+			prev, err := hx(rm, "prev_hex")
+			if err != nil {
+				return audit.Receipt{}, err
+			}
+			obj, err := hx(rm, "obj_hex")
+			if err != nil {
+				return audit.Receipt{}, err
+			}
+			return audit.Receipt{Prev: prev, Obj: obj, Seq: u64(rm, "seq"), At: u64(rm, "at")}, nil
+		}
+
+		switch str(in, "event") {
+		case "add-chain":
+			rawChain, _ := in["chain"].([]interface{})
+			receipts := make([]audit.Receipt, 0, len(rawChain))
+			sigs := make([][]byte, 0, len(rawChain))
+			for _, rc := range rawChain {
+				rm, _ := rc.(map[string]interface{})
+				r, err := buildReceipt(rm)
+				if err != nil {
+					return errf("%v", err)
+				}
+				receipts = append(receipts, r)
+				sigs = append(sigs, ed25519.Sign(priv, r.Bytes()))
+			}
+			if ci, ok := in["corrupt_sig_at"].(float64); ok {
+				idx := int(ci)
+				corrupted := append([]byte(nil), sigs[idx]...)
+				corrupted[0] ^= 0xFF
+				sigs[idx] = corrupted
+			}
+			lastErr := audit.VerifyChain(receipts, sigs, verifier)
+			if lastErr == nil {
+				auditor := audit.NewAuditor(verifier, signerID)
+				for i, r := range receipts {
+					if _, oerr := auditor.Observe(r, sigs[i]); oerr != nil {
+						lastErr = oerr
+						break
+					}
+				}
+				if lastErr == nil {
+					if em, ok := in["extra"].(map[string]interface{}); ok {
+						er, err := buildReceipt(em)
+						if err != nil {
+							return errf("%v", err)
+						}
+						esig := ed25519.Sign(priv, er.Bytes())
+						if _, oerr := auditor.Observe(er, esig); oerr != nil {
+							lastErr = oerr
+						}
+					}
+				}
+			}
+			return out(map[string]interface{}{"valid": lastErr == nil, "error": errKind(lastErr)})
+
+		case "linearize":
+			nodes, err := nodesFrom(in)
+			if err != nil {
+				return errf("%v", err)
+			}
+			_, lastErr := federation.Reconcile(nodes)
+			return out(map[string]interface{}{"valid": lastErr == nil, "error": errKind(lastErr)})
+
+		case "verify":
+			nodes, err := nodesFrom(in)
+			if err != nil {
+				return errf("%v", err)
+			}
+			rawOrder, _ := in["claimed_order_hex"].([]interface{})
+			order := make([][]byte, 0, len(rawOrder))
+			for _, o := range rawOrder {
+				b, err := hex.DecodeString(o.(string))
+				if err != nil {
+					return errf("%v", err)
+				}
+				order = append(order, b)
+			}
+			rec := federation.ReconcileRecord{Order: order}
+			lastErr := federation.VerifyReconcileOrder(rec, nodes)
+			return out(map[string]interface{}{"valid": lastErr == nil, "error": errKind(lastErr)})
+
+		default:
+			return errf("reconcile.state: unknown event %q", str(in, "event"))
+		}
+
+	// ---- opt-in LAMPS composite signature (alg -65537, design.md §4.2) ----
+	case "composite.mprime":
+		m, err := hx(in, "m_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		mp := cose.ComputeMprime([]byte("COMPSIG-MLDSA65-Ed25519-SHA512"), nil, m)
+		return out(map[string]interface{}{"mprime_hex": toHex(mp)})
+
+	case "composite.signerid":
+		mlPub, err := hx(in, "mldsa_pubkey_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		edPub, err := hx(in, "ed_pubkey_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		id, err := identity.CompositeSignerID(int(intOf(in["mldsa_alg"])), mlPub, edPub)
+		if err != nil {
+			return errf("%v", err)
+		}
+		return out(map[string]interface{}{"signer_id": id})
+
+	case "composite.sign":
+		mlSeed, err := hx(in, "mldsa_seed_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		edSeed, err := hx(in, "ed_seed_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		tbs, err := hx(in, "tbs_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		if len(mlSeed) != 32 || len(edSeed) != ed25519.SeedSize {
+			return errf("composite seeds must be 32 bytes")
+		}
+		var s [32]byte
+		copy(s[:], mlSeed)
+		_, sk := mldsa65.NewKeyFromSeed(&s)
+		signer := cose.CompositeSigner{ML65: sk, Ed: ed25519.NewKeyFromSeed(edSeed)}
+		val, err := signer.Sign(tbs)
+		if err != nil {
+			return errf("%v", err)
+		}
+		return out(map[string]interface{}{"value_hex": toHex(val)})
+
+	case "composite.verify":
+		mlPub, err := hx(in, "mldsa_pubkey_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		edPub, err := hx(in, "ed_pubkey_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		m, err := hx(in, "m_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		sig, err := hx(in, "sig_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		mlPK := new(mldsa65.PublicKey)
+		if err := mlPK.UnmarshalBinary(mlPub); err != nil {
+			return errf("%v", err)
+		}
+		if len(edPub) != ed25519.PublicKeySize {
+			return errf("bad ed25519 public key length")
+		}
+		v := cose.CompositeVerifier{ML65: mlPK, Ed: ed25519.PublicKey(edPub)}
+		return out(map[string]interface{}{"valid": cose.VerifyComposite(v, m, sig) == nil})
+
+	// ---- §5.2 Rotation object (tag-98 COSE_Sign, old+new co-signature) — #143 ----
+	case "rotation.leg_tbs":
+		// committed KAT: the per-leg "Signature" Sig_structure ToBeSigned (RFC 9052 §4.4).
+		prot, err := hx(in, "body_protected_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		alg := int(intOf(in["leg_alg"]))
+		payload, err := hx(in, "payload_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		tbs, err := cose.SignatureToBeSigned(prot, alg, payload)
+		if err != nil {
+			return errf("%v", err)
+		}
+		return out(map[string]interface{}{"tbs_hex": toHex(tbs)})
+
+	case "rotation.sign":
+		// build the tag-98 object over the supplied body protected header + payload with the
+		// old-then-new legs (low-level multi-leg COSE_Sign primitive; consensus + oracle pin).
+		oldAlg := int(intOf(in["old_alg"]))
+		oldSeed, err := hx(in, "old_seed_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		newAlg := int(intOf(in["new_alg"]))
+		newSeed, err := hx(in, "new_seed_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		prot, err := hx(in, "protected_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		payload, err := hx(in, "payload_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		oldSigner, _, err := mldsaKeyFromSeed(oldAlg, oldSeed)
+		if err != nil {
+			return errf("%v", err)
+		}
+		newSigner, _, err := mldsaKeyFromSeed(newAlg, newSeed)
+		if err != nil {
+			return errf("%v", err)
+		}
+		oldLeg, err := cose.SignatureLeg(prot, oldSigner, payload)
+		if err != nil {
+			return errf("%v", err)
+		}
+		newLeg, err := cose.SignatureLeg(prot, newSigner, payload)
+		if err != nil {
+			return errf("%v", err)
+		}
+		obj, err := cose.AssembleSignRaw(prot, payload, []cose.CoseSignLeg{oldLeg, newLeg})
+		if err != nil {
+			return errf("%v", err)
+		}
+		return out(map[string]interface{}{"obj_hex": toHex(obj)})
+
+	case "rotation.verify":
+		// run the full envelope VerifyRotationObject and report the verdict (valid + error kind).
+		obj, err := hx(in, "obj_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		oldAlg := int(intOf(in["old_alg"]))
+		oldPub, err := hx(in, "old_pubkey_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		newAlg := int(intOf(in["new_alg"]))
+		newPub, err := hx(in, "new_pubkey_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		profile := int(intOf(in["profile"]))
+		oldV, err := verifierFor(oldAlg, oldPub)
+		if err != nil {
+			return errf("%v", err)
+		}
+		newV, err := verifierFor(newAlg, newPub)
+		if err != nil {
+			return errf("%v", err)
+		}
+		kindOK := func(ch, k uint64) bool { return ch == 3 && k == 0 }
+		// Dispatch as a real receiver does — parse the COSE tag: a tag-98 (0xd8 0x62) Rotation
+		// object goes to the two-leg VerifyRotationObject; a tag-18 (single-signature) object goes
+		// to the general Verify, which rejects a channel-3/kind-0 single-sig rotation
+		// RotationUnauthorized (the single-Sign1 rotation-gap fix, §5.2). The go-forward (new) key
+		// is the tag-18 object's sole signer.
+		var verr error
+		if len(obj) >= 2 && obj[0] == 0xd8 && obj[1] == 0x62 {
+			_, verr = envelope.VerifyRotationObject(profile, oldV, newV, kindOK, nil, obj)
+		} else {
+			_, verr = envelope.Verify(profile, newV, kindOK, nil, obj)
+		}
+		return out(map[string]interface{}{"valid": verr == nil, "error": errKind(verr)})
+
+	case "object.decode":
+		// R7 decoder resource bounds (design.md §3.4): decode + bound-enforce an untrusted object
+		// and report the verdict (valid + named error kind). All four object-level bounds fire
+		// before the COSE signature is checked, so no verifier is needed; over_size materializes
+		// the object octet-size bound locally (rejected on raw length before any parse).
+		var obj []byte
+		if _, ok := in["over_size"]; ok {
+			obj = make([]byte, int(intOf(in["over_size"])))
+		} else {
+			var err error
+			obj, err = hx(in, "obj_hex")
+			if err != nil {
+				return errf("%v", err)
+			}
+		}
+		kindOK := func(ch, k uint64) bool { return true }
+		_, verr := envelope.Verify(1, nil, kindOK, nil, obj)
+		return out(map[string]interface{}{"valid": verr == nil, "error": errKind(verr)})
+
+	case "stream.verify_commit":
+		// R7 stream chunk-count bound: materialize the over-limit chunk set and verify the commit;
+		// the count check fires before the digest check, so the reject is TooManyChunks.
+		n := int(intOf(in["chunk_count"]))
+		chunks := make([]streaming.Chunk, n)
+		verr := streaming.VerifyCommit(streaming.StreamCommit{}, chunks)
+		return out(map[string]interface{}{"valid": verr == nil, "error": errKind(verr)})
+
+	case "error.name_for_code":
+		// T3.3: the naalp-error registry table lookup (design.md §3.5). Grades the port's embedded
+		// 119-entry name<->code table per-code, plus the unknown-code (opaque) contract.
+		name, reg := naalperror.NameForCode(uint64(intOf(in["code"])))
+		return out(map[string]interface{}{"name": name, "registered": reg})
+
+	case "error.encode":
+		// T3.3: deterministic CBOR of a naalp-error body {1:code, 2:name, ?3:detail, ?4:subject}.
+		var subj []byte
+		if _, ok := in["subject_hex"]; ok {
+			s, err := hx(in, "subject_hex")
+			if err != nil {
+				return errf("%v", err)
+			}
+			subj = s
+		}
+		detail, _ := in["detail"].(string)
+		name, _ := in["name"].(string)
+		b, err := naalperror.Encode(uint64(intOf(in["code"])), name, detail, subj)
+		if err != nil {
+			return errf("%v", err)
+		}
+		return out(map[string]interface{}{"body_hex": hex.EncodeToString(b)})
+
+	case "error.decode":
+		// T3.3: parse + dual-carriage validate a naalp-error body (registered code + wrong name ->
+		// Malformed; unknown code -> opaque accept).
+		body, err := hx(in, "body_hex")
+		if err != nil {
+			return errf("%v", err)
+		}
+		eo, derr := naalperror.Decode(body)
+		if derr != nil {
+			return out(map[string]interface{}{"valid": false, "error": errKind(derr)})
+		}
+		return out(map[string]interface{}{"valid": true, "code": eo.Code, "name": eo.Name})
+
 	default:
 		return response{Skipped: "op not implemented: " + req.Op}
 	}
+}
+
+// errKind returns the canonical error kind (the cose.Error.Kind used across the registry) for a
+// rotation verify failure, or "" for success.
+func errKind(err error) string {
+	if err == nil {
+		return ""
+	}
+	if ce, ok := err.(*cose.Error); ok {
+		return ce.Kind
+	}
+	return err.Error()
 }
 
 func intOf(v interface{}) int64 {

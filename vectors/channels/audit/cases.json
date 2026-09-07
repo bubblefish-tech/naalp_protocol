@@ -20,6 +20,24 @@
       "name": "ForkProof",
       "effect": 0,
       "variable": false
+    },
+    {
+      "code": 3,
+      "name": "CheckpointRoot",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 4,
+      "name": "WitnessCosign",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 5,
+      "name": "InclusionProof",
+      "effect": 0,
+      "variable": false
     }
   ],
   "states": [

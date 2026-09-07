@@ -92,6 +92,6 @@ The harness self-tests its own denial: a probe that reads `impl/go/go.mod` must 
 the harness reports itself broken. This proves the grading path does not depend on our
 implementation. It is **not** the same as "independent interoperability" — that claim requires an
 implementation **authored independently** from the spec by an unrelated party (the clean-room
-build trial, Plan I Task 8.3), and remains a forbidden claim until that trial passes.
+build trial), and remains a forbidden claim until that trial passes.
 
 See the harness overview in `harness/README.md`.

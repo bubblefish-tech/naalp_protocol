@@ -1,7 +1,7 @@
 <?php
 // Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
 /**
- * Naalp — the ergonomic one-import front door to the PHP N-AALP SDK (draft-bubblefish-naalp-00).
+ * Naalp — the ergonomic one-import front door to the PHP N-AALP SDK (draft-bubblefish-naalp-01).
  *
  * N-AALP makes the *object*, not the connection, the unit of security: every message is a
  * deterministically-encoded CBOR structure signed with COSE that carries, under one signature, its
@@ -63,6 +63,7 @@ final class Naalp
         array $causes = [],
         ?M $ext = null,
         ?M $cext = null,
+        string $audience = '',   // field 13 (§2.5.3): single-use consume binding; '' = absent
     ): NaalpObject {
         return new NaalpObject(
             kind: $kind,
@@ -76,6 +77,7 @@ final class Naalp
             causes: $causes,
             ext: $ext,
             cext: $cext,
+            audience: $audience,
         );
     }
 

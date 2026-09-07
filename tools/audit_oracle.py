@@ -13,6 +13,15 @@ Non-circular authority (NOT the code under test):
   * Object/authority signatures are NOT modelled here (Python has no ML-DSA); the signature
     checks (ReceiptUnsigned, the causal edge proven by a real signature) are graded in Go and
     Rust with real crypto. Go == oracle and Rust == oracle on the bytes ⟹ Go == Rust.
+  * ForkProof (draft-01, §8.5, finding #70): the non-repudiable equivocation proof carries the
+    accused authority's TWO conflicting signatures (SigA over body-a, SigB over body-b), plus an
+    external monotonic counter (T2.1) bound into the proof against replay/reorder. Its wire body
+    is {1:signer, 2:ext_counter, 3:body_a, 4:sig_a, 5:body_b, 6:sig_b} (deterministic CBOR). The
+    oracle emits the FRAMING WITNESS `preimage_hex` — the same body with the two signature bstrs
+    ELIDED to empty — which Go and Rust reproduce byte-for-byte; the deterministic ML-DSA
+    signatures themselves are graded by the two-implementation byte-parity (cose.sign1 consensus,
+    anchored to the NIST keyGen KAT), exactly as every other signed object is (envelope_oracle).
+    The Verify positive/negative cases run in the impl suites with real crypto.
 
 Emits vectors/audit/cases.json (LF-normalized).
 """
@@ -28,6 +37,12 @@ import cbor_oracle  # shared RFC-8949 deterministic-CBOR constructor (graded in 
 
 GENESIS = b"\x00" * 48  # SHA-384 width; the empty-chain prev
 
+# ForkProof worked-vector constants (draft-01, §8.5). The signer id is an opaque authority id in
+# the envelope field-5 form (the real key is C4/T4), chosen here so the framing witness is
+# independently reproducible; the external counter is a worked value bound into the proof (T2.1).
+FORK_SIGNER = b"\x41\x55\x54\x48\x30\x31"  # "AUTH01" — accused authority signer id (opaque bstr)
+FORK_EXT_COUNTER = 7                        # external monotonic counter bound into the proof (T2.1)
+
 
 def cid(name):
     """Content id (T1 framing) of a tiny worked object {1: name}."""
@@ -41,6 +56,21 @@ def receipt_bytes(prev, obj, seq, at):
 
 def head(body):
     return hashlib.sha384(body).digest()
+
+
+def fork_proof_preimage(signer, ext_counter, body_a, body_b):
+    """The draft-01 ForkProof framing witness: the deterministic-CBOR body
+    {1:signer, 2:ext_counter, 3:body_a, 4:sig_a, 5:body_b, 6:sig_b} with the two signature
+    byte-strings ELIDED to empty. Go and Rust reproduce this byte-for-byte; the real ML-DSA
+    signatures are graded separately by two-implementation deterministic byte-parity (§8.5)."""
+    return cbor_oracle.encode(("map", [
+        (1, signer),        # accused authority signer id
+        (2, ext_counter),   # external monotonic counter (T2.1)
+        (3, body_a),        # receipt A body (bstr) — signed input for sig-a
+        (4, b""),           # sig-a elided in the framing witness
+        (5, body_b),        # receipt B body (bstr) — signed input for sig-b (different obj, same seq)
+        (6, b""),           # sig-b elided in the framing witness
+    ]))
 
 
 def build():
@@ -86,6 +116,30 @@ def build():
         "expect": "Equivocation",
     }
 
+    # ForkProof (draft-01, §8.5, finding #70): the non-repudiable proof binds the accused
+    # authority's signer id, the external counter (T2.1), and BOTH conflicting receipt bodies
+    # (eq_a naming obj B, eq_b naming obj X — same seq 1, DIFFERENT objects). The oracle emits the
+    # framing witness (signatures elided); Go/Rust splice in the real deterministic ML-DSA
+    # signatures over body_a/body_b and grade byte-parity + Verify (positive/negative) themselves.
+    fp_preimage = fork_proof_preimage(FORK_SIGNER, FORK_EXT_COUNTER, eq_a, eq_b)
+    fork_proof = {
+        "signer_hex": FORK_SIGNER.hex(),
+        "ext_counter": FORK_EXT_COUNTER,
+        # Receipt A and B fields (self-contained so a consumer can rebuild both receipts): same seq,
+        # same prev = head(receipt 0), DIFFERENT objects.
+        "seq": 1,
+        "prev_hex": h0.hex(),
+        "at": 101,
+        "obj_a_hex": b.hex(),       # receipt A object (differs from B → equivocation)
+        "obj_b_hex": x.hex(),       # receipt B object
+        "body_a_hex": eq_a.hex(),   # signed input for sig-a (receipt A body)
+        "body_b_hex": eq_b.hex(),   # signed input for sig-b (receipt B body)
+        "preimage_hex": fp_preimage.hex(),  # {1:signer,2:ext_counter,3:body_a,4:'',5:body_b,6:''}
+        "note": ("Verify accepts iff signer present, seq_a==seq_b, obj_a!=obj_b, and BOTH sigs "
+                 "verify under the accused key; it FAILS CLOSED (ForkProofInvalid) on same-obj, "
+                 "seq-mismatch, or empty signer, and (ReceiptUnsigned) on a tampered signature."),
+    }
+
     # Causal graph (§8.2/§8.3): a valid DAG, a cycle, and a future-cause.
     causal_valid = {
         "nodes": [
@@ -115,10 +169,13 @@ def build():
     return {
         "source": ("design §8; receipt body {1:prev,2:obj,3:seq,4:at}; chain head = "
                    "SHA-384(receipt body); genesis prev = 48 zero bytes; content ids in T1 "
-                   "framing multihash(0x20, SHA-384); causal verdicts by independent topo check."),
+                   "framing multihash(0x20, SHA-384); causal verdicts by independent topo check; "
+                   "draft-01 ForkProof body {1:signer,2:ext_counter,3:body_a,4:sig_a,5:body_b,"
+                   "6:sig_b}, framing witness (sigs elided) reproduced by Go/Rust (§8.5)."),
         "chain": chain,
         "chain_broken": chain_broken,
         "equivocation": equivocation,
+        "fork_proof": fork_proof,
         "causal_valid": causal_valid,
         "causal_cycle": causal_cycle,
         "causal_future": causal_future,
@@ -134,6 +191,8 @@ def main():
         f.write("\n")
     print("wrote", os.path.relpath(out, os.path.join(HERE, "..")))
     print("  chain final head=%s..." % data["chain"]["final_head_hex"][:16])
+    print("  fork-proof preimage=%s... (%d bytes, sigs elided)"
+          % (data["fork_proof"]["preimage_hex"][:16], len(data["fork_proof"]["preimage_hex"]) // 2))
 
 
 if __name__ == "__main__":

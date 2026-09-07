@@ -1,5 +1,5 @@
 {
-  "source": "design \u00a78; receipt body {1:prev,2:obj,3:seq,4:at}; chain head = SHA-384(receipt body); genesis prev = 48 zero bytes; content ids in T1 framing multihash(0x20, SHA-384); causal verdicts by independent topo check.",
+  "source": "design \u00a78; receipt body {1:prev,2:obj,3:seq,4:at}; chain head = SHA-384(receipt body); genesis prev = 48 zero bytes; content ids in T1 framing multihash(0x20, SHA-384); causal verdicts by independent topo check; draft-01 ForkProof body {1:signer,2:ext_counter,3:body_a,4:sig_a,5:body_b,6:sig_b}, framing witness (sigs elided) reproduced by Go/Rust (\u00a78.5).",
   "chain": {
     "genesis_prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
     "receipts": [
@@ -60,6 +60,19 @@
       "body_hex": "a4015830dd58990198b5b9807df2969340cebd386bbd596d57c380d38fb362a7a99fbb5407ab52acb8ef6b0ae7380be3c59c250d0258322030237cdb58e7dc7ef7a675b5d137bf6f711275d8d9619076037a9bee52096c5a7af3ba4846d5b397d9d3b2b1e1d910f1940301041865"
     },
     "expect": "Equivocation"
+  },
+  "fork_proof": {
+    "signer_hex": "415554483031",
+    "ext_counter": 7,
+    "seq": 1,
+    "prev_hex": "dd58990198b5b9807df2969340cebd386bbd596d57c380d38fb362a7a99fbb5407ab52acb8ef6b0ae7380be3c59c250d",
+    "at": 101,
+    "obj_a_hex": "203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a60567",
+    "obj_b_hex": "2030237cdb58e7dc7ef7a675b5d137bf6f711275d8d9619076037a9bee52096c5a7af3ba4846d5b397d9d3b2b1e1d910f194",
+    "body_a_hex": "a4015830dd58990198b5b9807df2969340cebd386bbd596d57c380d38fb362a7a99fbb5407ab52acb8ef6b0ae7380be3c59c250d025832203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a605670301041865",
+    "body_b_hex": "a4015830dd58990198b5b9807df2969340cebd386bbd596d57c380d38fb362a7a99fbb5407ab52acb8ef6b0ae7380be3c59c250d0258322030237cdb58e7dc7ef7a675b5d137bf6f711275d8d9619076037a9bee52096c5a7af3ba4846d5b397d9d3b2b1e1d910f1940301041865",
+    "preimage_hex": "a60146415554483031020703586ea4015830dd58990198b5b9807df2969340cebd386bbd596d57c380d38fb362a7a99fbb5407ab52acb8ef6b0ae7380be3c59c250d025832203084c05ba9701c1c03094d7d13e84462add3e987ce1cf0619f27fb98454a57be9b322571fcc1cf79d91d88c1ce80a605670301041865044005586ea4015830dd58990198b5b9807df2969340cebd386bbd596d57c380d38fb362a7a99fbb5407ab52acb8ef6b0ae7380be3c59c250d0258322030237cdb58e7dc7ef7a675b5d137bf6f711275d8d9619076037a9bee52096c5a7af3ba4846d5b397d9d3b2b1e1d910f19403010418650640",
+    "note": "Verify accepts iff signer present, seq_a==seq_b, obj_a!=obj_b, and BOTH sigs verify under the accused key; it FAILS CLOSED (ForkProofInvalid) on same-obj, seq-mismatch, or empty signer, and (ReceiptUnsigned) on a tampered signature."
   },
   "causal_valid": {
     "nodes": [

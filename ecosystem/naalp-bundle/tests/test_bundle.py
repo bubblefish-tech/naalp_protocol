@@ -1,0 +1,422 @@
+# Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
+"""Conformance + mutation-surviving tests for the N-AALP offline proof bundle (E6.5/R12.5).
+
+Non-circularity (F3): the byte-level shape of every signed piece this bundle carries (the
+ApprovalRecord body, the ConsumeReceipt body, a full signed object) is checked against THREE
+independent, pre-existing top-level oracles -- never against naalp_bundle's own output:
+
+  - vectors/approval/cases.json          (ApprovalRecord.bytes() / .id())
+  - vectors/consume_receipt/cases.json   (ConsumeReceipt.bytes(), from tools/consume_receipt_oracle.py)
+  - vectors/worked/example.json          (a full signed N-AALP object, reference-generated)
+
+These oracles predate and are independent of this package; naalp_bundle shares no code with any
+of them. The BUNDLE-level chain (object <- approval <- receipt all cross-binding by content id)
+is exercised end-to-end through the REAL Part-1 primitives (naalp.envelope.sign,
+naalp.approval.sign_approval, naalp.approval.Ledger.consume_with_receipt) -- nothing here is
+mocked or faked.
+
+Run (from ecosystem/naalp-bundle/, PYTHONDONTWRITEBYTECODE=1, using the real Python on this
+machine -- not the Microsoft Store `python` stub):
+    python -m unittest -v tests.test_bundle
+"""
+import os
+import sys
+import tempfile
+import unittest
+
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _THIS_DIR not in sys.path:
+    sys.path.insert(0, _THIS_DIR)
+import _paths  # noqa: E402
+
+_PKG_ROOT = os.path.dirname(_THIS_DIR)  # ecosystem/naalp-bundle
+if _PKG_ROOT not in sys.path:
+    sys.path.insert(0, _PKG_ROOT)
+
+from naalp_bundle import (  # noqa: E402
+    BundleError, ProofBundle, TrustAnchor, build_bundle, verify_bundle,
+)
+from naalp_bundle.bundle import _parse_approval_body, _parse_receipt_body, _peek_object_signer  # noqa: E402
+from naalp import approval, cbor, cose, envelope, policy  # noqa: E402
+from naalp.cbor import U, T, M  # noqa: E402
+
+ALG = cose.ALG_MLDSA65
+
+
+def _seed(b):
+    return bytes([b]) * 32
+
+
+def _kind_ok(_ch, _k):
+    return True
+
+
+def _make_chain(profile=cose.PROFILE_PUBLIC, effect=policy.NON_IDEMPOTENT_WRITE,
+                 object_seed=0x11, approver_seed=0x22, ledger_seed=0x33,
+                 approver_id="approver-1", ledger_id=b"ledger-1", requester="requester-1"):
+    """Build one real, fully-signed object -> approval -> ledger-signed receipt chain and every
+    key needed to verify it, through nothing but real Part-1 primitives. Returns a dict so
+    individual pieces are easy to mutate per-test."""
+    obj_seed = _seed(object_seed)
+    obj_pk = cose.mldsa_keygen("ML-DSA-65", obj_seed)
+    appr_seed = _seed(approver_seed)
+    appr_pk = cose.mldsa_keygen("ML-DSA-65", appr_seed)
+    ldgr_seed = _seed(ledger_seed)
+    ldgr_pk = cose.mldsa_keygen("ML-DSA-65", ldgr_seed)
+
+    obj = envelope.Object(
+        kind=1, channel=4, signer=obj_pk, created=1_785_000_000_000, effect=effect,
+        body=M([(U(1), T("wire 500000 (cents) from treasury to acct-778-441"))]),
+        profile=profile,
+    )
+    object_bytes = envelope.sign(obj, ALG, obj_seed)
+
+    rec = approval.ApprovalRecord(obj.id, approver_id, policy.DESTRUCTIVE, b"\x01" * 8,
+                                   9_999_999_999_999, "")
+    approval_sig = approval.sign_approval(rec, ALG, appr_seed)
+
+    tmpdir = tempfile.TemporaryDirectory()
+    ledger = approval.open_ledger_signed(os.path.join(tmpdir.name, "consume.wal"), ledger_id, ALG, ldgr_seed)
+    _entry, receipt, receipt_sig = ledger.consume_with_receipt(rec.id(), requester)
+
+    anchor = TrustAnchor({
+        ("object", obj_pk): obj_pk,
+        ("approval", approver_id.encode("utf-8")): appr_pk,
+        ("receipt", ledger_id): ldgr_pk,
+    })
+    bundle = build_bundle(object_bytes, profile, rec, approval_sig, ALG, receipt, receipt_sig, ALG)
+    return {
+        "obj": obj, "object_bytes": object_bytes, "obj_seed": obj_seed, "obj_pk": obj_pk,
+        "rec": rec, "approval_sig": approval_sig, "appr_pk": appr_pk,
+        "receipt": receipt, "receipt_sig": receipt_sig, "ldgr_pk": ldgr_pk,
+        "anchor": anchor, "bundle": bundle, "ledger": ledger, "tmpdir": tmpdir,
+    }
+
+
+class OracleByteIdentity(unittest.TestCase):
+    """F3: this package's glue (the approval/receipt body parsers, and the object-signer peek)
+    reproduces bytes and ids from THREE independent, pre-existing oracles -- never from
+    naalp_bundle's own output."""
+
+    def test_approval_record_matches_independent_oracle(self):
+        cases = _paths.load_approval_cases()
+        case = cases["approvals"][0]  # name "A"
+        rec = approval.ApprovalRecord(
+            bytes.fromhex(case["approves_hex"]), case["approver"], case["grant"],
+            bytes.fromhex(case["nonce_hex"]), case["not_after"],
+        )
+        self.assertEqual(rec.bytes().hex(), case["record_hex"])
+        self.assertEqual(rec.id().hex(), case["approval_id_hex"])
+        # this package's own parser round-trips the independently-generated bytes exactly
+        reparsed = _parse_approval_body(bytes.fromhex(case["record_hex"]))
+        self.assertEqual(reparsed.bytes().hex(), case["record_hex"])
+        self.assertEqual(reparsed.approves, rec.approves)
+        self.assertEqual(reparsed.approver, rec.approver)
+
+    def test_consume_receipt_matches_independent_oracle(self):
+        cases = _paths.load_consume_receipt_cases()
+        case = cases["base"]
+        r = approval.ConsumeReceipt(
+            bytes.fromhex(case["ledger_hex"]), bytes.fromhex(case["approval_id_hex"]), case["position"],
+        )
+        self.assertEqual(r.bytes().hex(), case["body_hex"])
+        # this package's own parser round-trips the independently-generated bytes exactly
+        reparsed = _parse_receipt_body(bytes.fromhex(case["body_hex"]))
+        self.assertEqual(reparsed.bytes().hex(), case["body_hex"])
+        self.assertEqual(reparsed.ledger, r.ledger)
+        self.assertEqual(reparsed.position, r.position)
+
+    def test_worked_object_verifies_and_signer_peek_agrees_with_full_verify(self):
+        """Decode the independently-generated worked example, verify it for real, and confirm
+        this package's cheap PRE-verification signer peek (`_peek_object_signer`, used to pick a
+        candidate anchor key before the real check runs) agrees with the fully-verified,
+        cryptographically-checked signer -- two different code paths over the same real bytes."""
+        example = _paths.load_worked_example()
+        object_bytes = bytes.fromhex(example["signed_object_hex"])
+        pk = cose.mldsa_keygen("ML-DSA-65", bytes.fromhex(example["seed_hex"]))
+        obj = envelope.verify(cose.PROFILE_PUBLIC, ALG, pk, _kind_ok, object_bytes)
+        self.assertEqual(obj.content_id().hex(), example["content_id_hex"])
+        self.assertEqual(_peek_object_signer(object_bytes), obj.signer)
+
+
+class BundleChainConformance(unittest.TestCase):
+    """The bundle's own load-bearing property: a real object -> approval -> receipt chain,
+    packaged and verified end-to-end OFFLINE against an INDEPENDENT trust anchor."""
+
+    def test_build_and_verify_bundle_end_to_end(self):
+        c = _make_chain()
+        try:
+            verified = verify_bundle(c["bundle"], c["anchor"], _kind_ok)
+            self.assertEqual(verified.content_id(), c["obj"].id)
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+    def test_key_refs_name_the_three_independent_roles(self):
+        c = _make_chain()
+        try:
+            refs = c["bundle"].key_refs()
+            roles = [r[0] for r in refs]
+            self.assertEqual(roles, ["object", "approval", "receipt"])
+            # references only -- never key material (no pubkey bytes appear among the ref ids)
+            self.assertEqual(refs[0][1], c["obj_pk"])       # object role's id == the signer id itself
+            self.assertNotEqual(refs[0][1], b"")
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+    def test_bundle_wire_round_trip_is_byte_identical(self):
+        """(d) serialization is the blessed codec (naalp.cbor, unchanged) -- a re-serialized
+        bundle reproduces byte-identical output, and its content id is stable across the trip."""
+        c = _make_chain()
+        try:
+            first = c["bundle"].to_bytes()
+            reloaded = ProofBundle.from_bytes(first)
+            second = reloaded.to_bytes()
+            self.assertEqual(first, second)
+            self.assertEqual(c["bundle"].content_id(), reloaded.content_id())
+            verified = verify_bundle(reloaded, c["anchor"], _kind_ok)
+            self.assertEqual(verified.content_id(), c["obj"].id)
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+    def test_build_bundle_refuses_approval_that_does_not_bind_this_object(self):
+        c = _make_chain()
+        try:
+            other_seed = _seed(0x99)
+            other_obj = envelope.Object(kind=1, channel=4, signer=c["obj_pk"], created=1, effect=0,
+                                         body=M([(U(1), T("other"))]), profile=cose.PROFILE_PUBLIC)
+            envelope.sign(other_obj, ALG, other_seed)
+            wrong_rec = approval.ApprovalRecord(other_obj.id, "approver-1", policy.DESTRUCTIVE,
+                                                 b"\x02" * 8, 9_999_999_999_999, "")
+            wrong_sig = approval.sign_approval(wrong_rec, ALG, _seed(0x22))
+            with self.assertRaises(BundleError) as cm:
+                build_bundle(c["object_bytes"], cose.PROFILE_PUBLIC, wrong_rec, wrong_sig, ALG,
+                             c["receipt"], c["receipt_sig"], ALG)
+            self.assertEqual(cm.exception.kind, "ApprovalObjectMismatch")
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+
+class TamperDetectionFailsClosed(unittest.TestCase):
+    """(b) a tampered object/signature/receipt -> a named error, and every rejection returns no
+    verified object."""
+
+    def test_tampered_object_signature_rejected(self):
+        c = _make_chain()
+        try:
+            tampered = bytearray(c["object_bytes"])
+            tampered[-1] ^= 0xFF  # flip the final byte of the ML-DSA signature
+            bad_bundle = build_bundle(bytes(tampered), cose.PROFILE_PUBLIC, c["rec"], c["approval_sig"], ALG,
+                                      c["receipt"], c["receipt_sig"], ALG)
+            with self.assertRaises(envelope.EnvelopeError) as cm:
+                verify_bundle(bad_bundle, c["anchor"], _kind_ok)
+            self.assertEqual(cm.exception.kind, "BadSignature")
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+    def test_tampered_approval_signature_rejected(self):
+        c = _make_chain()
+        try:
+            tampered_sig = bytearray(c["approval_sig"])
+            tampered_sig[0] ^= 0xFF
+            bad_bundle = build_bundle(c["object_bytes"], cose.PROFILE_PUBLIC, c["rec"], bytes(tampered_sig), ALG,
+                                      c["receipt"], c["receipt_sig"], ALG)
+            with self.assertRaises(approval.ApprovalError) as cm:
+                verify_bundle(bad_bundle, c["anchor"], _kind_ok)
+            self.assertEqual(cm.exception.kind, "BadSignature")
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+    def test_tampered_receipt_signature_rejected(self):
+        c = _make_chain()
+        try:
+            tampered_sig = bytearray(c["receipt_sig"])
+            tampered_sig[0] ^= 0xFF
+            bad_bundle = build_bundle(c["object_bytes"], cose.PROFILE_PUBLIC, c["rec"], c["approval_sig"], ALG,
+                                      c["receipt"], bytes(tampered_sig), ALG)
+            with self.assertRaises(approval.ApprovalError) as cm:
+                verify_bundle(bad_bundle, c["anchor"], _kind_ok)
+            self.assertEqual(cm.exception.kind, "ConsumeReceiptUnsigned")
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+    def test_receipt_naming_a_different_approval_rejected(self):
+        """The receipt is genuinely, validly signed by the ledger -- just for the WRONG approval
+        (a different, also-genuinely-consumed one). Neither the object's signature nor the
+        approval's signature nor the receipt's own signature is broken; only the cross-binding
+        between the receipt and THIS bundle's approval is wrong. This is a bundle-level check
+        with no Part-1 analogue (M2's mutation target)."""
+        c = _make_chain()
+        try:
+            other_rec = approval.ApprovalRecord(c["obj"].id, "approver-1", policy.DESTRUCTIVE,
+                                                 b"\x02" * 8, 9_999_999_999_999, "")
+            _entry2, other_receipt, other_receipt_sig = c["ledger"].consume_with_receipt(
+                other_rec.id(), "requester-1")
+            self.assertNotEqual(bytes(other_receipt.approval_id), bytes(c["rec"].id()))
+            mismatched = ProofBundle(c["object_bytes"], cose.PROFILE_PUBLIC, c["rec"], c["approval_sig"], ALG,
+                                     other_receipt, other_receipt_sig, ALG)
+            with self.assertRaises(BundleError) as cm:
+                verify_bundle(mismatched, c["anchor"], _kind_ok)
+            self.assertEqual(cm.exception.kind, "ReceiptApprovalMismatch")
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+    def test_corrupted_algorithm_field_rejected_with_named_error(self):
+        """approval_alg/receipt_alg are plain bundle metadata (never signed), so a corrupted
+        algorithm number can drive naalp.cose into an alg/pubkey combination its OWN library
+        raises a bare ValueError for ('unknown alg %d') rather than cleanly returning False.
+        verify_bundle wraps that into a named BundleError so no caller has to catch an
+        unbounded exception type to stay fail-closed (never turns a rejection into an
+        acceptance -- only tightens the shape of the failure)."""
+        c = _make_chain()
+        try:
+            bogus_alg_bundle = ProofBundle(
+                c["bundle"].object_bytes, c["bundle"].profile, c["bundle"].approval,
+                c["bundle"].approval_sig, c["bundle"].approval_alg, c["bundle"].receipt,
+                c["bundle"].receipt_sig, -208,  # not a registered COSE algorithm
+            )
+            with self.assertRaises(BundleError) as cm:
+                verify_bundle(bogus_alg_bundle, c["anchor"], _kind_ok)
+            self.assertEqual(cm.exception.kind, "MalformedSignatureInput")
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+    def test_incomplete_bundle_rejected(self):
+        c = _make_chain()
+        try:
+            incomplete = ProofBundle(c["object_bytes"], cose.PROFILE_PUBLIC, None, b"", ALG, None, b"", ALG)
+            with self.assertRaises(BundleError) as cm:
+                verify_bundle(incomplete, c["anchor"], _kind_ok)
+            self.assertEqual(cm.exception.kind, "IncompleteBundle")
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+
+class TrustAnchorNonCircular(unittest.TestCase):
+    """(c) the F3 crucial property: verification succeeds ONLY against an anchor supplied
+    independently of the bundle; a self-anchored bundle is REFUSED with a named error
+    (M1's mutation target)."""
+
+    def test_missing_anchor_rejected(self):
+        c = _make_chain()
+        try:
+            with self.assertRaises(BundleError) as cm:
+                verify_bundle(c["bundle"], None, _kind_ok)
+            self.assertEqual(cm.exception.kind, "AnchorRequired")
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+    def test_unresolved_anchor_key_rejected(self):
+        c = _make_chain()
+        try:
+            partial = TrustAnchor({("object", c["obj_pk"]): c["obj_pk"]})  # approval/receipt keys missing
+            with self.assertRaises(BundleError) as cm:
+                verify_bundle(c["bundle"], partial, _kind_ok)
+            self.assertEqual(cm.exception.kind, "UnresolvedAnchor")
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+    def test_self_anchored_bundle_is_refused(self):
+        """A producer who -- naively or maliciously -- embeds the SAME keys that signed the
+        bundle as a convenience hint, and a verifier who builds its anchor FROM that hint rather
+        than an independent source: verify_bundle refuses this outright, before checking a
+        single signature, with a named error (CircularAnchor)."""
+        c = _make_chain()
+        try:
+            self_asserted = (
+                ("object", c["obj_pk"], c["obj_pk"]),
+                ("approval", b"approver-1", c["appr_pk"]),
+                ("receipt", b"ledger-1", c["ldgr_pk"]),
+            )
+            circular_bundle = ProofBundle(
+                c["bundle"].object_bytes, c["bundle"].profile, c["bundle"].approval,
+                c["bundle"].approval_sig, c["bundle"].approval_alg, c["bundle"].receipt,
+                c["bundle"].receipt_sig, c["bundle"].receipt_alg, self_asserted,
+            )
+            circular_anchor = TrustAnchor.from_bundle_self_asserted(circular_bundle)
+            # sanity: the self-derived anchor DOES resolve every key (it would happily verify if
+            # verify_bundle did not refuse it up front) -- proving the refusal is a real check,
+            # not an accidental UnresolvedAnchor from an empty anchor.
+            self.assertIsNotNone(circular_anchor.resolve("object", c["obj_pk"]))
+            with self.assertRaises(BundleError) as cm:
+                verify_bundle(circular_bundle, circular_anchor, _kind_ok)
+            self.assertEqual(cm.exception.kind, "CircularAnchor")
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+    def test_self_asserted_keys_round_trip_through_wire_bytes(self):
+        """The self-asserted-keys hint field is part of the bundle's own wire shape (so a
+        circular-anchor scenario survives serialization too) -- but verify_bundle still refuses
+        it exactly the same way after a real to_bytes()/from_bytes() round trip."""
+        c = _make_chain()
+        try:
+            self_asserted = (
+                ("object", c["obj_pk"], c["obj_pk"]),
+                ("approval", b"approver-1", c["appr_pk"]),
+                ("receipt", b"ledger-1", c["ldgr_pk"]),
+            )
+            circular_bundle = ProofBundle(
+                c["bundle"].object_bytes, c["bundle"].profile, c["bundle"].approval,
+                c["bundle"].approval_sig, c["bundle"].approval_alg, c["bundle"].receipt,
+                c["bundle"].receipt_sig, c["bundle"].receipt_alg, self_asserted,
+            )
+            reloaded = ProofBundle.from_bytes(circular_bundle.to_bytes())
+            self.assertEqual(reloaded.self_asserted_keys, self_asserted)
+            circular_anchor = TrustAnchor.from_bundle_self_asserted(reloaded)
+            with self.assertRaises(BundleError) as cm:
+                verify_bundle(reloaded, circular_anchor, _kind_ok)
+            self.assertEqual(cm.exception.kind, "CircularAnchor")
+        finally:
+            c["ledger"].close()
+            c["tmpdir"].cleanup()
+
+
+class DelegatedFailClosedChecks(unittest.TestCase):
+    """Properties the bundle inherits, unmodified, from the real Part-1 primitives it delegates
+    to -- proving the delegation is real (these are not re-implemented here)."""
+
+    def test_expired_approval_rejected(self):
+        obj_seed = _seed(0x44)
+        obj_pk = cose.mldsa_keygen("ML-DSA-65", obj_seed)
+        appr_seed = _seed(0x55)
+        appr_pk = cose.mldsa_keygen("ML-DSA-65", appr_seed)
+        ldgr_seed = _seed(0x66)
+        ldgr_pk = cose.mldsa_keygen("ML-DSA-65", ldgr_seed)
+        obj = envelope.Object(kind=1, channel=4, signer=obj_pk, created=1, effect=policy.DESTRUCTIVE,
+                              body=M([(U(1), T("x"))]), profile=cose.PROFILE_PUBLIC)
+        object_bytes = envelope.sign(obj, ALG, obj_seed)
+        past_rec = approval.ApprovalRecord(obj.id, "approver-2", policy.DESTRUCTIVE, b"\x03" * 8,
+                                           1, "")  # not_after = 1ms past epoch: already expired
+        sig = approval.sign_approval(past_rec, ALG, appr_seed)
+        with tempfile.TemporaryDirectory() as d:
+            ledger = approval.open_ledger_signed(os.path.join(d, "l.wal"), b"ledger-2", ALG, ldgr_seed)
+            try:
+                _e, receipt, receipt_sig = ledger.consume_with_receipt(past_rec.id(), "requester-2")
+                bundle = build_bundle(object_bytes, cose.PROFILE_PUBLIC, past_rec, sig, ALG,
+                                      receipt, receipt_sig, ALG)
+                anchor = TrustAnchor({
+                    ("object", obj_pk): obj_pk,
+                    ("approval", b"approver-2"): appr_pk,
+                    ("receipt", b"ledger-2"): ldgr_pk,
+                })
+                with self.assertRaises(approval.ApprovalError) as cm:
+                    verify_bundle(bundle, anchor, _kind_ok, pos_time=10_000)
+                self.assertEqual(cm.exception.kind, "ApprovalExpired")
+            finally:
+                ledger.close()
+
+
+if __name__ == "__main__":
+    unittest.main()

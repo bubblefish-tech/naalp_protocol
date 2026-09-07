@@ -1,0 +1,34 @@
+# Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
+#
+# Minimal real OpenTelemetry Collector config for the E3.1 live round-trip test
+# (collector_live_test.go). An OTLP/HTTP receiver accepts the spans naalp-otel's
+# NewOTLPHTTPTracerProvider sends; the file exporter writes each received export batch as
+# one newline-delimited JSON object (the fileexporter default: format=json, encoding=none,
+# confirmed against open-telemetry/opentelemetry-collector-contrib README at tag v0.160.0)
+# to /etc/otelcol-contrib/spans.json inside the container, which the test reads back via
+# `docker exec cat` and parses to assert the naalp.* + gen_ai.* attributes arrived intact.
+# The debug exporter is additional, human-readable confirmation visible via `docker logs`.
+#
+# Path note: the official otelcol-contrib image is built FROM scratch (confirmed against
+# open-telemetry/opentelemetry-collector-releases's Dockerfile at tag v0.160.0 this
+# session) -- there is no /tmp directory at all in that image, and no shell to create one.
+# /etc/otelcol-contrib/ is the one directory the image itself creates (to hold config.yaml),
+# so the file exporter's output is placed there instead; the test container is started with
+# --user 0:0 (root) so the write succeeds regardless of that directory's default ownership.
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  file:
+    path: /etc/otelcol-contrib/spans.json
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [file, debug]

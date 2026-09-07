@@ -16,7 +16,7 @@ There are two layers, at two different depths, and they compose:
 | Layer | What it answers | Where it lives |
 |---|---|---|
 | **Discovery channel** (`0x0010`, baseline tier) | Which protocols, carriage classes, tools, and agents a peer offers, as a lightweight signed record | the draft's Channel Surfaces section |
-| **Signed description and directories** (`naalp-description`, draft-01) | The full per-operation capability table of one service — its operations, each one's effect class, and whether it needs approval — plus signed collections and equivocation detection | the draft's Channel Surfaces section |
+| **Signed description and directories** (C18, draft-01) | The full per-operation capability table of one service — its operations, each one's effect class, and whether it needs approval — plus signed collections and equivocation detection | the draft's Channel Surfaces section |
 
 ## The Discovery channel (baseline)
 
@@ -116,7 +116,7 @@ non-circular oracle (`tools/description_oracle.py`) that never reuses the code u
 
 Every check is fail-closed (the draft's Security Considerations section): a failing object is rejected whole, returns its
 named error, and causes no state change. A baseline-only endpoint that validates only the
-frozen kinds correctly rejects a `naalp-description` object as `UnknownKind`.
+frozen kinds correctly rejects a C18 description object as `UnknownKind`.
 
 ## What this mechanism does not decide
 

@@ -1,0 +1,29 @@
+key,value,kind,coverage,idents
+protected-header version field,2,int,all,NAALP_VERSION;NaalpVersion
+object body field id,1,int,all,FieldID;FIELD_ID;FieldId;id
+object body field kind,2,int,all,FieldKind;FIELD_KIND;kind
+object body field channel,3,int,all,FieldChannel;FIELD_CHANNEL;channel
+object body field tier,4,int,all,FieldTier;FIELD_TIER;tier
+object body field signer,5,int,all,FieldSigner;FIELD_SIGNER;signer
+object body field created,6,int,all,FieldCreated;FIELD_CREATED;created
+object body field effect,7,int,all,FieldEffect;FIELD_EFFECT;effect
+object body field causes,8,int,all,FieldCauses;FIELD_CAUSES;causes
+object body field profile,9,int,all,FieldProfile;FIELD_PROFILE;profile
+object body field body,10,int,all,FieldBody;FIELD_BODY;body
+object body field ext,11,int,all,FieldExt;FIELD_EXT;ext
+object body field cext,12,int,all,FieldCext;FIELD_CEXT;cext
+object body field audience,13,int,all,FieldAudience;FIELD_AUDIENCE;audience
+object body field suite,14,int,all,FieldSuite;FIELD_SUITE;suite
+naalp header label,naalp,string,all,naalpHeaderLabel;NAALP_HEADER_LABEL;_HEADER_LABEL;HEADER_LABEL;HeaderLabel
+recheck ext key,13,int,reference,RecheckKey;RECHECK_KEY
+recheck procedure recompute-content-id,1,int,reference,RecheckRecomputeContentID;RECHECK_RECOMPUTE_CONTENT_ID
+recheck procedure verify-cose-sign1,2,int,reference,RecheckVerifyCoseSign1;RECHECK_VERIFY_COSE_SIGN1
+recheck procedure walk-causes,3,int,reference,RecheckWalkCauses;RECHECK_WALK_CAUSES
+recheck procedure replay-consume-check,4,int,reference,RecheckReplayConsumeCheck;RECHECK_REPLAY_CONSUME_CHECK
+composite suite id mldsa65-ed25519,1,int,reference,SuiteMLDSA65Ed25519;SUITE_MLDSA65_ED25519
+max object octet size,1048576,int,all,MaxObjectSize;MAX_OBJECT_SIZE
+max causes count,1024,int,all,MaxCauses;MAX_CAUSES
+max ext count,64,int,all,MaxExt;MAX_EXT
+max cext count,64,int,all,MaxCext;MAX_CEXT
+max nesting depth,16,int,all,MaxNestingDepth;MAX_NESTING_DEPTH
+max stream chunks,1048576,int,all,MaxStreamChunks;MAX_STREAM_CHUNKS

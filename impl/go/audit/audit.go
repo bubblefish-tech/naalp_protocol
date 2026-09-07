@@ -30,10 +30,11 @@ const HeadSize = 48
 
 // Errors reuse the cose.Error type so every N-AALP error carries a stable Kind (design §8.6).
 var (
-	ErrChainBroken      = &cose.Error{Kind: "ChainBroken", Msg: "receipt prev/seq does not chain to the previous receipt"}
-	ErrEquivocation     = &cose.Error{Kind: "Equivocation", Msg: "two receipts at one seq name different objects"}
-	ErrCausalViolation  = &cose.Error{Kind: "CausalViolation", Msg: "causal graph has a cycle or a future cause"}
-	ErrReceiptUnsigned  = &cose.Error{Kind: "ReceiptUnsigned", Msg: "receipt signature does not verify"}
+	ErrChainBroken     = &cose.Error{Kind: "ChainBroken", Msg: "receipt prev/seq does not chain to the previous receipt"}
+	ErrEquivocation    = &cose.Error{Kind: "Equivocation", Msg: "two receipts at one seq name different objects"}
+	ErrCausalViolation = &cose.Error{Kind: "CausalViolation", Msg: "causal graph has a cycle or a future cause"}
+	ErrReceiptUnsigned = &cose.Error{Kind: "ReceiptUnsigned", Msg: "receipt signature does not verify"}
+	ErrForkProofInvalid = &cose.Error{Kind: "ForkProofInvalid", Msg: "fork proof does not prove equivocation"}
 )
 
 // Receipt is one signed append to an ordering authority's chain (design.md §8.1).
@@ -115,39 +116,140 @@ func VerifyChain(receipts []Receipt, sigs [][]byte, v cose.Verifier) error {
 // chained, so it is evidence a verifier checks independently of the signer's clock.
 func ConsistentWithAnchor(created, at uint64) bool { return created <= at }
 
-// ForkProof is the evidence of equivocation: two validly-signed receipts by one authority at
-// the same seq naming different objects (§8.5). It is offline-verifiable by anyone.
+// ForkProof is the non-repudiable evidence of equivocation (design.md §8.5, R-8.3): two
+// validly-signed receipts by ONE authority at the SAME seq naming DIFFERENT objects, together
+// with the accused authority's OWN two signatures over those two receipt bodies. draft-01
+// (finding #70) added SigA/SigB and the external counter: draft-00's proof named the two receipts
+// but carried neither signature, so an accused signer could deny the fork; carrying both of the
+// accused's signatures makes the proof self-contained — any third party verifies both signatures
+// against the accused key with no further evidence and no repudiation.
 type ForkProof struct {
-	A, B Receipt
+	Signer     []byte  // accused authority signer id (envelope field-5 form); both sigs verify under its key
+	ExtCounter uint64  // external monotonic counter bound into the proof (T2.1): fixes replay/reorder
+	A          Receipt // first receipt (A.Bytes() is the signed input for SigA)
+	SigA       []byte  // the accused authority's signature over A.Bytes()
+	B          Receipt // second receipt at the same seq naming a different object
+	SigB       []byte  // the accused authority's signature over B.Bytes()
+}
+
+// NewForkProof assembles a fork proof from two conflicting signed receipts, the accused signer id,
+// and an external monotonic counter. It copies the byte slices so the proof owns its evidence.
+// It performs no checks — Verify is the fail-closed gate; this is the pure constructor (A9).
+func NewForkProof(signer []byte, a Receipt, sigA []byte, b Receipt, sigB []byte, extCounter uint64) ForkProof {
+	return ForkProof{
+		Signer:     append([]byte(nil), signer...),
+		ExtCounter: extCounter,
+		A:          a,
+		SigA:       append([]byte(nil), sigA...),
+		B:          b,
+		SigB:       append([]byte(nil), sigB...),
+	}
+}
+
+// Bytes is the deterministic-CBOR encoding of the fork-proof body (draft-01 naalp-fork-proof):
+// {1: signer, 2: ext_counter, 3: body_a, 4: sig_a, 5: body_b, 6: sig_b}. The two receipt bodies
+// are embedded as the exact bytes each signature covers.
+func (fp ForkProof) Bytes() []byte {
+	b, _ := cbor.Encode(cbor.Map{
+		{K: cbor.Uint(1), V: cbor.Bstr(fp.Signer)},
+		{K: cbor.Uint(2), V: cbor.Uint(fp.ExtCounter)},
+		{K: cbor.Uint(3), V: cbor.Bstr(fp.A.Bytes())},
+		{K: cbor.Uint(4), V: cbor.Bstr(fp.SigA)},
+		{K: cbor.Uint(5), V: cbor.Bstr(fp.B.Bytes())},
+		{K: cbor.Uint(6), V: cbor.Bstr(fp.SigB)},
+	})
+	return b
+}
+
+// Preimage is the deterministic-CBOR framing witness: the fork-proof body with the two signature
+// byte-strings elided to empty. It is the structural authority the independent oracle reproduces
+// byte-for-byte; the two ML-DSA signatures are graded by cross-implementation deterministic
+// byte-parity (the cose.sign1 consensus, anchored to the NIST keyGen KAT), as with every other
+// signed object. This is not a wire object; it exists only to grade the framing.
+func (fp ForkProof) Preimage() []byte {
+	b, _ := cbor.Encode(cbor.Map{
+		{K: cbor.Uint(1), V: cbor.Bstr(fp.Signer)},
+		{K: cbor.Uint(2), V: cbor.Uint(fp.ExtCounter)},
+		{K: cbor.Uint(3), V: cbor.Bstr(fp.A.Bytes())},
+		{K: cbor.Uint(4), V: cbor.Bstr(nil)},
+		{K: cbor.Uint(5), V: cbor.Bstr(fp.B.Bytes())},
+		{K: cbor.Uint(6), V: cbor.Bstr(nil)},
+	})
+	return b
+}
+
+// Verify checks that fp is a non-repudiable proof of equivocation by the authority whose key is v
+// (design.md §8.5, R-8.3). It accepts iff ALL hold: (1) the signer id is present; (2) the two
+// receipts share one seq; (3) they name DIFFERENT objects (an authority contradicting itself); and
+// (4) BOTH signatures verify under v — which, because a single verifier checks both, proves one
+// signer. Any failure rejects the whole proof (fail-closed) with a named error and accepts nothing
+// partial: a same-object / seq-mismatch / unnamed-signer proof is ForkProofInvalid, and a signature
+// that does not verify is ReceiptUnsigned. v MUST be the verifier resolved for fp.Signer.
+func (fp ForkProof) Verify(v cose.Verifier) error {
+	if len(fp.Signer) == 0 {
+		return ErrForkProofInvalid // an unnamed accused is not evidence
+	}
+	if fp.A.Seq != fp.B.Seq {
+		return ErrForkProofInvalid // different sequence positions → not one-seq equivocation
+	}
+	if bytes.Equal(fp.A.Obj, fp.B.Obj) {
+		return ErrForkProofInvalid // same object named twice → the authority did not equivocate
+	}
+	if !v.VerifyRaw(fp.A.Bytes(), fp.SigA) || !v.VerifyRaw(fp.B.Bytes(), fp.SigB) {
+		return ErrReceiptUnsigned // a signature that does not verify under the accused key
+	}
+	return nil // a valid, non-repudiable proof of Equivocation
+}
+
+// seenReceipt is a receipt the auditor has accepted, kept with its signature so a later conflict
+// can be minted into a ForkProof carrying BOTH of the accused's signatures (draft-01, §8.5).
+type seenReceipt struct {
+	r   Receipt
+	sig []byte
 }
 
 // Auditor observes an authority's receipts and detects equivocation from the signed receipts
-// alone (§8.5). It does not and cannot force delivery of withheld events — that residual is a
-// trust property of the authority, not something the wire removes.
+// alone (§8.5). On a conflict it mints a non-repudiable ForkProof carrying the accused signer id,
+// both conflicting signatures, and an external monotonic counter (T2.1). It does not and cannot
+// force delivery of withheld events — that residual is a trust property of the authority, not
+// something the wire removes.
 type Auditor struct {
-	v    cose.Verifier
-	seen map[uint64]Receipt
+	v          cose.Verifier
+	signer     []byte // the accused authority's signer id, stamped into minted proofs
+	extCounter uint64 // external monotonic counter; the current value is bound into each proof, then advanced
+	seen       map[uint64]seenReceipt
 }
 
-// NewAuditor makes an auditor for one authority's key.
-func NewAuditor(v cose.Verifier) *Auditor {
-	return &Auditor{v: v, seen: make(map[uint64]Receipt)}
+// NewAuditor makes an auditor for one authority (its verifier v and signer id), its external
+// counter starting at zero.
+func NewAuditor(v cose.Verifier, signer []byte) *Auditor {
+	return NewAuditorAt(v, signer, 0)
+}
+
+// NewAuditorAt makes an auditor whose external monotonic counter starts at extBase, so the counter
+// bound into proofs can be seeded from an external source (T2.1).
+func NewAuditorAt(v cose.Verifier, signer []byte, extBase uint64) *Auditor {
+	return &Auditor{v: v, signer: append([]byte(nil), signer...), extCounter: extBase, seen: make(map[uint64]seenReceipt)}
 }
 
 // Observe records a signed receipt. It returns ReceiptUnsigned if the signature is invalid; a
 // non-nil ForkProof with Equivocation if a previously-seen receipt at the same seq named a
-// different object; and (nil, nil) otherwise (including a benign exact duplicate).
+// different object (the proof carries the accused signer id, both stored/observed signatures, and
+// the auditor's current external counter, which then advances); and (nil, nil) otherwise (including
+// a benign exact duplicate).
 func (a *Auditor) Observe(r Receipt, sig []byte) (*ForkProof, error) {
 	if !a.v.VerifyRaw(r.Bytes(), sig) {
 		return nil, ErrReceiptUnsigned
 	}
 	if prev, ok := a.seen[r.Seq]; ok {
-		if !bytes.Equal(prev.Obj, r.Obj) {
-			return &ForkProof{A: prev, B: r}, ErrEquivocation
+		if !bytes.Equal(prev.r.Obj, r.Obj) {
+			fp := NewForkProof(a.signer, prev.r, prev.sig, r, sig, a.extCounter)
+			a.extCounter++
+			return &fp, ErrEquivocation
 		}
 		return nil, nil
 	}
-	a.seen[r.Seq] = r
+	a.seen[r.Seq] = seenReceipt{r: r, sig: append([]byte(nil), sig...)}
 	return nil, nil
 }
 

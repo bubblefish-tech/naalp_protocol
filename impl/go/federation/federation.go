@@ -28,6 +28,12 @@ import (
 // resolves it (the object is ordered once by the shared causal constraints).
 var ErrScopeOverlapConflict = &cose.Error{Kind: "ScopeOverlapConflict", Msg: "authorities' scopes overlap"}
 
+// ErrReconcileMismatch is the verify-event reject of the Reconcile state machine (draft "## Reconcile
+// state machine", error code 61): an independent recomputation of the deterministic linearization
+// disagrees with the total order a Reconcile record claims, so the record is rejected whole.
+// Emitted by VerifyReconcileOrder.
+var ErrReconcileMismatch = &cose.Error{Kind: "ReconcileMismatch", Msg: "independent linearization disagrees with the reconcile record's claimed order"}
+
 // Reconcile deterministically merges the objects of a shared causal graph into one total order
 // (design.md §8.4). It first verifies the graph is a valid partial order (acyclic, no
 // future-cause; audit.VerifyCausal), then linearizes it with Kahn's algorithm, breaking ties
@@ -128,3 +134,32 @@ func (r ReconcileRecord) Bytes() []byte {
 
 // SignReconcile signs a Reconcile record with a tier-1 ordering authority's key.
 func SignReconcile(r ReconcileRecord, s cose.Signer) ([]byte, error) { return s.Sign(r.Bytes()) }
+
+// VerifyReconcileOrder is the verify-event choke point of the Reconcile state machine (draft "##
+// Reconcile state machine"). A verifier independently re-runs the deterministic linearization over the
+// identical causal graph and rejects the record whole (ReconcileMismatch) if the recomputed total order
+// differs from the one the record claims. It MUST recompute via Reconcile — the content-id tie-break —
+// and NEVER audit.TopoOrder, whose (position, input-index) tie-break would spuriously disagree on
+// causally-concurrent objects. A node set that is not a valid partial order is rejected under that
+// fault (CausalViolation), fail-closed. It returns nil only when the record's claimed order is
+// byte-for-byte the deterministic order (verified).
+//
+// This is distinct from the per-port signature-verify verifyReconcile(record, alg, pubkey, sig), which
+// checks the COSE signature over the record bytes; VerifyReconcileOrder verifies the ORDER, not the
+// signature. Named ...Order uniformly across all ten ports so one parity token cannot collide with the
+// signature-verify name.
+func VerifyReconcileOrder(r ReconcileRecord, nodes []audit.CausalNode) error {
+	recomputed, err := Reconcile(nodes)
+	if err != nil {
+		return err // CausalViolation: the graph is not a valid partial order
+	}
+	if len(recomputed) != len(r.Order) {
+		return ErrReconcileMismatch
+	}
+	for i := range recomputed {
+		if !bytes.Equal(recomputed[i], r.Order[i]) {
+			return ErrReconcileMismatch
+		}
+	}
+	return nil // the claimed order is the deterministic order
+}

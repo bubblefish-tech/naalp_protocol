@@ -1,7 +1,7 @@
 {
   "name": "naalp",
   "version": "0.1.0",
-  "description": "Reference SDK for N-AALP (Native Agentic Application Layer Protocol), draft-bubblefish-naalp-00",
+  "description": "Reference SDK for N-AALP (Native Agentic Application Layer Protocol), draft-bubblefish-naalp-01",
   "license": "Apache-2.0",
   "type": "module",
   "author": "Shawn Sammartano <naalp-editor@bubblefish.sh>",
@@ -28,8 +28,12 @@
     "./*": { "types": "./naalp/*.d.mts", "import": "./naalp/*.mjs" }
   },
   "types": "./naalp/index.d.mts",
+  "bin": {
+    "naalp": "./bin/naalp.mjs"
+  },
   "files": [
     "naalp",
+    "bin",
     "LICENSE",
     "NOTICE"
   ],
@@ -39,7 +43,10 @@
   "scripts": {
     "test": "node --test \"test/**/*.test.mjs\"",
     "example": "node examples/sign-object.mjs",
+    "quickstart": "node examples/two-agent-quickstart.mjs",
+    "cli": "node bin/naalp.mjs",
     "clean:types": "node scripts/clean-types.mjs",
+    "build": "npm run build:types",
     "build:types": "npm run clean:types && tsc -p tsconfig.json",
     "prepack": "npm run build:types",
     "docs": "typedoc"

@@ -3,6 +3,7 @@ package sh.bubblefish.naalp
 
 import java.io.BufferedOutputStream
 import java.security.MessageDigest
+import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters
 
 /**
  * naalp-adapter-kotlin — the Kotlin N-AALP conformance adapter.
@@ -79,6 +80,11 @@ private fun skipped(why: String): Map<String, Any?> {
 }
 
 private fun sha384(b: ByteArray): ByteArray = MessageDigest.getInstance("SHA-384").digest(b)
+
+// The Ed25519 public key matching a 32-byte seed (RFC 8032), for the approval.state deterministic
+// test approver key -- the signature is verified inside the port, never graded across ports.
+private fun ed25519PubFromSeed(seed: ByteArray): ByteArray =
+    Ed25519PrivateKeyParameters(seed, 0).generatePublicKey().encoded
 
 // ---- tagged-value -> Cbor.Value ----
 
@@ -172,6 +178,67 @@ private fun handle(op: String, inp: Map<String, Any?>): Map<String, Any?> {
         "cose.verify1" ->
             return out("valid", Cose.coseVerify1(intVal(inp, "alg"), hx(inp, "pubkey_hex"), hx(inp, "obj_hex")))
 
+        "rotation.leg_tbs" ->
+            return out("tbs_hex", Hex.encode(Cose.signatureToBeSigned(
+                hx(inp, "body_protected_hex"), intVal(inp, "leg_alg"), hx(inp, "payload_hex"))))
+
+        "rotation.sign" -> {
+            val prot = hx(inp, "protected_hex")
+            val payload = hx(inp, "payload_hex")
+            val oldLeg = Cose.signatureLeg(prot, intVal(inp, "old_alg"), hx(inp, "old_seed_hex"), payload)
+            val newLeg = Cose.signatureLeg(prot, intVal(inp, "new_alg"), hx(inp, "new_seed_hex"), payload)
+            return out("obj_hex", Hex.encode(Cose.assembleSignRaw(prot, payload, listOf(oldLeg, newLeg))))
+        }
+
+        "rotation.verify" -> {
+            val robj = hx(inp, "obj_hex")
+            val oldAlg = intVal(inp, "old_alg")
+            val newAlg = intVal(inp, "new_alg")
+            val profile = intVal(inp, "profile").toLong()
+            val oldPk = hx(inp, "old_pubkey_hex")
+            val newPk = hx(inp, "new_pubkey_hex")
+            val kindOk = Envelope.KindValidator { ch, k -> ch == 3L && k == 0L }
+            // dispatch by COSE tag: tag-98 (0xd8 0x62) -> two-leg verifyRotationObject; a tag-18
+            // single-sig object -> the general verify, which rejects a (3,0) single-sig rotation.
+            return try {
+                if (robj.size >= 2 && (robj[0].toInt() and 0xff) == 0xd8 && (robj[1].toInt() and 0xff) == 0x62) {
+                    Envelope.verifyRotationObject(profile, oldAlg, oldPk, newAlg, newPk, kindOk, robj)
+                } else {
+                    Envelope.verify(profile, newAlg, newPk, kindOk, robj)
+                }
+                out("valid", true, "error", "")
+            } catch (e: NaalpException) {
+                out("valid", false, "error", e.kind)
+            }
+        }
+
+        "object.decode" -> {
+            // R7 decoder resource bounds: decode + bound-enforce an untrusted object; all four
+            // object-level bounds fire BEFORE the COSE signature is checked, so no verifier is
+            // needed. over_size materializes the octet-size bound (rejected on raw length before
+            // any parse).
+            val obj = if (inp.containsKey("over_size")) ByteArray(intVal(inp, "over_size")) else hx(inp, "obj_hex")
+            val kindOk = Envelope.KindValidator { _, _ -> true }
+            return try {
+                Envelope.verify(1L, 0, ByteArray(0), kindOk, obj) // dummy alg/pubkey: never reached for a reject
+                out("valid", true, "error", "")
+            } catch (e: NaalpException) {
+                out("valid", false, "error", e.kind)
+            }
+        }
+
+        "stream.verify_commit" -> {
+            val n = intVal(inp, "chunk_count")
+            val chunks = List(n) { Streaming.Chunk(0L, ByteArray(0)) } // n empty chunks
+            val commit = Streaming.StreamCommit(ByteArray(0), ByteArray(0)) // count check fires before digest
+            return try {
+                Streaming.verifyCommit(commit, chunks)
+                out("valid", true, "error", "")
+            } catch (e: NaalpException) {
+                out("valid", false, "error", e.kind)
+            }
+        }
+
         "signerid" ->
             return out("signer_id", Identity.signerId(intVal(inp, "alg"), hx(inp, "pubkey_hex")))
 
@@ -248,6 +315,150 @@ private fun handle(op: String, inp: Map<String, Any?>): Map<String, Any?> {
         "stream.checkpoint" ->
             return out("body_hex", Hex.encode(Records.streamCheckpointBody(hx(inp, "stream_id_hex"), u64(inp, "through_offset"), hx(inp, "digest_so_far_hex"))))
 
+        "stream.state" -> {
+            // design.md §10 state table + § Timers (stream idle/commit timer): drive ONE stream
+            // through an ordered `events` list on a fresh Guard; report the LAST event's outcome
+            // plus the stream's final state. Graded against the independent, non-circular
+            // tools/streamstate_oracle.py (F3).
+            val rawEvents = (inp["events"] as? List<*>) ?: emptyList<Any?>()
+            val g = Streaming.Guard()
+            var lastErrKind = ""
+            var lastStream = ByteArray(0)
+            for (re in rawEvents) {
+                val emAny = re as? Map<*, *> ?: throw NaalpException("Malformed", "stream.state: event is not an object")
+                @Suppress("UNCHECKED_CAST")
+                val em = emAny as Map<String, Any?>
+                val sid = hx(em, "stream_hex")
+                lastStream = sid
+                try {
+                    when (str(em, "ev")) {
+                        "open" ->
+                            g.open(Streaming.StreamOpen(sid, u64(em, "effect"), null, 0L), u64(em, "granted"))
+                        "chunk" -> g.chunk(sid)
+                        "checkpoint" -> g.checkpoint(sid)
+                        "commit" -> {
+                            val rawChunks = (em["chunks"] as? List<*>) ?: emptyList<Any?>()
+                            val chunks = rawChunks.map { rc ->
+                                val cm = rc as Map<*, *>
+                                val offset: Long = when (val o = cm["offset"]) {
+                                    is Long -> o
+                                    is Int -> o.toLong()
+                                    is Double -> o.toLong()
+                                    is String -> o.toLong()
+                                    else -> 0L
+                                }
+                                Streaming.Chunk(offset, Hex.decode(cm["data_hex"] as String))
+                            }
+                            g.commit(Streaming.StreamCommit(sid, hx(em, "digest_hex")), chunks)
+                        }
+                        "expire" -> g.expire(sid)
+                        else -> throw NaalpException("Malformed", "stream.state: unknown event ${str(em, "ev")}")
+                    }
+                    lastErrKind = ""
+                } catch (e: NaalpException) {
+                    if (e.kind == "Malformed") throw e // a parse-level failure aborts the op
+                    lastErrKind = e.kind
+                }
+            }
+            return out("valid", lastErrKind.isEmpty(), "error", lastErrKind, "state", g.state(lastStream).toString())
+        }
+
+        "delivery.state" -> {
+            // ietf draft "## Delivery state machine" (# Object State Machines): drive ONE object
+            // through an ordered `events` list of signed delivery updates on a fresh WAL-backed
+            // Tracker; report the LAST event's outcome plus the object's final stage name. A
+            // rejected event (regress -> StageOutOfOrder) leaves the recorded stage unchanged.
+            // Graded against the independent, non-circular tools/delivery_state_oracle.py (F3).
+            val rawEvents = (inp["events"] as? List<*>) ?: emptyList<Any?>()
+            val tf = java.io.File.createTempFile("naalp-delivery-state-", ".wal")
+            return try {
+                val tr = Delivery.openTracker(tf.absolutePath)
+                try {
+                    var lastErrKind = ""
+                    var lastObj = ByteArray(0)
+                    for (re in rawEvents) {
+                        val emAny = re as? Map<*, *> ?: throw NaalpException("Malformed", "delivery.state: event is not an object")
+                        @Suppress("UNCHECKED_CAST")
+                        val em = emAny as Map<String, Any?>
+                        val obj = hx(em, "obj_hex")
+                        lastObj = obj
+                        when (str(em, "ev")) {
+                            "update" -> {
+                                lastErrKind = try {
+                                    tr.advance(obj, u64(em, "stage"), 0L)
+                                    ""
+                                } catch (e: NaalpException) {
+                                    e.kind
+                                }
+                            }
+                            else -> throw NaalpException("Malformed", "delivery.state: unknown event ${str(em, "ev")}")
+                        }
+                    }
+                    val (st, _) = tr.stage(lastObj)
+                    out("valid", lastErrKind.isEmpty(), "error", lastErrKind, "state", Delivery.stageName(st))
+                } finally {
+                    tr.close()
+                }
+            } finally {
+                tf.delete()
+            }
+        }
+
+        "approval.state" -> {
+            // ietf draft "## Approval state machine" (# Object State Machines): build ONE signed
+            // approval, then drive it through an ordered `events` list of consume attempts through the
+            // REAL composed choke point Approval.consumeApproval on a fresh single-use ledger; report
+            // the LAST event's {valid, error} plus the ledger length after it (the draft's "ledger left
+            // untouched by a rejected request", observable via Ledger.size()). Graded against the
+            // independent, non-circular tools/approval_state_oracle.py (F3). The approver key is a
+            // deterministic Ed25519 test key -- the signature is verified, not graded (bytes are not
+            // compared across ports for this op).
+            val amAny = inp["approval"] as? Map<*, *> ?: throw NaalpException("Malformed", "approval.state: missing approval object")
+            @Suppress("UNCHECKED_CAST")
+            val am = amAny as Map<String, Any?>
+            val a = Approval.ApprovalRecord(
+                hx(am, "approves_hex"), str(am, "approver"), u64(am, "grant"),
+                hx(am, "nonce_hex"), u64(am, "not_after"),
+            )
+            val seed = ByteArray(32) // deterministic all-zero test approver seed
+            val pk = ed25519PubFromSeed(seed)
+            val sig = Cose.ed25519Sign(seed, a.bytes())
+
+            val tf = java.io.File.createTempFile("naalp-approval-state-", ".wal")
+            return try {
+                val ledger = Approval.openLedger(tf.absolutePath)
+                try {
+                    val rawEvents = (inp["events"] as? List<*>) ?: emptyList<Any?>()
+                    var lastErrKind: String? = null
+                    for (re in rawEvents) {
+                        val emAny = re as? Map<*, *> ?: throw NaalpException("Malformed", "approval.state: event is not an object")
+                        @Suppress("UNCHECKED_CAST")
+                        val em = emAny as Map<String, Any?>
+                        when (str(em, "ev")) {
+                            "consume" -> {
+                                val presentCid = hx(em, "present_cid_hex")
+                                lastErrKind = try {
+                                    Approval.consumeApproval(
+                                        a, Cose.ALG_ED25519, pk, sig, presentCid,
+                                        u64(em, "pos_time"), u64(em, "required_effect"), ledger, str(em, "by")
+                                    )
+                                    null
+                                } catch (e: NaalpException) {
+                                    e.kind
+                                }
+                            }
+                            else -> throw NaalpException("Malformed", "approval.state: unknown event ${str(em, "ev")}")
+                        }
+                    }
+                    out("valid", lastErrKind == null, "error", lastErrKind ?: "", "ledger_len", ledger.size())
+                } finally {
+                    ledger.close()
+                }
+            } finally {
+                tf.delete()
+            }
+        }
+
         "transport.emit" ->
             return out("result", Records.transportEmit(str(inp, "transport"), boolVal(inp, "sensitive"), boolVal(inp, "require_peer_auth")))
 
@@ -284,6 +495,167 @@ private fun handle(op: String, inp: Map<String, Any?>): Map<String, Any?> {
             val ordRaw = (inp["order"] as? List<*>) ?: emptyList<Any?>()
             val order = ordRaw.map { Hex.decode(it as String) }
             return out("body_hex", Hex.encode(Graph.reconcileRecord(auths, order)))
+        }
+
+        "reconcile.state" -> {
+            // ietf draft "## Reconcile state machine" (# Object State Machines): drive the machine
+            // through ONE event (add-chain | linearize | verify) on fresh state and report
+            // {valid, error}. add-chain runs the draft's fixed verifyChain-then-observe pipeline (a
+            // `chain` that must independently pass Audit.verifyChain, plus an optional `extra`
+            // receipt fed only to observe — a chain array cannot itself carry a duplicate seq without
+            // independently tripping ChainBroken, so equivocation is exercised via the separate
+            // `extra` observation); linearize runs Federation.reconcile (which verifies the causal
+            // graph internally via Graph.verifyCausal); verify runs Federation.verifyReconcileOrder,
+            // which MUST recompute via Federation.reconcile (content-id tie-break), never a position
+            // tie-break. Graded against the independent, non-circular tools/reconcile_state_oracle.py
+            // (F3). The authority key is a deterministic all-zero-seed ML-DSA-65 test key (the
+            // Kotlin port's Audit.verifyChain/Auditor only support the ML-DSA raw-signature primitive)
+            // — the signature is verified, not graded (bytes are not compared across ports for this
+            // op). Audit.Auditor.observe RETURNS a ForkProof on equivocation rather than throwing; a
+            // non-null return is reported here as the Equivocation outcome.
+            val rcAlg = Cose.ALG_MLDSA65
+            val rcSeed = ByteArray(32) // deterministic all-zero test authority seed
+            val rcPk = Cose.mldsaKeygen("ML-DSA-65", rcSeed)
+
+            fun buildReceipt(rc: Any?): Audit.Receipt {
+                @Suppress("UNCHECKED_CAST")
+                val rm = rc as Map<String, Any?>
+                return Audit.Receipt(hx(rm, "prev_hex"), hx(rm, "obj_hex"), u64(rm, "seq"), u64(rm, "at"))
+            }
+
+            fun reconcileNodesFrom(m: Map<String, Any?>): List<Federation.CausalNode> {
+                val raw = (m["nodes"] as? List<*>) ?: emptyList<Any?>()
+                return raw.map { r ->
+                    @Suppress("UNCHECKED_CAST")
+                    val nm = r as Map<String, Any?>
+                    val id = hx(nm, "id_hex")
+                    val cr = nm["causes_hex"] as? List<*>
+                    val causes = cr?.map { Hex.decode(it as String) } ?: emptyList()
+                    Federation.CausalNode(id, causes)
+                }
+            }
+
+            when (str(inp, "event")) {
+                "add-chain" -> {
+                    val rawChain = (inp["chain"] as? List<*>) ?: emptyList<Any?>()
+                    val receipts = ArrayList<Audit.Receipt>()
+                    val sigs = ArrayList<ByteArray>()
+                    for (rc in rawChain) {
+                        val r = buildReceipt(rc)
+                        receipts.add(r)
+                        sigs.add(Cose.mldsaSign(rcAlg, rcSeed, r.bytes()))
+                    }
+                    if (inp["corrupt_sig_at"] != null) {
+                        val idx = intVal(inp, "corrupt_sig_at")
+                        val corrupted = sigs[idx].copyOf()
+                        corrupted[0] = (corrupted[0].toInt() xor 0xFF).toByte()
+                        sigs[idx] = corrupted
+                    }
+                    var lastErrKind: String? = try {
+                        Audit.verifyChain(receipts, sigs, rcAlg, rcPk)
+                        null
+                    } catch (e: NaalpException) {
+                        e.kind
+                    }
+                    if (lastErrKind == null) {
+                        val auditor = Audit.Auditor(rcAlg, rcPk, rcPk)
+                        for (i in receipts.indices) {
+                            try {
+                                val fp = auditor.observe(receipts[i], sigs[i])
+                                if (fp != null) {
+                                    lastErrKind = "Equivocation"
+                                    break
+                                }
+                            } catch (e: NaalpException) {
+                                lastErrKind = e.kind
+                                break
+                            }
+                        }
+                        if (lastErrKind == null) {
+                            val em = inp["extra"]
+                            if (em is Map<*, *>) {
+                                val er = buildReceipt(em)
+                                val esig = Cose.mldsaSign(rcAlg, rcSeed, er.bytes())
+                                try {
+                                    val fp = auditor.observe(er, esig)
+                                    if (fp != null) lastErrKind = "Equivocation"
+                                } catch (e: NaalpException) {
+                                    lastErrKind = e.kind
+                                }
+                            }
+                        }
+                    }
+                    return out("valid", lastErrKind == null, "error", lastErrKind ?: "")
+                }
+
+                "linearize" -> {
+                    val nodes = reconcileNodesFrom(inp)
+                    val lastErrKind = try {
+                        Federation.reconcile(nodes)
+                        null
+                    } catch (e: NaalpException) {
+                        e.kind
+                    }
+                    return out("valid", lastErrKind == null, "error", lastErrKind ?: "")
+                }
+
+                "verify" -> {
+                    val nodes = reconcileNodesFrom(inp)
+                    val rawOrder = (inp["claimed_order_hex"] as? List<*>) ?: emptyList<Any?>()
+                    val order = rawOrder.map { Hex.decode(it as String) }
+                    val rec = Federation.ReconcileRecord(emptyList(), order)
+                    val lastErrKind = try {
+                        Federation.verifyReconcileOrder(rec, nodes)
+                        null
+                    } catch (e: NaalpException) {
+                        e.kind
+                    }
+                    return out("valid", lastErrKind == null, "error", lastErrKind ?: "")
+                }
+
+                else -> throw NaalpException("Malformed", "reconcile.state: unknown event ${str(inp, "event")}")
+            }
+        }
+
+        // ---- opt-in LAMPS composite signature (alg -65537, design.md §4.2) ----
+        "composite.mprime" ->
+            return out("mprime_hex", Hex.encode(Cose.computeMprime(
+                "COMPSIG-MLDSA65-Ed25519-SHA512".toByteArray(Charsets.US_ASCII), ByteArray(0), hx(inp, "m_hex"))))
+
+        "composite.signerid" ->
+            return out("signer_id", Identity.compositeSignerId(intVal(inp, "mldsa_alg"), hx(inp, "mldsa_pubkey_hex"), hx(inp, "ed_pubkey_hex")))
+
+        "composite.sign" ->
+            return out("value_hex", Hex.encode(Cose.compositeSign(hx(inp, "mldsa_seed_hex"), hx(inp, "ed_seed_hex"), hx(inp, "tbs_hex"))))
+
+        "composite.verify" ->
+            return out("valid", Cose.compositeVerify(hx(inp, "mldsa_pubkey_hex"), hx(inp, "ed_pubkey_hex"), hx(inp, "m_hex"), hx(inp, "sig_hex")))
+
+        "error.name_for_code" -> {
+            // T3.3: the naalp-error registry table lookup (design.md §3.5). Grades the port's
+            // embedded 119-entry name<->code table per-code, plus the unknown-code (opaque) contract.
+            val (name, registered) = NaalpError.nameForCode(u64(inp, "code"))
+            return out("name", name, "registered", registered)
+        }
+
+        "error.encode" -> {
+            // T3.3: deterministic CBOR of a naalp-error body {1:code, 2:name, ?3:detail, ?4:subject}.
+            var subj: ByteArray? = null
+            val sh = inp["subject_hex"]
+            if (sh is String) subj = Hex.decode(sh)
+            val body = NaalpError.encode(u64(inp, "code"), str(inp, "name"), str(inp, "detail"), subj)
+            return out("body_hex", Hex.encode(body))
+        }
+
+        "error.decode" -> {
+            // T3.3: parse + dual-carriage validate a naalp-error body (registered code + wrong name
+            // -> Malformed; unknown code -> opaque accept).
+            return try {
+                val eo = NaalpError.decode(hx(inp, "body_hex"))
+                out("valid", true, "code", eo.code, "name", eo.name)
+            } catch (e: NaalpException) {
+                out("valid", false, "error", e.kind)
+            }
         }
 
         else -> return skipped("op not implemented: $op")

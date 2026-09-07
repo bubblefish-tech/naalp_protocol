@@ -2,7 +2,7 @@
 
 # N-AALP C# / .NET SDK
 
-The C# reference implementation of **N-AALP** (draft-bubblefish-naalp-00) — an
+The C# reference implementation of **N-AALP** (draft-bubblefish-naalp-01) — an
 application-layer object protocol for autonomous agents. NuGet package `Bubblefish.Naalp`,
 namespace `Naalp`, target `net8.0`. Every N-AALP object is a deterministically-encoded CBOR
 structure signed with COSE that carries, under one signature, its content identity, its signer, a
@@ -22,7 +22,7 @@ offline, over any transport.**
 
 Every construction is **graded byte-for-byte** against the shared conformance corpus
 (== Go == Rust == Python); the reference worked object is reproduced exactly by the CI byte-KAT
-(`test/WorkedExampleKat.cs`).
+(`test/WorkedExampleKatTest.cs`).
 
 ## What this SDK does NOT provide
 
@@ -49,7 +49,7 @@ Every construction is **graded byte-for-byte** against the shared conformance co
   - `Graph.cs` — causal verify + deterministic federation reconcile.
   - `Channels.cs` — the 20-channel / 65-kind table (`Lookup`, `CheckEffect`).
   - `Hex.cs`, `NaalpException.cs` — helpers.
-- `test/Bubblefish.Naalp.Tests.csproj` — `WorkedExampleKat` (byte-exact worked object),
+- `test/Bubblefish.Naalp.Tests.csproj` — `WorkedExampleKatTest` (byte-exact worked object),
   `PrimitivesSmoke` (standards-anchored primitives), xUnit.
 - `examples/SecureObject.cs` — a runnable build → sign → verify → tamper demo.
 
@@ -99,7 +99,7 @@ dotnet run -c Release --project impl/csharp/examples
 
 ## Run the tests
 
-The byte-KAT (`WorkedExampleKat`) reproduces the committed worked object
+The byte-KAT (`WorkedExampleKatTest`) reproduces the committed worked object
 (`vectors/worked/example.json`) byte-for-byte, including the full `signed_object_hex`;
 `PrimitivesSmoke` anchors the primitives to their standards vectors:
 

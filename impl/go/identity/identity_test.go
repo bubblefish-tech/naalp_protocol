@@ -23,6 +23,13 @@ type idCases struct {
 		PubkeyHex string `json:"pubkey_hex"`
 		SignerID  string `json:"signer_id"`
 	} `json:"signers"`
+	Composite struct {
+		Name        string `json:"name"`
+		MldsaAlg    int    `json:"mldsa_alg"`
+		MldsaPubHex string `json:"mldsa_pubkey_hex"`
+		EdPubHex    string `json:"ed_pubkey_hex"`
+		SignerID    string `json:"signer_id"`
+	} `json:"composite"`
 	NFC struct {
 		NFCHex string `json:"nfc_utf8_hex"`
 		NFDHex string `json:"nfd_utf8_hex"`
@@ -66,6 +73,31 @@ func TestSignerIDMatchesOracle(t *testing.T) {
 		if got != s.SignerID {
 			t.Errorf("%s: signer id\n got %s\nwant %s", s.Name, got, s.SignerID)
 		}
+	}
+}
+
+// TestCompositeSignerIDMatchesOracle grades the composite signer-id (derived from BOTH keys)
+// against the independent oracle (design.md §5.1; F3), and confirms leg-stripping changes the
+// id: the composite id differs from the pure ML-DSA-65 id over the same ML-DSA key.
+func TestCompositeSignerIDMatchesOracle(t *testing.T) {
+	c := load(t)
+	comp := c.Composite
+	if comp.SignerID == "" {
+		t.Fatal("no composite signer-id case")
+	}
+	got, err := CompositeSignerID(comp.MldsaAlg, mh(t, comp.MldsaPubHex), mh(t, comp.EdPubHex))
+	if err != nil {
+		t.Fatalf("CompositeSignerID: %v", err)
+	}
+	if got != comp.SignerID {
+		t.Errorf("composite signer id\n got %s\nwant %s", got, comp.SignerID)
+	}
+	pureID, err := SignerID(comp.MldsaAlg, mh(t, comp.MldsaPubHex))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got == pureID {
+		t.Fatal("composite id equals the pure ML-DSA id — leg-stripping would not change it")
 	}
 }
 
@@ -144,7 +176,7 @@ func TestRevocation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := VerifyRevocation(rec, cose.MLDSA65Verifier{PK: pk}, pk.Bytes(), sig); err != nil {
+	if err := VerifyRevocation(rec, cose.MLDSA65Verifier{PK: pk}, pk.Bytes(), sig, nil); err != nil {
 		t.Fatalf("valid revocation rejected: %v", err)
 	}
 	if !RevokedAt(rec, 101) {

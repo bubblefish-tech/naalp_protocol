@@ -21,7 +21,7 @@
     <Version>0.1.0</Version>
     <Authors>Shawn Sammartano</Authors>
     <Company>BubbleFish Technologies, Inc.</Company>
-    <Description>Reference SDK for N-AALP (Native Agentic Application Layer Protocol), draft-bubblefish-naalp-00: the full signed object envelope (deterministic CBOR + COSE_Sign1 + post-quantum ML-DSA-65/-87) plus the byte-level primitives, verifiable offline over any transport.</Description>
+    <Description>Reference SDK for N-AALP (Native Agentic Application Layer Protocol), draft-bubblefish-naalp-01: the full signed object envelope (deterministic CBOR + COSE_Sign1 + post-quantum ML-DSA-65/-87) plus the byte-level primitives, verifiable offline over any transport.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/bubblefish-tech/naalp_protocol</PackageProjectUrl>
     <RepositoryUrl>https://github.com/bubblefish-tech/naalp_protocol.git</RepositoryUrl>
@@ -36,12 +36,14 @@
     <None Include="QUICKSTART.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
-  <!-- The library compiles only the SDK sources under impl/csharp; the tests and examples are
-       separate projects (test/Bubblefish.Naalp.Tests.csproj, examples/) and must not be pulled
-       into the library assembly by the SDK's default **/*.cs globbing. -->
+  <!-- The library compiles only the SDK sources under impl/csharp; the tests, examples, and the
+       worked-example emitter are separate projects (test/Bubblefish.Naalp.Tests.csproj, examples/,
+       tools/WorkedExampleEmit/) and must not be pulled into the library assembly by the SDK's
+       default **/*.cs globbing. -->
   <ItemGroup>
     <Compile Remove="test/**/*.cs" />
     <Compile Remove="examples/**/*.cs" />
+    <Compile Remove="tools/**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>

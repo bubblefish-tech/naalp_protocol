@@ -102,6 +102,119 @@ namespace Naalp
             return new byte[][] { p.V, pl.V, s.V };
         }
 
+        // --- COSE_Sign (tag 98) multi-signature support: the §5.2 Rotation object co-signature ---
+
+        public const long TAG_SIGN = 98;
+
+        /// <summary>One COSE_Signature protected header: {1: alg} (RFC 9052 §4).</summary>
+        public static byte[] LegProtected(int alg)
+        {
+            return Cbor.Encode(new Cbor.M(new List<Cbor.Pair>
+            {
+                new Cbor.Pair(new Cbor.U(1), new Cbor.N(alg)),
+            }));
+        }
+
+        /// <summary>
+        /// The per-signer COSE_Signature signing input for a COSE_Sign (RFC 9052 §4.4):
+        /// det-CBOR(["Signature", body_protected, sign_protected, external_aad(empty), payload]). Note
+        /// the five-element "Signature" structure (with the per-leg sign_protected) vs the four-element
+        /// "Signature1" of a COSE_Sign1.
+        /// </summary>
+        public static byte[] SignatureToBeSigned(byte[] bodyProt, int signerAlg, byte[] payload)
+        {
+            return Cbor.Encode(new Cbor.A(new List<Cbor.Value>
+            {
+                new Cbor.T("Signature"),
+                new Cbor.B(bodyProt),
+                new Cbor.B(LegProtected(signerAlg)),
+                new Cbor.B(Array.Empty<byte>()),
+                new Cbor.B(payload),
+            }));
+        }
+
+        /// <summary>Build one COSE_Signature leg: [leg_protected_bytes, signature_bytes].</summary>
+        public static byte[][] SignatureLeg(byte[] bodyProt, int alg, byte[] seed, byte[] payload)
+        {
+            byte[] sprot = LegProtected(alg);
+            byte[] sig = MldsaSign(alg, seed, SignatureToBeSigned(bodyProt, alg, payload));
+            return new byte[][] { sprot, sig };
+        }
+
+        /// <summary>The tagged COSE_Sign object: 98([body_prot, {}, payload, [[sprot, {}, sig], ...]]).</summary>
+        public static byte[] AssembleSignRaw(byte[] bodyProt, byte[] payload, List<byte[][]> legs)
+        {
+            var sigArr = new List<Cbor.Value>();
+            foreach (byte[][] leg in legs)
+            {
+                sigArr.Add(new Cbor.A(new List<Cbor.Value>
+                {
+                    new Cbor.B(leg[0]),
+                    new Cbor.M(new List<Cbor.Pair>()),
+                    new Cbor.B(leg[1]),
+                }));
+            }
+            return Cbor.Encode(new Cbor.Tag(TAG_SIGN, new Cbor.A(new List<Cbor.Value>
+            {
+                new Cbor.B(bodyProt),
+                new Cbor.M(new List<Cbor.Pair>()),
+                new Cbor.B(payload),
+                new Cbor.A(sigArr),
+            })));
+        }
+
+        /// <summary>Recover (body_prot, payload, legs[(sprot, sig)]) from a tagged COSE_Sign object.</summary>
+        public static (byte[] BodyProt, byte[] Payload, List<byte[][]> Legs) ParseSignRaw(byte[] obj)
+        {
+            Cbor.Value v = Cbor.Decode(obj);
+            if (!(v is Cbor.Tag tag) || tag.N != TAG_SIGN || !(tag.Content is Cbor.A arr))
+            {
+                throw new NaalpException("Malformed", "not a tagged COSE_Sign");
+            }
+            List<Cbor.Value> items = arr.Items;
+            if (items.Count != 4 || !(items[0] is Cbor.B bp) || !(items[2] is Cbor.B pl) || !(items[3] is Cbor.A sigs))
+            {
+                throw new NaalpException("Malformed", "malformed COSE_Sign array");
+            }
+            var legs = new List<byte[][]>();
+            foreach (Cbor.Value sv in sigs.Items)
+            {
+                if (!(sv is Cbor.A e) || e.Items.Count != 3 || !(e.Items[0] is Cbor.B sprot) || !(e.Items[2] is Cbor.B lsig))
+                {
+                    throw new NaalpException("Malformed", "malformed COSE_Signature leg");
+                }
+                legs.Add(new byte[][] { sprot.V, lsig.V });
+            }
+            return (bp.V, pl.V, legs);
+        }
+
+        /// <summary>Extract the alg (label 1) value from a serialized leg protected header {1: alg}.</summary>
+        public static int AlgFromProtected(byte[] prot)
+        {
+            // §3.1.1 (R5): reject the redundant 0x41A0 encoding of an empty protected header (a
+            // bstr wrapping an empty map; its unwrapped content is the single byte 0xA0) as
+            // NonCanonical, before interpreting the header — the empty protected header is pinned
+            // to 0x40.
+            if (prot.Length == 1 && prot[0] == 0xA0)
+            {
+                throw new NaalpException("NonCanonical",
+                    "empty protected header must be 0x40, not 0x41A0 (§3.1.1, R5)");
+            }
+            Cbor.Value v = Cbor.Decode(prot);
+            if (!(v is Cbor.M m))
+            {
+                throw new NaalpException("Malformed", "protected header not a map");
+            }
+            foreach (Cbor.Pair p in m.Pairs)
+            {
+                if (p.K is Cbor.U ku && ku.V == 1 && p.Val is Cbor.N nv)
+                {
+                    return (int)nv.V;
+                }
+            }
+            throw new NaalpException("Malformed", "no alg in protected header");
+        }
+
         // --- ML-DSA (FIPS 204) via BouncyCastle ---
 
         private static MLDsaParameters MldsaParams(int alg)
@@ -180,6 +293,109 @@ namespace Naalp
             signer.Init(false, pub);
             signer.BlockUpdate(msg, 0, msg.Length);
             return signer.VerifySignature(sig);
+        }
+
+        /// <summary>Derive the 32-byte Ed25519 public key from a 32-byte seed (RFC 8032 secret key
+        /// clamping + scalar-basepoint multiplication, via BouncyCastle's key-pair derivation).</summary>
+        public static byte[] Ed25519PublicKeyFromSeed(byte[] seed)
+        {
+            if (seed.Length != 32)
+            {
+                throw new NaalpException("Malformed", "ed25519 secret key must be a 32-byte seed");
+            }
+            var priv = new Ed25519PrivateKeyParameters(seed, 0);
+            return priv.GeneratePublicKey().GetEncoded();
+        }
+
+        // --- LAMPS opt-in composite signature (alg -65537, design.md §4.2) ---
+
+        public const int ALG_COMPOSITE_65_ED25519 = -65537; // COMPSIG-MLDSA65-Ed25519-SHA512
+        public const int ALG_COMPOSITE_44_ED25519 = -65538; // edge; RESERVED, not implemented
+        private static readonly byte[] COMPOSITE_PREFIX =
+            System.Text.Encoding.ASCII.GetBytes("CompositeAlgorithmSignatures2025");
+        private static readonly byte[] COMPOSITE_LABEL_MLDSA65_ED25519 =
+            System.Text.Encoding.ASCII.GetBytes("COMPSIG-MLDSA65-Ed25519-SHA512");
+        private const int MLDSA65_SIG_SIZE = 3309;   // FIPS 204 ML-DSA-65 signature size
+        public const int MLDSA65_PUB_SIZE = 1952;    // FIPS 204 ML-DSA-65 pubkey size (split point)
+
+        /// <summary>
+        /// The LAMPS composite message representative M' = Prefix || Label || len(ctx) || ctx ||
+        /// SHA-512(M) (§4.2). len(ctx) is a single length octet; the N-AALP composite context is
+        /// empty, so the octet is 0x00. Both legs sign this same M'.
+        /// </summary>
+        public static byte[] ComputeMprime(byte[] label, byte[] ctx, byte[] m)
+        {
+            if (ctx.Length > 255)
+            {
+                throw new NaalpException("Malformed", "composite context exceeds one length octet");
+            }
+            byte[] h;
+            using (var sha = System.Security.Cryptography.SHA512.Create())
+            {
+                h = sha.ComputeHash(m);
+            }
+            byte[] outp = new byte[COMPOSITE_PREFIX.Length + label.Length + 1 + ctx.Length + h.Length];
+            int o = 0;
+            Array.Copy(COMPOSITE_PREFIX, 0, outp, o, COMPOSITE_PREFIX.Length);
+            o += COMPOSITE_PREFIX.Length;
+            Array.Copy(label, 0, outp, o, label.Length);
+            o += label.Length;
+            outp[o++] = (byte)ctx.Length;               // len(ctx) as a single length octet
+            Array.Copy(ctx, 0, outp, o, ctx.Length);
+            o += ctx.Length;
+            Array.Copy(h, 0, outp, o, h.Length);
+            return outp;
+        }
+
+        /// <summary>
+        /// The LAMPS composite signature value over the COSE ToBeSigned <paramref name="tbs"/>:
+        /// mldsaSig || tradSig (ML-DSA-65 first, raw concatenation; §4.2). The ML-DSA leg is
+        /// deterministic (rnd=0) with context = the suite Label octets (ParametersWithContext); the
+        /// Ed25519 leg signs M' with no context.
+        /// </summary>
+        public static byte[] CompositeSign(byte[] mldsaSeed, byte[] edSeed, byte[] tbs)
+        {
+            if (mldsaSeed.Length != 32)
+            {
+                throw new NaalpException("Malformed", "ML-DSA seed must be 32 bytes");
+            }
+            byte[] mprime = ComputeMprime(COMPOSITE_LABEL_MLDSA65_ED25519, Array.Empty<byte>(), tbs);
+            MLDsaPrivateKeyParameters sk = MLDsaPrivateKeyParameters.FromSeed(MLDsaParameters.ml_dsa_65, mldsaSeed);
+            var signer = new MLDsaSigner(MLDsaParameters.ml_dsa_65, deterministic: true);
+            signer.Init(true, new ParametersWithContext(sk, COMPOSITE_LABEL_MLDSA65_ED25519));
+            signer.BlockUpdate(mprime, 0, mprime.Length);
+            byte[] mldsaSig = signer.GenerateSignature();
+            byte[] tradSig = Ed25519Sign(edSeed, mprime);
+            byte[] outp = new byte[mldsaSig.Length + tradSig.Length];
+            Array.Copy(mldsaSig, 0, outp, 0, mldsaSig.Length);   // ML-DSA first (LAMPS order)
+            Array.Copy(tradSig, 0, outp, mldsaSig.Length, tradSig.Length);
+            return outp;
+        }
+
+        /// <summary>
+        /// Valid IFF BOTH the ML-DSA-65 leg (context = Label) and the Ed25519 leg (no context)
+        /// validate over M'. A value of the wrong length is malformed and rejected. A stripped or
+        /// re-interpreted lone leg has no valid composite because M' binds both components
+        /// (RFC 9955; §4.2/§4.5).
+        /// </summary>
+        public static bool CompositeVerify(byte[] mldsaPk, byte[] edPk, byte[] m, byte[] sig)
+        {
+            if (sig.Length != MLDSA65_SIG_SIZE + 64)
+            {
+                return false;
+            }
+            byte[] mprime = ComputeMprime(COMPOSITE_LABEL_MLDSA65_ED25519, Array.Empty<byte>(), m);
+            MLDsaPublicKeyParameters pub = MLDsaPublicKeyParameters.FromEncoding(MLDsaParameters.ml_dsa_65, mldsaPk);
+            var signer = new MLDsaSigner(MLDsaParameters.ml_dsa_65, deterministic: true);
+            signer.Init(false, new ParametersWithContext(pub, COMPOSITE_LABEL_MLDSA65_ED25519));
+            signer.BlockUpdate(mprime, 0, mprime.Length);
+            byte[] mldsaSigPart = new byte[MLDSA65_SIG_SIZE];
+            Array.Copy(sig, 0, mldsaSigPart, 0, MLDSA65_SIG_SIZE);
+            bool mldsaOk = signer.VerifySignature(mldsaSigPart);
+            byte[] edSigPart = new byte[sig.Length - MLDSA65_SIG_SIZE];
+            Array.Copy(sig, MLDSA65_SIG_SIZE, edSigPart, 0, edSigPart.Length);
+            bool edOk = Ed25519Verify(edPk, mprime, edSigPart);
+            return mldsaOk && edOk;
         }
 
         /// <summary>Produce a deterministic tagged COSE_Sign1 object over (protected, payload).</summary>

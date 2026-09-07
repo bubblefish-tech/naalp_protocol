@@ -1,0 +1,1927 @@
+; draft-bubblefish-naalp-01 -- Native Agentic Application Layer
+; Protocol: the complete CDDL wire-format module (RFC 8610). The copy
+; in Appendix A of the Internet-Draft is normative; the copy
+; maintained with the reference implementation is a byte-identical
+; mirror, machine-validated for well-formedness and against the
+; conformance vector corpus.
+;
+; This module is complete: the object body, the effect, profile, and
+; channel vocabularies, the COSE_Sign1 / COSE_Sign wrapper (RFC 9052
+; Section 4), the protected header, the identity records, the safety
+; label, the approval and consume records, the receipt and ForkProof,
+; the delivery update, the stream objects, the carriage body, the
+; channel-registry note, the federated reconcile record, and the
+; collaboration/rooms membership records (room op + principal
+; binding) -- all reachable from the `naalp-artifact` root.
+;
+; All instances are deterministic CBOR per RFC 8949 Section 4.2.1
+; (shortest heads, map keys ascending by encoded bytes, no indefinite
+; lengths, no duplicate keys). A non-canonical encoding of any
+; production here is rejected.
+
+; ---- Collected root -----------------------------------------------
+; The set of top-level N-AALP artifacts this module defines, as a
+; single reachable root so a CDDL tool sees no unreferenced rule.
+; Each concrete instance is validated against the specific production
+; for its kind (the conformance harness targets the rule per
+; construction), not against this union; the union exists only for
+; reachability.
+naalp-artifact = naalp-object
+  / naalp-signed-object / naalp-protected-header
+  / naalp-rotation / naalp-revocation / naalp-foreign-link
+  / naalp-safety-label
+  / naalp-approval / naalp-approval-held / naalp-consume-entry
+  / naalp-consume-receipt
+  / naalp-receipt / naalp-fork-proof / naalp-delivery-update
+  / naalp-stream-open / naalp-stream-commit / naalp-stream-checkpoint
+  / naalp-carriage-body / naalp-reconcile
+  / naalp-room-op / naalp-principal-binding
+  / naalp-delegation-grant
+  / recheck-procedure / signer-counter
+  / naalp-mcp-tool-call / naalp-mcp-annotations
+  / naalp-mcp-call-binding / mcp-hint
+  / naalp-flow-open / naalp-continuation / naalp-flow-checkpoint
+  / naalp-flow-commit
+  / naalp-description / naalp-directory / naalp-description-import
+  / naalp-name-binding / naalp-task-transition
+  / naalp-negotiation-offer / naalp-negotiation-counter
+  / naalp-negotiation-accept
+  / negotiation-role
+  / naalp-risk-label / naalp-labeled-object / naalp-trust-ref
+  / naalp-payment-import / naalp-payment-charge-binding
+  / naalp-payment-format
+  / naalp-ui-event / ui-event-kind
+  / naalp-gateway-decision / gw-decision
+  / naalp-refusal / refusal-outcome
+  / naalp-error / naalp-error-code
+  / trust-decision-input-class
+  / naalp-decision-record / ordering-basis
+  / naalp-checkpoint-root / naalp-witness-cosign / naalp-inclusion-proof
+  / naalp-egress-attestation / egress-binding
+  / naalp-foreign-profile-pin
+  / naalp-hazard-claim / naalp-hazard-authorization
+  / hazard-class / hazard-envelope / spatial-bounds / hazard-window
+
+; Decoder resource bounds -- CDDL cannot express element counts,
+; nesting depth, or octet size (RFC 8610 restricts none of these), so
+; these are MUST-level limits every decoder enforces fail-closed, not
+; this schema: object octet size <= 1 MiB (TooLarge, on raw bytes
+; before parse); |causes| (field 8) <= 1024 (TooManyCauses); |ext|
+; (11) and |cext| (12) <= 64 each (TooManyExtensions); CBOR nesting
+; depth <= 16 with the outermost item at depth 1 (DepthExceeded);
+; stream chunk count <= 2^20 (TooManyChunks, native streaming below).
+; The maxima are wire constants, projected identically into all ten
+; ports so one port cannot accept what another refuses. The object
+; body -- the map that is signed as the COSE_Sign1 payload.
+naalp-object = {
+  1 : bstr,
+  ; id -- content id: multihash(0x20, SHA-384(body-without-1))
+  2 : uint,
+  ; kind -- object kind code (per channel surface)
+  3 : channel-id,
+  ; channel -- N-PAMP channel id
+  4 : uint,
+  ; tier -- channel capability tier (0 = baseline)
+  5 : bstr,
+  ; signer -- self-certifying signer id
+  6 : uint,
+  ; created -- signer's claimed creation time, epoch ms (advisory)
+  7 : effect,
+  ; effect -- closed effect value
+  8 : [* bstr],
+  ; causes -- content ids of causing objects; may be empty
+  9 : profile,
+  ; profile -- crypto profile
+  10 : any,
+  ; body -- kind-specific body, validated by the channel surface
+  ? 11 : { * uint => any },
+  ; ext -- non-critical extensions; unknown keys ignored
+  ? 12 : { * uint => any },
+  ; cext -- critical extensions; any unknown key => reject
+  ? 13 : tstr,
+  ; audience -- endpoint/channel-scope id the object is bound to.
+  ; OMITTED when empty -- a no-audience object encodes byte-
+  ; identically to a draft-00 object. MANDATORY for consume-once
+  ; kinds (enforced by channel-surface validation, not this
+  ; cardinality). A verifier rejects an object whose audience is not
+  ; itself: WrongAudience. This is object-map FIELD 13 (a top-level
+  ; envelope field) -- the genuine draft-01 envelope addition that
+  ; anchors naalp-version 2. DISTINCT namespace from ext/cext KEY 13
+  ; (recheck) below, which is a key INSIDE the field-11/12 maps, not
+  ; a top-level object field.
+  ? 14 : uint,
+  ; suite -- signed suite declaration: PRESENT iff the object's alg
+  ; is the composite id -65537; ABSENT (byte-identical to a pure
+  ; object) for a pure ML-DSA object. Value 1 = COMPSIG-MLDSA65-
+  ; Ed25519-SHA512. Top-level object FIELD 14 -- DISTINCT namespace
+  ; from ext key 14 (signer-counter) INSIDE the field-11/12 maps
+  ; below.
+  ; The ext (11) / cext (12) extension-KEY namespace is a single
+  ; registry (RFC Required / FCFS) so two implementers assigning keys
+  ; cannot COLLIDE -- a critical-ext collision is a denial; the
+  ; registry_drift gate asserts key uniqueness + agreement with the
+  ; per-capability registries. The currently-registered keys are 1
+  ; safety-label (ext), 13 recheck (ext/cext), 14 signer-counter
+  ; (ext), 15 producing-boundary (ext), 16 naalp-hazard-claim
+  ; (cext): ext/cext key 13 = recheck: it
+  ; names the body claim's re-check procedure by id
+  ; (recheck-procedure below). In ext (11) it is may-ignore (an
+  ; unknown id ignored); in cext (12) it is must-understand (an
+  ; unknown id => UnknownCriticalExt, the same rule).
+  ; ext key 14 = signer-counter: an OPTIONAL forward-only per-signer
+  ; position (signer-counter below). It rides the NON-CRITICAL ext
+  ; map (11)
+  ; ONLY -- a detection aid, not a verification gate -- so it is
+  ; may-ignore; placing it in cext (12) is an unrecognized critical
+  ; key => UnknownCriticalExt (the same rule). It is covered by the
+  ; SIGNER's own COSE_Sign1 signature (ext is part of the signed
+  ; body). Detection, not prevention (# Security Considerations). ext
+  ; key 15 = producing-boundary: an OPTIONAL per-object disclosure
+  ; (naalp-producing-boundary below). of the trust boundary that
+  ; emitted the object and whether that boundary OBSERVED the event
+  ; first-hand or RELAYED a report of it. It rides the NON-CRITICAL
+  ; ext map (11) ONLY -- a disclosure, not a verification gate -- so
+  ; it is may-ignore (a verifier that does not understand it, or
+  ; reads a malformed value, ignores the entry and the object still
+  ; verifies); placing it in cext (12) is an unrecognized critical
+  ; key => UnknownCriticalExt (the same rule). It is covered by the
+  ; SIGNER's own COSE_Sign1 signature (ext is part of the signed
+  ; body), so it is SELF-ASSERTED; it establishes record-order /
+  ; observational domain, NOT cross-boundary event precedence (#
+  ; Security Considerations).
+  ; cext key 16 = naalp-hazard-claim: an OPTIONAL critical
+  ; must-understand physical-hazard claim (naalp-hazard-claim below) --
+  ; the hazard dimension orthogonal to effect (physical danger, not
+  ; data reversibility). It rides the CRITICAL cext map (12) ONLY: a
+  ; safety gate, so a verifier that has not implemented Component F
+  ; rejects the WHOLE object (UnknownCriticalExt) rather than letting a
+  ; hazardous action through unchecked -- the fail-closed direction,
+  ; the OPPOSITE of producing-boundary's may-ignore ext placement. It
+  ; is covered by the SIGNER's own COSE_Sign1 signature (cext is part
+  ; of the signed body).
+}
+
+; Closed effect vocabulary, aligned 1:1 with the N-PAMP Bridge
+; SafetyLabel. An unrecognized effect is treated as destructive,
+; never fail-open.
+effect = &(
+  read_only:            0,
+  idempotent_write:     1,
+  non_idempotent_write: 2,
+  destructive:          3,
+)
+
+; Crypto profiles -- one wire, per-profile row.
+profile = &(
+  public:     1,
+  enterprise: 2,
+  sovereign:  3,
+)
+
+; N-PAMP channel ids 0x0000..0x0013 -- the twenty channels.
+channel-id = 0..19
+
+; ---- COSE signing wrapper (RFC 9052) ------------------------------
+; On the wire, an N-AALP object is a tagged COSE structure whose
+; payload is the deterministic-CBOR `naalp-object` body above. A
+; single signature uses COSE_Sign1 (tag 18) -- either a pure ML-DSA
+; signature (per profile) or the opt-in classical-bridge signature: a
+; single COSE_Sign1 under the private-use composite alg id -65537
+; whose signature value is the IETF LAMPS composite mldsaSig(3309) ||
+; tradSig(64). COSE_Sign (tag 98, multiple signatures) carries two
+; roles: the legacy two-signature Ed25519+ML-DSA hybrid (OPTIONAL;
+; not required by the Standard profile), and the Rotation object
+; co-signature (channel 3 / kind 0; old-key then new-key legs, both
+; required); a channel-3/kind-0 object MUST be tag 98, and a tag-18
+; single-signature rotation is rejected RotationUnauthorized. Signing
+; is the FIPS 204 deterministic variant (rnd = 0) so two
+; implementations produce byte-identical signatures.
+;
+
+naalp-signed-object = COSE_Sign1_Tagged / COSE_Sign_Tagged
+
+COSE_Sign1_Tagged = #6.18(COSE_Sign1)
+COSE_Sign1 = [
+  protected   : bstr,
+  ; serialized protected header {1 => cose-alg}; empty => zero-length
+  ; bstr 0x40 (reject the 0x41A0 bstr-wrapped-empty-map form)
+  unprotected : cose-header,
+  payload     : bstr,
+  ; the deterministic-CBOR naalp-object body (the signed payload)
+  signature   : bstr,
+]
+
+COSE_Sign_Tagged = #6.98(COSE_Sign)
+; optional hybrid (Ed25519 + ML-DSA)
+COSE_Sign = [
+  protected   : bstr,
+  ; body protected header: empty for the legacy hybrid; for a
+  ; Rotation object (channel 3/kind 0) the enriched naalp header {1:
+  ; newKeyAlg, "naalp": {...}}
+  unprotected : cose-header,
+  payload     : bstr,
+  signatures  : [+ COSE_Signature],
+]
+COSE_Signature = [
+  protected   : bstr,
+  ; serialized per-signer header {1 => cose-alg}
+  unprotected : cose-header,
+  signature   : bstr,
+]
+
+cose-header = { * (int / tstr) => any }
+
+; COSE algorithm ids. ML-DSA from RFC 9964; Ed25519 from RFC 9864.
+; SLH-DSA (FIPS 205) is reserved, addable with no envelope change
+; once its COSE code point is assigned.
+cose-alg = &(
+  ml-dsa-44: -48,
+  ; NIST level 2 -- optional edge/light tier only, never a
+  ; Public/Enterprise/Sovereign default
+  ml-dsa-65: -49,
+  ; NIST level 3 -- Public / Enterprise default (MTI)
+  ml-dsa-87: -50,
+  ; NIST level 5 -- Sovereign default / mandate
+  ed25519:   -19,
+  ; classical, opt-in composite leg only
+  compsig-mldsa65-ed25519: -65537,
+  ; opt-in LAMPS composite (Public/Enterprise) -- COSE private-use,
+  ; N-AALP provisional
+  compsig-mldsa44-ed25519: -65538,
+  ; edge composite suite -- RESERVED (registered, not implemented
+  ; this wave)
+)
+
+; ---- object envelope protected header -----------------------------
+; A COSE_Sign1 over an N-AALP object uses this protected header: the
+; COSE `alg` plus a pre-parse routing copy of the signer, profile,
+; and naalp-version, carried under a text-string label ("naalp"). A
+; tstr label cannot collide with any integer-labeled standard COSE
+; header parameter (RFC 9052 Section 3.1). A verifier MUST reject an
+; object whose header signer/profile copies disagree with the body's
+; field 5 / field 9 (HeaderBodyMismatch). An empty protected header
+; is a zero-length bstr (RFC 9052 Section 3); the N-AALP object
+; header is never empty (it always carries alg + "naalp"). Per this
+; disposition, the redundant 0x41A0 encoding of an empty protected
+; header (a bstr wrapping an empty map) MUST be rejected as
+; NonCanonical, at every protected-header parse site, before the
+; header is interpreted.
+naalp-protected-header = {
+  1 : cose-alg,
+  ; COSE algorithm id
+  "naalp" : naalp-header-meta,
+}
+naalp-header-meta = {
+  1 : bstr,
+  ; signer -- copy of object body field 5
+  2 : profile,
+  ; profile -- copy of object body field 9
+  3 : uint,
+  ; naalp-version (draft-01: 2; draft-00 was 1 -- anchored by the
+  ; audience envelope field)
+}
+
+; ---- identity + key lifecycle -------------------------------------
+; The signer id (envelope field 5) is a self-certifying multibase
+; string, identical in form to the N-PAMP PeerHandle: signer =
+; multibase(base32, multihash(0x12, SHA-256(multicodec(mc, pubkey))))
+; mc is a multiformats key-type code: 0xed (ed25519-pub), 0x1211
+; (mldsa-65-pub), 0x1212 (mldsa-87-pub) -- all draft status; 0x12
+; (sha2-256) is permanent. base32 is RFC 4648 lowercase without
+; padding (multibase prefix "b"). A verifier recomputes the id from
+; the key and rejects a mismatch (SignerMismatch); no CA.
+;
+; Identity-channel (0x0003) lifecycle record bodies (carried in
+; envelope field 10 by the channel surface):
+naalp-rotation = {
+; co-signed by BOTH the old and new key
+  1 : tstr,
+  ; old -- prior signer id
+  2 : tstr,
+  ; new -- successor signer id
+  3 : uint,
+  ; not_before (epoch ms)
+}
+naalp-revocation = {
+; signed by the key it revokes (or a recovery key)
+  1 : tstr,
+  ; key -- the signer id being revoked
+  2 : uint,
+  ; not_after (epoch ms)
+}
+naalp-foreign-link = {
+; cross-signed by the FOREIGN identity's key
+  1 : tstr,
+  ; controls -- the N-AALP signer id
+  2 : tstr,
+  ; foreign_id -- foreign identifier; MUST be NFC (else NonNFC)
+  3 : uint,
+  ; not_after (epoch ms)
+}
+
+; ---- effect authorization + safety label --------------------------
+; The effect (object body field 7) is the closed four-value set
+; defined above
+; (read_only/idempotent_write/non_idempotent_write/destructive),
+; aligned 1:1 with the N-PAMP Bridge SafetyLabel u8 (NPAMP draft-01
+; 10_bridge_framework Section 7): 0x00..0x03, an identity map, so
+; carriage over the Bridge is loss-free. The values form a LATTICE
+; with destructive at the top.
+;
+; The effect is an AUTHORIZATION INPUT, not a hint -- closing the gap
+; N-PAMP names and leaves open ("describes intent and does not
+; replace authorization"). An endpoint grants a maximum effect (a
+; capability) to an AUTHENTICATED signer id, and an object is
+; authorized iff effect <= granted (the lattice); otherwise it is
+; denied (EffectNotAuthorized). An effect value the evaluator does
+; not recognize is treated as destructive and MUST NOT fail open. No
+; layer authorizes from transport metadata, a foreign header, or a
+; client-supplied name (UnauthenticatedPrincipal). This is endpoint
+; policy, not a wire production: the wire carries only the effect
+; value (field 7).
+;
+; The OPTIONAL safety label is a signed, non-critical ext entry under
+; ext key 1 (object body field 11). It is attributable to the
+; object's signer and auditable; it is an ACCOUNTABLE CLAIM, NOT a
+; guarantee that the content is safe.
+naalp-safety-label = {
+; ext[1]
+  1 : tstr,
+  ; risk -- an accountable risk claim (e.g. "elevated")
+  2 : tstr,
+  ; scope -- what the object affects (e.g. "billing-records")
+}
+
+; ---- approval + single-use consume ledger -------------------------
+; An Approval binds, UNDER SIGNATURE, the content id of the exact
+; canonical argument object it approves. Because the args are named
+; by content id, mutating any argument changes that id and the
+; approval no longer matches (ApprovalMismatch). The approval is not
+; valid across sessions/contexts (it carries a nonce) nor after
+; not_after (ApprovalExpired), and once consumed it is dead. These
+; record bodies are signed with the crypto over deterministic CBOR;
+; wrapping them as Governance-channel (0x0004) objects.
+naalp-approval = {
+  1 : bstr,
+  ; approves -- content id of the exact args object
+  2 : tstr,
+  ; approver -- approver signer id
+  3 : effect,
+  ; grant -- the granted effect class
+  4 : bstr,
+  ; nonce -- anti-replay nonce
+  5 : uint,
+  ; not_after -- expiry, epoch ms
+  ? 6 : tstr,
+  ; audience -- OPTIONAL valid-context; field omitted = unrestricted
+  ; by the issuer's explicit choice; when present, a relying party
+  ; checks it at use and rejects AudienceMismatch on mismatch. An
+  ; empty string is not a distinct value -- omit field 6 to mean
+  ; absent.
+}
+; A held outcome -- approval required but not yet granted -- is a
+; DISTINCT signed non-success result, never a silent success or
+; denial.
+naalp-approval-held = {
+  1 : bstr,
+  ; approves -- content id of the args whose approval is pending
+  2 : tstr,
+  ; reason -- accountable explanation
+}
+; PARTY-VISIBLE COARSE REFUSAL. A refusal returned to the
+; authenticated party carries ONLY a single value from a closed
+; vocabulary and the content id of the full signed record -- a
+; reference, not the reason. Every discriminating detail lives only
+; in that full signed record (a naalp-approval-held, a
+; naalp-gateway-decision, or an audit event), resolvable by a party
+; authorized to read it, so repeated refusals cannot serve an
+; adaptive party as an oracle. A party-visible refusal that carries
+; discriminating detail, or omits the record content id, is a
+; RefusalDetailLeak. An outcome outside the closed set is
+; UnknownRefusalOutcome.
+refusal-outcome = &(
+  denied:       0,
+  ; the action is refused
+  held:         1,
+  ; the action requires a further step not yet taken
+  unverifiable: 2,
+  ; required evidence did not verify
+)
+naalp-refusal = {
+  1 : refusal-outcome,
+  ; outcome -- the coarse, party-visible outcome (closed set)
+  2 : bstr,
+  ; record -- content id of the full signed record carrying the
+  ; detail
+}
+; N-AALP ERROR OBJECT (Control/Error surface: channel 0x0000, kind
+; 3). The body of a Control/Error object. It reports one fail-closed
+; rejection reason as BOTH a numeric `code` (field 1) and its
+; registered `name` (field 2), plus an OPTIONAL free-text `detail`
+; (field 3) and an OPTIONAL `subject` content id (field 4, the object
+; the error is about). The Control/Error kind has effect read_only
+; (kind table) -- an error report effects nothing. Field 1 is `code :
+; uint`, deliberately NOT the naalp-error-code enum below, so a code
+; from a LATER-registered or private-use point still validates
+; against this grammar (the open, RFC-Required registry).
+; DUAL-CARRIAGE: a receiver that KNOWS `code` MUST find `name` equal
+; to the registered name for that code, else it rejects `Malformed`
+; (the strengthening direction); a `code` it does NOT know is opaque
+; and non-fatal (name diagnostic only, no semantics inferred), for
+; forward compatibility. The authoritative name<->code taxonomy is
+; the naalp-error-code enum below.
+naalp-error = {
+  1 : uint,
+  ; code -- registered error code (standards 1..0x7FFF; private
+  ; >=0x8000)
+  2 : tstr,
+  ; name -- the registered name for `code` (MUST agree; else
+  ; Malformed)
+  ? 3 : tstr,
+  ; detail -- OPTIONAL non-normative human diagnostic (no security
+  ; meaning)
+  ? 4 : bstr,
+  ; subject -- OPTIONAL content id of the object the error is about
+}
+; N-AALP ERROR CODES registry (# IANA). Registration policy RFC
+; Required / FCFS in the standards range 1..0x7FFF; >=0x8000 is
+; private-use, no registration; 0 is reserved and MUST NOT appear on
+; the wire. The naalp-error body above binds `code` as a bare uint,
+; NOT this enum, so the registry can grow without breaking CDDL
+; validation of a future or private code. This enum is the
+; authoritative error-code taxonomy.
+;
+naalp-error-code = &(
+  NonCanonical: 1,
+  DepthExceeded: 2,
+  Malformed: 3,
+  ContentIdMismatch: 4,
+  HeaderBodyMismatch: 5,
+  UnsupportedVersion: 6,
+  UnknownCriticalExt: 7,
+  UnknownKind: 8,
+  RangeError: 9,
+  NonNFC: 10,
+  WrongAudience: 11,
+  TooLarge: 12,
+  TooManyCauses: 13,
+  TooManyExtensions: 14,
+  TooManyChunks: 15,
+  UnknownAlg: 16,
+  KeyAlgMismatch: 17,
+  ProfileDowngrade: 18,
+  HybridIncomplete: 19,
+  SuiteMismatch: 20,
+  CompositeRefused: 21,
+  BadSignature: 22,
+  SignerMismatch: 23,
+  RotationUnauthorized: 24,
+  KeyRevoked: 25,
+  EffectNotAuthorized: 26,
+  UnauthenticatedPrincipal: 27,
+  MalformedSafetyLabel: 28,
+  ApprovalRequired: 29,
+  ApprovalMismatch: 30,
+  ApprovalExpired: 31,
+  AlreadyConsumed: 32,
+  ConsumeFork: 33,
+  ConsumeForkInvalid: 34,
+  ConsumeReceiptUnsigned: 35,
+  LedgerCorrupt: 36,
+  LedgerUnsigned: 37,
+  AudienceMismatch: 38,
+  FreshnessSelfAsserted: 39,
+  UnknownRefusalOutcome: 40,
+  RefusalDetailLeak: 41,
+  ChainBroken: 42,
+  Equivocation: 43,
+  CausalViolation: 44,
+  ReceiptUnsigned: 45,
+  ForkProofInvalid: 46,
+  StageOutOfOrder: 47,
+  StreamDigestMismatch: 48,
+  StreamStateError: 49,
+  ConfidentialTransportRequired: 50,
+  PeerUnauthenticated: 51,
+  NotDelivered: 52,
+  MappingError: 53,
+  EffectDeclarationMismatch: 54,
+  StateTransitionError: 55,
+  CapExceedsParent: 56,
+  TransformCycle: 57,
+  InputGateBypass: 58,
+  TaskStateError: 59,
+  ScopeOverlapConflict: 60,
+  ReconcileMismatch: 61,
+  WrongFlow: 62,
+  SeqGap: 63,
+  AboveCeiling: 64,
+  GapDetected: 65,
+  CommitMismatch: 66,
+  ContMalformed: 67,
+  GrantExpired: 68,
+  GrantNotYetValid: 69,
+  GrantRevoked: 70,
+  UntrustedChainRoot: 71,
+  DelegationDepthExceeded: 72,
+  GrantMalformed: 73,
+  NameMalformed: 74,
+  NameChainBroken: 75,
+  NameForkProofInvalid: 76,
+  IllegalTransition: 77,
+  TaskChainBroken: 78,
+  ForeignCard: 79,
+  DescMalformed: 80,
+  MalformedApprovalFlag: 81,
+  DirForkProofInvalid: 82,
+  ImporterMismatch: 83,
+  UnknownDescriptionFormat: 84,
+  VerifierKeyMismatch: 85,
+  NegMalformed: 86,
+  UnknownRole: 87,
+  UnknownProfile: 88,
+  NotDescended: 89,
+  NotOffer: 90,
+  NotAccept: 91,
+  MalformedCriticalFlag: 92,
+  UnknownCriticalRisk: 93,
+  ReferenceMismatch: 94,
+  MalformedAnnotation: 95,
+  EffectUnderDeclared: 96,
+  EffectOutsideLattice: 97,
+  ToolCallMalformed: 98,
+  PayMalformed: 99,
+  UnknownPaymentFormat: 100,
+  GwMalformed: 101,
+  UnknownGatewayDecision: 102,
+  UIMalformed: 103,
+  UIChainBroken: 104,
+  UnknownUIEventKind: 105,
+  ActionSubstituted: 106,
+  UINoConsent: 107,
+  StaleEpoch: 108,
+  Unauthorized: 109,
+  OwnerImmutable: 110,
+  MemberExists: 111,
+  MemberUnknown: 112,
+  OwnerExists: 113,
+  RoleInvalid: 114,
+  RoomOpMismatch: 115,
+  OpUnknown: 116,
+  PrincipalUnknown: 117,
+  PrincipalExists: 118,
+  RebindUnauthorized: 119,
+  EgMalformed: 120,
+  UnknownEgressBinding: 121,
+  DecisionMalformed: 122,
+  UnknownOrderingBasis: 123,
+  OrderingDisclosureMalformed: 124,
+  TermDispositionMalformed: 125,
+  CheckpointMalformed: 126,
+  WitnessRootMismatch: 127,
+  InclusionProofInvalid: 128,
+  ForeignProfileMalformed: 129,
+  HazardMalformed: 130,
+  HazardNotCovered: 131,
+  HazardUnknown: 132,
+)
+; TRUST-DECISION INPUT-CLASS REGISTRY. The open,
+; RFC Required / FCFS registry of the decision inputs the closure
+; property governs, each classified by its safe shape (verifiable /
+; attenuating / committed). It grows input-by-input as new
+; architectures mint new inputs, without reopening the property.
+;
+trust-decision-input-class = &(
+  identifier:               1,
+  ; the identifier a decision keys on (verifiable)
+  object-parse:             2,
+  ; the object bytes and their parse (verifiable)
+  object-identity:          3,
+  ; the object content id (verifiable)
+  conformance-expectation:  4,
+  ; the expected conformance value (verifiable)
+  verification-procedure:   5,
+  ; the evaluator's own procedure (verifiable)
+  delegated-authority:      6,
+  ; authority derived across a delegation hop (attenuating)
+  approved-action:          7,
+  ; which action an approval authorizes (committed)
+  negotiated-parameters:    8,
+  ; the negotiated profile and parameters (committed)
+  validity-clock:           9,
+  ; when a credential's validity is judged (committed)
+  use-context:              10,
+  ; the context a portable verdict is valid in (committed)
+)
+; The consume ledger is a durable, hash-chained set keyed by the
+; approval content id. Consume is an atomic compare-and-set: the
+; first append for an approval id wins; a second is rejected
+; (AlreadyConsumed). The head after an entry is SHA-384(entry); the
+; entry carries the prior head in field 2, so editing any entry
+; breaks the next entry's linkage (LedgerCorrupt on replay). The
+; genesis head is 48 zero bytes. Atomicity = the store's write-ahead
+; log (persist-before-acknowledge) + a single-writer-per-approval-id
+; discipline.
+naalp-consume-entry = {
+  1 : uint,
+  ; seq -- ledger sequence position
+  2 : bstr,
+  ; prev -- prior chain head (48 bytes; genesis = zero)
+  3 : bstr,
+  ; approval_id -- the approval content id being consumed
+  4 : tstr,
+  ; by -- consumer signer id
+}
+
+; The ledger-signed consume receipt -- draft-01 addition. It moves
+; the anti-double-spend counter OFF the requester and ONTO the
+; consuming ledger (the ordering authority): the receipt binds the
+; approval content id to the LEDGER's own forward-only position and
+; is SIGNED BY THE LEDGER KEY over these exact bytes. The requester
+; cannot forge the ledger's position or signature, so a partition
+; that spends one approval twice leaves TWO ledger-signed receipts
+; against ONE approval id, each carrying a position drawn from forked
+; state -- a contradiction authored by neither the requester nor a
+; thief, provable on comparison (ConsumeFork; the surfaced evidence
+; carries both receipts and both ledger signatures). It does not
+; PREVENT the second spend; it makes the double-spend detectable in
+; bytes neither party could repudiate, and the approval's expiry
+; bounds the exposure window. Keyed by approval content id,
+; first-append-wins: on one reachable ledger the first consume
+; assigns exactly one position and one receipt; a byte-identical
+; re-emission is a benign duplicate, and a second receipt with a
+; DIFFERENT position (or a DIFFERENT ledger) is a detected fork.
+; Wrapping receipts as Audit-channel (0x000B) objects. This does not
+; alter naalp-consume-entry (the ledger's internal hash-chained
+; entry, above).
+naalp-consume-receipt = {
+  1 : bstr,
+  ; ledger -- the consuming ledger's signer id (the ordering
+  ; authority)
+  2 : bstr,
+  ; approval_id -- the approval content id consumed (the
+  ; compare-and-set key)
+  3 : uint,
+  ; position -- the ledger's forward-only position bound to this
+  ; consume
+}
+
+; ---- audit chain + causal graph + tiered ordering -----------------
+; An ordering authority records each accepted object by appending a
+; signed Receipt, signed by the authority with the crypto over the
+; deterministic-CBOR body. The chain is tamper-evident: the head
+; after a receipt is SHA-384(receipt body), the genesis prev is 48
+; zero bytes, and the body carries the prior head in field 1 -- so
+; any reorder, omission, or substitution breaks a `prev` link
+; (ChainBroken) or duplicates a `seq`. The authority NEVER mutates
+; the origin object to order it; ordering is an outer signed layer
+; and the object's own signature stays valid. `at` is the authority's
+; time anchor, evidence a verifier checks independently of the
+; signer's clock. An independent auditor detects equivocation -- two
+; receipts by one authority at one `seq` naming different objects --
+; from the signed receipts alone and mints a non-repudiable
+; naalp-fork-proof (below, draft-01) carrying both of the accused's
+; signatures. Wrapping receipts as Audit-channel (0x000B) objects;
+; the federation (higher) tier that reconciles multiple authorities
+; over the shared causal graph -- both tiers order the identical
+; signed objects, so federation needs no wire change.
+naalp-receipt = {
+  1 : bstr,
+  ; prev -- hash of the previous receipt body (48 bytes; genesis =
+  ; zero)
+  2 : bstr,
+  ; obj -- content id of the accepted object (never the object
+  ; itself)
+  3 : uint,
+  ; seq -- monotonic sequence position within this authority's chain
+  4 : uint,
+  ; at -- authority time anchor, epoch ms
+}
+
+; ForkProof -- the auditor's NON-REPUDIABLE equivocation proof.
+; CHANGED IN draft-01 (SUPERSEDES draft-00's ForkProof): draft-00's
+; fork proof named the two conflicting receipts but carried NEITHER
+; conflicting signature, so an accused signer could deny the fork.
+; draft-01's ForkProof carries the accused authority's OWN two
+; signatures -- sig-a over body-a and sig-b over body-b, two
+; validly-signed receipts by ONE authority at ONE seq naming
+; DIFFERENT objects -- making the proof self-contained and
+; non-repudiable: any third party verifies both signatures against
+; the accused key with no further evidence. `ext-counter` is an
+; external monotonic counter bound into the proof so a replayed or
+; reordered proof is detectable. The two embedded bodies are
+; naalp-receipt encodings (the exact bytes each signature covers).
+; Verify accepts iff signer is present, the two bodies share one seq,
+; name different objects, and BOTH signatures verify under the
+; accused key; it is rejected whole (fail-closed) otherwise.
+naalp-fork-proof = {
+  1 : bstr,
+  ; signer -- accused authority signer id (envelope field-5 form)
+  2 : uint,
+  ; ext-counter -- external monotonic counter bound into the proof
+  3 : bstr,
+  ; body-a -- receipt A body (naalp-receipt det-CBOR); sig-a's input
+  4 : bstr,
+  ; sig-a -- the accused authority's signature over body-a
+  5 : bstr,
+  ; body-b -- receipt B body (naalp-receipt det-CBOR); obj !=
+  ; body-a's
+  6 : bstr,
+  ; sig-b -- the accused authority's signature over body-b
+}
+
+; The causal graph is not a distinct wire object: an edge "A causes
+; B" is carried by B's object body field 8 (`causes`, an array of
+; content ids) and proven by B's own signature. It is a signed
+; partial order, checkable offline with no ordering authority
+; present; a total order is a policy layered over it. A cause an
+; effect could not have seen -- a present cause at a later ordering
+; position, or a cycle -- is rejected (CausalViolation).
+
+; ---- delivery stages + persist-before-ack + switchboard -----------
+; Delivery is four distinct, monotonic, separately-observable stages
+; -- there is no single "sent" boolean. Each stage is a signed
+; delivery.update naming the target object's content id and the stage
+; reached. Stages advance in order; observing a stage earlier than
+; the one already reached is StageOutOfOrder. An endpoint MUST
+; durably persist an object (write-ahead log fsync) BEFORE emitting
+; the acknowledgment that advances its stage, so a crash immediately
+; after an acknowledgment loses nothing (persist-before-ack). The
+; live switchboard (two connections held open, objects passed through
+; both directions concurrently) and the content-free relay (a relay
+; holding objects only in transit still writes a valid audit trail
+; over content ids) are behavioural properties of an endpoint/relay,
+; not additional wire objects. Wrapping delivery.update as a
+; Delivery-channel object.
+delivery-stage = &(
+  persisted_origin: 0,
+  ; object durably persisted at the origin
+  accepted_relay:   1,
+  ; accepted by a relay in transit
+  persisted_target: 2,
+  ; durably persisted at the target
+  presented:        3,
+  ; presented to the target application
+)
+naalp-delivery-update = {
+  1 : bstr,
+  ; obj -- content id of the object whose delivery this reports
+  2 : delivery-stage,
+  ; stage -- the stage reached (0..3)
+  3 : uint,
+  ; at -- observer time, epoch ms
+}
+
+; ---- native streaming + per-stream commitment ---------------------
+; A native stream runs on the N-PAMP Stream channel 0x000C, distinct
+; from foreign streamed carriage (0x000D) -- N-AALP never carries a
+; foreign protocol on 0x000C. The chunks are raw data frames the
+; transport AEAD already authenticates; they are NOT signed
+; individually (per-chunk ML-DSA would be ruinous). Instead three
+; signed objects govern the stream. StreamOpen binds the stream's
+; identity, effect, and -- where it causes an effect -- its approval;
+; a stream whose effect is not authorized is refused BEFORE any
+; chunk. StreamCommit carries a single rolling SHA-384 over the
+; chunks in absolute-offset order (a bare 48-octet digest), making
+; the whole stream non-repudiable with one signature, not N; altering
+; any delivered byte invalidates it (StreamDigestMismatch). Optional
+; StreamCheckpoints let a verifier confirm a prefix (digest_so_far =
+; SHA-384 of the prefix through that offset) without waiting for the
+; end. The same three objects map onto QUIC / WS / HTTP native
+; streaming and the commitment verifies identically. Full-duplex is
+; inherent Wrapping these as Stream-channel objects.
+naalp-stream-open = {
+  1 : bstr,
+  ; stream_id
+  2 : effect,
+  ; effect -- the stream's effect class
+  ? 3 : bstr,
+  ; approval -- content id of the approval binding (present iff
+  ; effecting)
+  4 : uint,
+  ; substream -- NPAMP-STREAM sub-stream id
+}
+naalp-stream-commit = {
+  1 : bstr,
+  ; stream_id
+  2 : bstr,
+  ; digest -- rolling SHA-384 over the complete ordered stream (48
+  ; octets)
+}
+naalp-stream-checkpoint = {
+  1 : bstr,
+  ; stream_id
+  2 : uint,
+  ; through_offset -- absolute offset the prefix ends at
+  3 : bstr,
+  ; digest_so_far -- SHA-384 over the prefix through_offset (48
+  ; octets)
+}
+
+; ---- N-AALP-CONT flow continuation --------------------------------
+; A long-running flow costs two full ML-DSA signatures (FlowOpen +
+; FlowCommit) regardless of the number of continuations, generalizing
+; native streaming from a byte stream to a flow of typed steps.
+; FlowOpen fixes the effect ceiling + approval bindings and is a
+; signed N-AALP object whose authority is reconstructable from its
+; bytes alone; its head = SHA-384(body) anchors the chain and its
+; content-id (multihash(0x20, SHA-384(body))) is carried by every
+; child object. A Continuation is a cheap UNSIGNED hash-chain link
+; (head = SHA-384(body); prev = the previous head, the FlowOpen head
+; for seq 0) whose effect MUST be <= the ceiling (AboveCeiling
+; otherwise). A Checkpoint confirms a contiguous prefix (a
+; dropped/reordered link is GapDetected). FlowCommit binds the final
+; chain head under the second full signature (CommitMismatch on a
+; missing/altered link). Domain separation is structural: the four
+; body shapes (3 / 5 / 3 / 2 fields) are distinct.
+naalp-flow-open = {
+  1 : bstr,
+  ; flow_id
+  2 : effect,
+  ; effect_ceiling -- the max effect any continuation may cause
+  3 : [* bstr],
+  ; approvals -- content-ids of the approvals authorizing the flow
+}
+naalp-continuation = {
+  1 : bstr,
+  ; flow_open_id -- content-id of the FlowOpen (WrongFlow if
+  ; mismatched)
+  2 : uint,
+  ; seq -- 0-based position in the chain
+  3 : effect,
+  ; effect -- this step's effect; MUST be <= the FlowOpen ceiling
+  4 : bstr,
+  ; payload_id -- content-id of this step's payload
+  5 : bstr,
+  ; prev -- the previous link head (FlowOpen head for seq 0) (48
+  ; octets)
+}
+naalp-flow-checkpoint = {
+  1 : bstr,
+  ; flow_open_id
+  2 : uint,
+  ; through_seq -- the contiguous prefix ends at this seq
+  3 : bstr,
+  ; head -- chain head after the prefix (48 octets)
+}
+naalp-flow-commit = {
+  1 : bstr,
+  ; flow_open_id
+  2 : bstr,
+  ; final_head -- chain head over the whole ordered sequence (48
+  ; octets)
+}
+
+; ---- transport bindings -------------------------------------------
+; A transport binding adds NO new wire object: it carries exactly one
+; signed N-AALP object (any production above) as one message unit,
+; byte-for-byte, over N-PAMP / QUIC / WebSocket / HTTP, with
+; identical object semantics. The media type is
+; `application/vnd.bubblefish.naalp+cbor` (one object per
+; representation), registered in the IANA Considerations. The object
+; is self-secured; the binding adds only framing and, from the
+; transport, confidentiality and connection authentication. The
+; confidentiality boundary is NORMATIVE: an object marked sensitive
+; MUST NOT be emitted in cleartext over a non-confidential transport
+; -- the binding refuses it (ConfidentialTransportRequired) and
+; directs the deployment to a confidential transport (N-PAMP is the
+; reference confidential transport). A transport lacking peer
+; authentication where policy requires it is refused
+; (PeerUnauthenticated). These are endpoint behaviours, not wire
+; productions.
+
+; ---- foreign carriage by class ------------------------------------
+; N-AALP carries a foreign protocol by wrapping its message,
+; octet-for-octet, in a signed N-AALP carriage object interpreted by
+; a carriage CLASS. The carriage body is a normal N-AALP object body
+; (envelope field 10): signed, effect-labeled, identity-bound,
+; audited. The `foreign` field is carried VERBATIM and MUST NOT be
+; re-serialized, canonicalized, summarized, or rewritten; N-AALP
+; metadata is carried around it, never inside it. The carriage
+; object's signer remains the authority -- a foreign identity NEVER
+; becomes an N-AALP authorization identity. The OPAQUE class carries
+; any protocol, including an undefined one, on an experimental
+; protocol id with no registration. protocol_id ranges: standards
+; 0x01-0x0F (RFC Required / FCFS), experimental 0x10-0x7F (no
+; registration), private 0x80-0xFF. content_type (field 3) is the
+; foreign ENCODING, an OPEN registry ("N-AALP Carriage Content
+; Types"): standard encodings 0x00-0x0F (RFC Required / FCFS),
+; experimental 0x10-0x7F and private 0x80-0xFF take no registration
+; (0 json, 1 octet-stream, 2 text). Over N-PAMP the raw `foreign`
+; octets ride an N-PAMP Bridge frame of the matching class
+; byte-exact.
+naalp-carriage-class = &(
+  jsonrpc: 0,
+  ; any JSON-RPC 2.0 protocol (MCP, A2A core)
+  http:    1,
+  ; any HTTP-semantics protocol
+  msg:     2,
+  ; any message-passing / performative protocol
+  stream:  3,
+  ; any event/streaming foreign reply
+  doc:     4,
+  ; capability/schema documents (agent cards, tool catalogs)
+  opaque:  5,
+  ; any declared-content-type payload, incl. undefined protocols
+)
+naalp-carriage-body = {
+  1 : uint,
+  ; protocol_id -- N-AALP registry
+  2 : naalp-carriage-class,
+  ; class -- 0 JSONRPC .. 5 OPAQUE
+  3 : uint,
+  ; content_type -- foreign encoding (open registry)
+  4 : bstr,
+  ; correlation -- exchange correlation token
+  5 : tstr,
+  ; method -- advisory routing key (foreign op name)
+  6 : bstr,
+  ; foreign -- the foreign message, carried octet-for-octet
+}
+
+; ---- the twenty channel surfaces, baseline tier -------------------
+; A channel surface adds NO new encoding, signature, or identity: it
+; only assigns `kind` codes (object body field 2), each scoped by the
+; `channel` id (field 3), and binds each kind to a declared `effect`
+; (field 7). All twenty channels (0x0000..0x0013) and their baseline
+; kinds are enumerated in the machine-readable registry (65 kinds). A
+; fixed-effect kind's object MUST carry exactly its declared effect
+; (EffectDeclarationMismatch otherwise); a variable-effect kind
+; (Stream StreamOpen, Bridge Carriage) takes the carried/stream
+; action's effect, authorized at run time by the effect lattice. An
+; object on an unregistered (channel, kind) is rejected
+; (UnknownKind). Each channel's baseline body is a spine production
+; already defined above -- Identity rotation/
+; revocation/foreign-link, Governance approval/held/consume, Audit
+; receipt/fork-proof, delivery-update, Stream open/commit/checkpoint,
+; Bridge carriage -- or a thin channel-specific body carried in
+; object body field 10; the surface introduces no new wire
+; production, only the kind/effect/state vocabulary. Higher tiers
+; (tier 1+) are the higher-tier surfaces below.
+
+; ---- Higher tiers: federated ordering + the tier model ------------
+; The channel tier is envelope field 4; tier = 0 is the frozen
+; baseline (all twenty channels). A higher tier (tier 1+) adds
+; capability WITHOUT changing the baseline envelope, effect
+; vocabulary, identity model, or audit chain: a baseline-tier
+; verifier accepts a higher-tier object's spine and IGNORES an
+; unknown higher-tier NON-critical extension (field 11), while an
+; unknown CRITICAL extension (field 12) it cannot honor is rejected
+; fail-closed (UnknownCriticalExt) -- the same field-11/field-12
+; mechanism defined in the protected header. No new wire field is
+; introduced for tiering.
+;
+; Federated ordering (the Federation channel higher tier, tier 1):
+; multiple independent authorities each issue baseline receipts over
+; their own scope, and a signed Reconcile object records a
+; DETERMINISTIC merge of their receipt chains over the shared causal
+; graph -- a topological linearization of the union causal DAG
+; tie-broken by object content id (bytewise ascending). Because the
+; order depends only on the causal graph, any split of the same
+; objects across authorities reconciles to the same order, so moving
+; from single-authority to federated ordering requires NO envelope or
+; object change. ScopeOverlapConflict (an object claimed by two
+; authorities) is an operator error at baseline and is resolved by
+; the merge at tier 1 (the object is ordered once).
+naalp-reconcile = {
+  1 : [+ tstr],
+  ; authorities -- the ordering authorities' signer ids reconciled
+  2 : [+ bstr],
+  ; order -- the deterministic total order, object content ids
+}
+
+; ---- Collaboration / rooms membership (higher tier, tier 1) -------
+; A Phase-3 ADDITIVE higher-tier surface over the frozen baseline
+; envelope, effect vocabulary, identity model, and audit chain -- it
+; introduces NO new wire mechanism, only tier-1 kinds on the
+; Governance channel (0x0004; membership ops) and the Identity
+; channel (0x0003; the principal registry), so it reuses the
+; naalp-object envelope, the naalp-receipt chain, and the identity
+; records unchanged. A baseline verifier that has not licensed the
+; tier rejects a room kind as UnknownKind (fail-closed), consistent
+; with the tier model above. It builds three recorded decisions: #4a
+; Membership carriage -- a membership change is a first-class SIGNED
+; naalp-object whose body (field 10) is a naalp-room-op. It is
+; CURSOR-OCCUPYING and RECEIPT-CHAINED: each accepted op is ordered
+; at a cursor by an ordering authority's naalp-receipt over the op's
+; content id (multihash(0x20, SHA-384(op body))), weaving membership
+; into the append-only audit chain. It is EPOCH-BUMPING: the op
+; carries the membership epoch it is built against (field 3); each
+; accepted op increments the room's epoch, so a superseded-epoch op
+; is rejected (StaleEpoch). Ops:
+; create/add_member/remove_member/change_role/add_owner. #4b O2
+; ownership -- multi-owner, ADD-ONLY: add_owner adds an owner; an
+; owner is never removed (remove_member refuses an owner) nor demoted
+; (change_role refuses to lower an owner), so the owner count is
+; monotonically >= 1 (a room can never become ownerless). #3 Delivery
+; Model B -- a naalp-principal-binding maps a stable semantic
+; principal id to a durable Handle (a signer id), kept as a
+; per-principal SHA-384 chain (head = SHA-384(body), prior head in
+; field 4, genesis = 48 zero bytes). A delivery addresses the
+; semantic id and resolves it to the Handle at send time -- a durable
+; naming layer above the connection-scoped N-PAMP PeerHandle. A
+; rebind is authorised only by a verified rotation from the current
+; handle to the new handle; a rebind to an unrelated key is refused.
+; The membership op-authorisation, epoch guard, owner-immutability,
+; and rebind continuity are endpoint behaviours (graded by two
+; implementations against the non-circular oracle), not wire
+; productions.
+naalp-room-op = {
+  1 : bstr,
+  ; room -- room id
+  2 : room-op-code,
+  ; op -- membership operation
+  3 : uint,
+  ; epoch -- membership epoch this op is built against (bumps on
+  ; accept)
+  4 : tstr,
+  ; subject -- affected member signer id (the creator, for create);
+  ; NFC
+  5 : member-role,
+  ; role -- the role assigned to the subject
+}
+room-op-code = &(
+  create:        0,
+  add_member:    1,
+  remove_member: 2,
+  change_role:   3,
+  add_owner:     4,
+)
+member-role = &(
+  member: 0,
+  admin:  1,
+  owner:  2,
+)
+naalp-principal-binding = {
+  1 : tstr,
+  ; principal -- the stable semantic principal id (MUST be NFC)
+  2 : tstr,
+  ; handle -- the current durable Handle (a signer id) it resolves to
+  3 : uint,
+  ; epoch -- monotonic per-principal binding epoch (0 for first bind)
+  4 : bstr,
+  ; prev -- prior per-principal chain head (48 bytes; genesis = zero)
+}
+
+; ---- multi-hop agent-delegation grant -- draft-01 addition --------
+; A DelegationGrant is a NORMAL N-AALP object (envelope): an
+; independent COSE_Sign1 whose ISSUER is the verified envelope signer
+; (field 5), NEVER a body field. It is a Capability-channel (0x0002)
+; kind DelegationGrant (kind 4), tier 1 -- a named escalation adding
+; MULTI-HOP capability under the frozen baseline envelope; a verifier
+; that has not licensed the tier rejects the kind as UnknownKind
+; (fail-closed). The object's OWN effect (envelope field 7) is
+; non_idempotent_write (issuing a grant); effect_cap below is the
+; SEPARATE ceiling it confers on the subject. It REUSES the
+; CapDelegate substrate -- parent-by-content-id in `causes` and
+; CapExceedsParent attenuation -- rather than a parallel mechanism
+; (D5). The delegation PARENT (the grant or CapIssue that authorised
+; THIS grant's issuer) is named by content id in envelope field 8
+; (`causes`): the UNIQUE cause resolving to a Capability authority
+; object (CapIssue kind 0, CapDelegate kind 1, DelegationGrant kind
+; 4) whose subject/holder == this grant's issuer; a root grant
+; (issuer in the verifier's trust-anchor set) has none, two-or-more
+; is ChainBroken. scope is OPTIONAL: an absent field 6 is
+; unconstrained (an empty scope is not a distinct value).
+naalp-delegation-grant = {
+  1 : tstr,
+  ; subject -- delegatee agent id (agent B), signer-id form; MUST be
+  ; NFC
+  2 : effect,
+  ; effect_cap -- MAX effect conveyed (the lattice); child <= parent
+  ; else CapExceedsParent
+  3 : uint,
+  ; max_depth -- max FURTHER delegation hops below this grant (0 =
+  ; act, not re-delegate)
+  4 : uint,
+  ; not_before -- validity-window start, epoch ms (GrantNotYetValid
+  ; before)
+  5 : uint,
+  ; not_after -- validity-window end, epoch ms (GrantExpired after)
+  ? 6 : tstr,
+  ; scope -- OPTIONAL NFC resource scope; child scope MUST be
+  ; contained else CapExceedsParent
+}
+
+; ---- The checkable minimum: recheck procedure (draft-01 addition) -
+; A signature makes a body claim ATTRIBUTABLE; a claim is CHECKABLE
+; only if a stranger can re-derive it without trusting the speaker,
+; which requires the object to NAME the procedure a verifier runs to
+; re-check it. That naming is carried as extension key 13 (see
+; naalp-object above): the VALUE is a recheck-procedure id into this
+; CLOSED registry. In the non-critical ext map (field 11) it is
+; may-ignore (an unknown id ignored); in the critical cext map (field
+; 12) it is must-understand and an unknown id is rejected
+; (UnknownCriticalExt, the critical-extension rule reaching the
+; procedure it names). A known id verifies in either map. There is no
+; boolean on the wire -- placement (ext vs cext) is the criticality
+; signal (the N-AALP spine carries no CBOR booleans). recheck is an
+; ext-key (key 13) and does NOT move naalp-version -- the version is
+; anchored by the top-level audience envelope field.
+;
+recheck-procedure = &(
+  recompute-content-id: 1,
+  ; recompute the content id from the body and compare
+  verify-cose-sign1:    2,
+  ; verify the COSE_Sign1 signature under the signer key
+  walk-causes:          3,
+  ; walk the signed causal partial order offline
+  replay-consume-check: 4,
+  ; replay the single-use consume ledger for the approval
+)
+
+; ---- The per-signer forward-only counter (draft-01 addition) ------
+; A signer MAY carry a forward-only counter it increments on each
+; object, to DETECT key duplication -- NOT to prevent it. It is
+; carried as extension key 14 in the object's NON-CRITICAL ext map
+; (field 11, may-ignore), covered by the SIGNER's own COSE_Sign1
+; signature -- the deliberate contrast with the LEDGER-signed
+; naalp-consume-receipt position. The value is a bare forward-only
+; position; ANY 64-bit uint is valid (a large value is not an error,
+; it must decode as a 64-bit unsigned position without rounding). The
+; field is OPTIONAL: an absent counter is valid. It is
+; DETECTION-only: a single self-authored sequence proves nothing;
+; duplication is flagged only when two conflicting sequences bearing
+; ONE signer id physically meet where the attacker cannot suppress
+; one (# Security Considerations). Placing the counter in the
+; critical cext map is an unrecognized critical key
+; (UnknownCriticalExt). No wire-version bump: this reuses the ext
+; mechanism (a new ext-key assignment, not a change to an existing
+; object body), so naalp-version stays at 2.
+signer-counter = uint
+
+; ---- The NAALP-MCP binding profile (draft-01 addition) ------------
+; An MCP tool call is CARRIED (its bytes unchanged -- carriage, not
+; adoption), its unenforced, untrusted annotation hints are mapped to
+; the closed four-effect lattice by a PUBLISHED table, and the
+; WRAPPING SIGNER is accountable for that mapping (a false
+; declaration is attributable to that key). The wrapper is a
+; Bridge-channel (0x000D) tier-1 kind McpToolCall (kind 1) -- a named
+; escalation over the frozen baseline Carriage kind (0), under the
+; frozen envelope; a baseline verifier that has not licensed the tier
+; rejects it as UnknownKind (fail-closed). Its OWN envelope effect
+; (field 7) is the wrapping signer's DECLARED effect; a verifier
+; independently recomputes the annotation-derived effect from the
+; carried annotations and enforces the MORE SEVERE of the two (the
+; good-regulator attenuator -- an unknown or disagreeing input
+; collapses UP, never down). A declared effect BELOW the
+; annotation-derived effect is rejected (EffectUnderDeclared); an
+; annotation set that maps outside the lattice is rejected
+; (MalformedAnnotation), never defaulted to benign.
+;
+;
+; The MCP ToolAnnotations are booleans in JSON, but the N-AALP spine
+; carries NO CBOR boolean Each hint is transcribed as the uint 1
+; (true) / 0 (false); an ABSENT hint is the MCP documented default,
+; applied by the mapping (readOnlyHint default false, destructiveHint
+; default true, idempotentHint default false, openWorldHint default
+; true). destructiveHint's default of TRUE is why an un-annotated
+; write maps to destructive -- the same fail-closed rule as N-AALP's
+; "absent effect on a state-changing object => destructive". A
+; present 0 and an absent hint encode to DIFFERENT bytes (empty !=
+; absent) though they may resolve to the same effect. A hint value
+; outside {0,1} is rejected (it transcribes no boolean).
+; openWorldHint (key 4) is carried for accountability but is an
+; ADVISORY risk signal ONLY -- it never enters the effect lattice
+; (risk dimensions ride as advisory labels, not effects).
+mcp-hint = 0..1
+; a JSON boolean hint transcribed to the spine: 1 = true, 0 = false
+naalp-mcp-annotations = {
+; the wrapping signer's transcription of the tool's MCP annotations
+  ? 1 : mcp-hint,
+  ; readOnlyHint (absent => MCP default false)
+  ? 2 : mcp-hint,
+  ; destructiveHint (absent => MCP default true; the fail-closed
+  ; default)
+  ? 3 : mcp-hint,
+  ; idempotentHint (absent => MCP default false)
+  ? 4 : mcp-hint,
+  ; openWorldHint (absent => MCP default true; ADVISORY, not an
+  ; effect)
+}
+naalp-mcp-tool-call = {
+; the wrapper body (envelope field 10); its OWN effect is field 7
+  1 : bstr,
+  ; tool -- the MCP tool definition bytes, carried octet-for-octet
+  2 : bstr,
+  ; args -- the MCP tool-call argument bytes, carried octet-for-octet
+  3 : naalp-mcp-annotations,
+  ; annotations -- the signer's transcription; the mapping is over
+  ; these
+}
+; The approval binds the content id of this call binding. Because it
+; names BOTH the tool id and the args id by content id, a changed
+; tool DESCRIPTION (new tool_id) OR changed ARGUMENTS (new args_id)
+; yields a new call content id, invalidating a prior approval bound
+; to the old one.
+naalp-mcp-call-binding = {
+  1 : bstr,
+  ; tool_id -- content id of the tool bytes: multihash(0x20,
+  ; SHA-384(tool))
+  2 : bstr,
+  ; args_id -- content id of the args bytes: multihash(0x20,
+  ; SHA-384(args))
+}
+
+; ---- signed description / directory primitive (draft-01 addition) -
+; A signed, OFFLINE-VERIFIABLE description and discovery layer
+; carried on N-AALP's own signed object: the authority is the
+; SIGNATURE OVER THE BYTES, never the connection or host that served
+; them, so a signed description re-verifies byte-identically when an
+; unrelated host serves the same bytes (a bearer credential, not a
+; fetched document). It introduces NO new envelope, encoding,
+; signature, identity, or audit mechanism: each object below is an
+; ordinary COSE_Sign1 over a deterministic-CBOR body, reusing the
+; closed effect lattice and the content-id framing. The head of each
+; object is SHA-384(body); its content-id is multihash(0x20,
+; SHA-384(body)).
+;
+; A naalp-description lists a service's operations, each a
+; naalp-description-operation carrying its effect (lattice) and an
+; approval declaration. requires_approval is the uint 1/0 -- the
+; N-AALP spine carries no CBOR boolean; a value outside {0,1} is
+; rejected (MalformedApprovalFlag), never defaulted. A
+; naalp-directory is a signed collection whose members are
+; content-ids (the same list-of-content-ids shape the causal partial
+; order uses); it carries a monotonic per-signer version so two
+; versions can be compared. Two conflicting versions from ONE signer
+; -- the SAME directory and version but DIFFERENT members -- are a
+; FORK, detected at the FIRST-DIFFERING member position, the same way
+; the audit fork proof reports the position of an equivocation.
+;
+; A naalp-description-import carries a FOREIGN description format (an
+; A2A Agent Card, an ANP Agent Description, an AGNTCY Agent Badge)
+; octet-for-octet in `foreign` (carriage, not adoption -- the foreign
+; bytes MUST NOT be re-serialized, canonicalized, or rewritten) as a
+; signed attestation that binds the foreign bytes' content-id
+; (multihash(0x20, SHA-384(foreign))) AND an N-AALP effect mapping
+; (`operations`) for the described operations. The `importer` is the
+; wrapping signer id and is the SOLE authorization identity: a
+; verifier recomputes the self-certifying signer id from the
+; verifying key and requires `importer` to equal it (ImporterMismatch
+; otherwise), so a foreign identity embedded in `foreign` NEVER
+; becomes an N-AALP authorization identity -- the confused-deputy
+; rule of the MCP profile and foreign carriage.
+;
+naalp-description-operation = {
+  1 : tstr,
+  ; name -- operation name (advisory routing key)
+  2 : effect,
+  ; effect -- the operation's effect class (lattice)
+  3 : desc-approval-flag,
+  ; requires_approval -- 1 requires an approval, 0 otherwise (no CBOR
+  ; bool)
+}
+desc-approval-flag = 0..1
+; a boolean transcribed to the spine: 1 = requires approval, 0 = not
+naalp-description = {
+  1 : bstr,
+  ; service -- opaque service id
+  2 : [* naalp-description-operation],
+  ; operations -- the listed operations
+}
+naalp-description-format = &(
+  a2a-agent-card:        1,
+  ; A2A Agent Card
+  anp-agent-description: 2,
+  ; ANP Agent Description
+  agntcy-agent-badge:    3,
+  ; AGNTCY Agent Badge
+)
+naalp-directory = {
+  1 : bstr,
+  ; directory -- opaque directory id
+  2 : uint,
+  ; version -- monotonic per-signer version
+  3 : [* bstr],
+  ; members -- content-ids of the member objects (the causal-order
+  ; shape)
+}
+naalp-description-import = {
+  1 : bstr,
+  ; importer -- the wrapping signer id; the SOLE authorization
+  ; identity
+  2 : naalp-description-format,
+  ; format -- the foreign description format code
+  3 : bstr,
+  ; foreign -- the foreign description bytes, carried octet-for-octet
+  4 : [* naalp-description-operation],
+  ; operations -- the N-AALP effect mapping the importer attests
+}
+
+; ---- name bindings + the signed A2A task-state profile (draft-01 ad
+; Two receipt-CHAINED, OFFLINE-WALKABLE surfaces reusing the audit
+; receipt chain unchanged: the head of each object is SHA-384(body),
+; the genesis prev is 48 zero bytes, seq is monotonic, and the body
+; carries the prior head in `prev`, so editing or omitting a record
+; breaks the next record's linkage. They add NO new envelope,
+; encoding, signature, identity, or audit mechanism: each object is
+; an ordinary COSE_Sign1 over a deterministic-CBOR body, reusing the
+; content-id framing.
+;
+; A naalp-name-binding maps a name to a signer id and CHAINS onto the
+; prior binding for that name. A key ROTATION is a NEW binding at the
+; next seq naming the new signer. A binding is DATED BY ITS CHAIN
+; POSITION (seq); the envelope's `created` field (naalp-object field
+; 6) is advisory only. A name's history is WALKABLE offline (the
+; signer succession); a deleted/omitted binding leaves a detectable
+; HOLE at the first-broken position (gap-evident, as the audit chain
+; / directory fork report position); two bindings by ONE authority at
+; the SAME (name, seq) naming DIFFERENT signers are a FORK, reported
+; at that seq (the same way the audit fork proof reports an
+; equivocation position).
+naalp-name-binding = {
+  1 : tstr,
+  ; name -- the name being bound (a durable, human-readable name)
+  2 : bstr,
+  ; signer -- the signer id the name maps to at this position
+  ; (signer-id form)
+  3 : uint,
+  ; seq -- monotonic per-name chain position; seq 0 is the genesis
+  ; binding
+  4 : bstr,
+  ; prev -- the prior binding's head (48 bytes; genesis = 48 zero
+  ; bytes)
+}
+
+; A naalp-task-transition is one signed, receipt-CHAINED A2A
+; (Agent2Agent) task-lifecycle state transition. The A2A TaskState
+; set is an IMPORTED vocabulary (carriage, not adoption): the A2A
+; specification (Section 4.1.3) defines the eight states and the
+; terminal/interrupted categories NORMATIVELY (start = submitted;
+; terminal = {completed, canceled, failed, rejected}; interrupted =
+; {input- required, auth-required}) and leaves the exact legal edges
+; to implementations; N-AALP's legal-edge table is DERIVED from those
+; documented category rules and is enforced by the endpoint, not by
+; this wire production (the wire carries only the from/to state
+; values). `card` is the content-id of the A2A Agent Card attestation
+; (a naalp-description-import with format a2a-agent-card) that binds
+; the task profile to an agent/operation; a transition carrying a
+; card other than the profile's bound card is rejected (ForeignCard).
+; An illegal edge, a non-contiguous `from`, a transition out of a
+; terminal state, or a gap/reorder in the chain is detected
+; fail-closed (IllegalTransition / TaskChainBroken), position
+; reported.
+;
+task-state = &(
+  submitted:      0,
+  ; acknowledged, not yet started (the start state)
+  working:        1,
+  ; actively processed
+  input-required: 2,
+  ; interrupted, awaiting client input
+  auth-required:  3,
+  ; interrupted, awaiting authentication
+  completed:      4,
+  ; terminal success
+  canceled:       5,
+  ; terminal, canceled before completion
+  failed:         6,
+  ; terminal, finished with an error
+  rejected:       7,
+  ; terminal, the agent declined the task
+)
+naalp-task-transition = {
+  1 : bstr,
+  ; task -- the task id (opaque)
+  2 : bstr,
+  ; card -- content-id of the bound A2A Agent Card attestation
+  3 : task-state,
+  ; from -- the source state
+  4 : task-state,
+  ; to -- the target state
+  5 : uint,
+  ; seq -- monotonic per-task chain position; seq 0's from =
+  ; submitted
+  6 : bstr,
+  ; prev -- the prior transition's head (48 bytes; genesis = zero)
+}
+
+; ---- governed negotiation, advisory risk labels, and trust (draft-0
+; Three signed surfaces reusing the closed effect lattice, the
+; content-id framing, and the causal partial order (`causes`)
+; UNCHANGED: each object is an ordinary COSE_Sign1 over a
+; deterministic-CBOR body. head = SHA-384(body); content-id =
+; multihash(0x20, SHA-384(body)).
+;
+; GOVERNED NEGOTIATION. offer / counter / accept are SIGNED,
+; CAUSALLY-LINKED messages: each names its predecessor(s) by
+; content-id in `causes` (the same list-of-content-ids shape the
+; causal partial order uses). Each SELECTS a profile from the CLOSED,
+; PRE-REGISTERED negotiation-profile set -- the negotiation selects a
+; pre-registered profile, never a free-form capability string and
+; never a runtime-generated handler. The three productions are
+; distinguished by a fixed `role` literal (0/1/2), so an offer body
+; never validates against the accept production and vice-versa. An
+; accept MUST DESCEND from its offer along the `causes` DAG (enforced
+; by the endpoint, NotDescended otherwise); an unknown profile
+; (UnknownProfile) or role is rejected fail-closed. The
+; machine-readable role/profile source is the negotiation-role /
+; negotiation-profile enums below.
+negotiation-role = &(
+  offer:   0,
+  ; the initiating offer (the root; no causes)
+  counter: 1,
+  ; a counter chaining onto the offer or a prior counter
+  accept:  2,
+  ; the accept; it MUST descend from its offer
+)
+negotiation-profile = &(
+  baseline:  0,
+  ; the baseline capability profile
+  streaming: 1,
+  ; the native-streaming capability profile
+  batch:     2,
+  ; the batched-delivery capability profile
+)
+naalp-negotiation-offer = {
+  1 : bstr,
+  ; negotiation -- opaque negotiation id (ties the exchange together)
+  2 : 0,
+  ; role -- offer (fixed literal 0)
+  3 : negotiation-profile,
+  ; profile -- the selected pre-registered profile (closed set)
+  4 : [* bstr],
+  ; causes -- content-ids of predecessors (empty for an offer)
+}
+naalp-negotiation-counter = {
+  1 : bstr,
+  ; negotiation
+  2 : 1,
+  ; role -- counter (fixed literal 1)
+  3 : negotiation-profile,
+  ; profile
+  4 : [* bstr],
+  ; causes -- names the offer or a prior counter
+}
+naalp-negotiation-accept = {
+  1 : bstr,
+  ; negotiation
+  2 : 2,
+  ; role -- accept (fixed literal 2)
+  3 : negotiation-profile,
+  ; profile -- the AGREED pre-registered profile
+  4 : [* bstr],
+  ; causes -- descends from the offer along this chain
+}
+
+; ADVISORY RISK LABELS. A naalp-risk-label is one carried label
+; {code, critical}; a naalp-labeled-object carries an effect (the
+; lattice) together with a set of risk labels. The vocabulary is a
+; closed standard set -- sensitive/egress (gating), reversible
+; (informing) -- plus a private/experimental extensible range, so
+; `code` is an open uint and the known set is enforced by the
+; endpoint + registry (as the signer-counter is an open uint).
+; `critical` is the per-carriage must-understand flag (uint 1/0 --
+; the spine carries no CBOR boolean); the critical-extension rule
+; rejects an unknown CRITICAL label (UnknownCriticalRisk) and ignores
+; an unknown non-critical one. LOAD-BEARING INVARIANT: a risk label
+; is an ADVISORY dimension, NEVER a fifth effect -- carrying a label
+; does not change the object's effect class (the closed effect
+; lattice is untouched).
+risk-code = uint
+; a risk-label code (standard set + private/experimental extensible
+; range)
+risk-critical = 0..1
+; per-carriage must-understand flag: 1 = critical, 0 = advisory (no
+; CBOR bool)
+naalp-risk-label = {
+  1 : risk-code,
+  ; code -- the risk-label code
+  2 : risk-critical,
+  ; critical -- the must-understand flag
+}
+naalp-labeled-object = {
+  1 : effect,
+  ; effect -- the effect class (field 7); the effect class derives
+  ; from this ALONE -- risk labels never alter it
+  2 : [* naalp-risk-label],
+  ; labels -- the advisory risk labels carried on the object
+}
+
+; TRUST. A naalp-trust-ref carries a THIRD-PARTY trust statement as a
+; CHECKABLE signed object: `reference` is the content-id of an
+; EXTERNAL registry record (an ERC-8004-style reputation/identity
+; registry record). A verifier CONFIRMS the reference by recomputing
+; that content-id over the external bytes; the signature checks. But
+; NO wire field WEIGHS the statement -- there is no score, rank, or
+; ordering on the wire; the protocol carries trust statements and
+; does not weigh them, and which to believe is left to the relying
+; party.
+naalp-trust-ref = {
+  1 : bstr,
+  ; registry -- opaque external-registry identifier (e.g.
+  ; "erc-8004:reputation")
+  2 : bstr,
+  ; reference -- content-id of the referenced external record
+  3 : bstr,
+  ; subject -- the subject the statement is about (opaque id)
+}
+
+; ---- payment import, UI consent, and portable gateway evidence (dra
+; Three signed surfaces reusing the closed effect lattice, the
+; content-id framing, the approval + single-use consume ledger, and
+; the receipt chain UNCHANGED: each object is an ordinary COSE_Sign1
+; over a deterministic-CBOR body. head = SHA-384(body); content-id =
+; multihash(0x20, SHA-384(body)). These are NEW productions, not
+; changes to an existing object body, so naalp-version stays at 2.
+;
+; PAYMENT IMPORT. A naalp-payment-import carries a foreign payment
+; payload -- an AP2 mandate, an Agentic Commerce Protocol delegated
+; token, an x402 payload -- octet-for-octet in `foreign` (carriage,
+; not adoption; the foreign bytes MUST NOT be re-serialized,
+; canonicalized, or rewritten), and turns it into a value-bearing
+; charge N-AALP governs with its OWN added guarantees. `format`
+; selects the imported FORMAT from the closed naalp-payment-format
+; registry; an unknown format is rejected (UnknownPaymentFormat). The
+; naalp-payment-charge-binding names the exact value an approval
+; binds by content-id -- including the foreign payload's content-id
+; (`foreign_id`, the carriage binding) -- so a wrong
+; amount/payee/currency OR a substituted foreign payload yields a
+; different content-id and no longer matches the approval
+; (ApprovalMismatch). A payment spend is a non_idempotent_write spent
+; SINGLE-USE through the consume ledger (AlreadyConsumed on replay).
+; There is NO fifth effect and NO payment-specific ledger. There is
+; no boolean on the wire.
+naalp-payment-format = &(
+  ap2-mandate:         1,
+  ; AP2 mandate
+  acp-delegated-token: 2,
+  ; Agentic Commerce Protocol delegated token
+  x402-payload:        3,
+  ; x402 payload
+)
+naalp-payment-import = {
+  1 : naalp-payment-format,
+  ; format -- the imported payment format (closed registry)
+  2 : uint,
+  ; amount -- the charge amount in minor units
+  3 : tstr,
+  ; currency -- the charge currency code (e.g. "USD")
+  4 : bstr,
+  ; payee -- the payee id (opaque)
+  5 : uint,
+  ; not_after -- the charge expiry, epoch ms
+  6 : bstr,
+  ; foreign -- the imported payment payload, carried octet-for-octet
+}
+; The charge-binding is the payment-import's fields with `foreign`
+; replaced by its content-id (`foreign_id`); it shares the import's
+; 6-field shape by design and is distinguished by position and
+; semantics (the value an approval binds), not by CDDL structure. It
+; is a hashing input, not itself an on-wire signed object (only
+; naalp-payment-import is signed as an envelope body).
+naalp-payment-charge-binding = {
+; the exact value an approval binds by content-id
+  1 : naalp-payment-format,
+  ; format
+  2 : uint,
+  ; amount
+  3 : tstr,
+  ; currency
+  4 : bstr,
+  ; payee
+  5 : uint,
+  ; not_after
+  6 : bstr,
+  ; foreign_id -- content-id of the foreign payload: multihash(0x20,
+  ; SHA-384(foreign))
+}
+
+; UI CONSENT BINDING. A naalp-ui-event is one shown tool-lifecycle
+; event (AG-UI style) in a user- interface event stream,
+; receipt-CHAINED by the chain construction: head = SHA-384(body),
+; genesis prev = 48 zero bytes, monotonic seq, prior head carried in
+; `prev`, so editing or omitting an event breaks the next event's
+; linkage (a detectable hole with position). `kind` is the closed
+; ui-event-kind set; `action` is the content-id of the exact action
+; bytes shown to the user. A human approval (a naalp-approval) binds
+; the shown-and-approved action's content-id, and the action actually
+; executed MUST hash to that same content-id -- a SUBSTITUTED action
+; has a different content-id and is rejected (ActionSubstituted).
+; There is no boolean on the wire.
+ui-event-kind = &(
+  shown:      0,
+  ; the action / tool call was shown (rendered) to the user
+  args-shown: 1,
+  ; the arguments were shown to the user
+  approved:   2,
+  ; the user approved the shown action
+  rejected:   3,
+  ; the user rejected the shown action
+)
+naalp-ui-event = {
+  1 : bstr,
+  ; session -- UI session id (ties the stream together)
+  2 : ui-event-kind,
+  ; kind -- the event kind (closed set)
+  3 : bstr,
+  ; action -- content-id of the exact action bytes shown at this step
+  4 : uint,
+  ; seq -- monotonic per-session chain position; seq 0 is the genesis
+  ; event
+  5 : bstr,
+  ; prev -- the prior event's head (48 bytes; genesis = zero)
+}
+
+; PORTABLE GATEWAY EVIDENCE. A naalp-gateway-decision is a SIGNED
+; decision object an enforcement gateway of ANY vendor emits as
+; portable evidence. Its authority is the SIGNATURE OVER THE BYTES,
+; never the connection or host that served them, so it verifies
+; offline and RE-VERIFIES IDENTICALLY when served by a party OTHER
+; than the gateway (the third-party re-serve property). This is the
+; EVIDENCE FORMAT ONLY -- it defines NO policy language. `decision`
+; is the closed gw-decision set; `action` is the content-id of the
+; action decided about; `policy` is the opaque identity of the
+; deciding policy (a name, not a program); `effect` is the effect
+; class of the action. An unknown decision code is rejected
+; (UnknownGatewayDecision). The gateway is the SIGNER (envelope field
+; 5); a verifier resolves its key offline from the self-certifying
+; signer id and checks the signature over the bytes.
+gw-decision = &(
+  allow: 0,
+  ; the gateway allows the action
+  deny:  1,
+  ; the gateway denies the action
+  hold:  2,
+  ; the gateway holds the action pending a further step
+)
+naalp-gateway-decision = {
+  1 : gw-decision,
+  ; decision -- the decision outcome (closed set)
+  2 : bstr,
+  ; action -- content-id of the action decided about
+  3 : bstr,
+  ; policy -- the deciding policy's opaque identity (NOT a policy
+  ; language)
+  4 : effect,
+  ; effect -- the effect class of the action
+  ? 5 : ordering-disclosure,
+  ; ordering (R1) -- OPTIONAL. ABSENT is read correspondence-only,
+  ; never a stronger claim. The mandatory fields 1-4 are validated
+  ; FIRST: a body failing a mandatory-field check is GwMalformed
+  ; regardless of any optional 5/6, so a look-alike whose field 1 is
+  ; not the gw-decision uint stays GwMalformed.
+  ? 6 : naalp-foreign-profile-pin,
+  ; foreign-profile (R8) -- OPTIONAL; present iff the decision was over
+  ; foreign-protocol evidence. Pins the foreign evidence profile's
+  ; identifier AND revision at decision time (bind the reference, not
+  ; just the class).
+}
+naalp-foreign-profile-pin = {
+  1 : tstr,
+  ; id -- the foreign evidence profile identifier, an ABSOLUTE URI
+  ; (opaque per-protocol ids drift at the mapping)
+  2 : tstr,
+  ; revision -- the profile revision pinned at decision time
+}
+
+; ===== EVIDENCE-RECORD FAMILY (R1 ordering + S1 DecisionRecord +
+; S3 CheckpointRoot). All additive sibling productions; naalp-version
+; stays 2. The accountability triple, carried natively:
+; unique-selection + governed-at-T + binding-fixed-by-T. =====
+
+; ORDERING BASIS (R1): what, if anything, establishes
+; decision->effect / record->event ORDER, and from which
+; observational domain. The weakest claim is the ZERO value ON
+; PURPOSE: a record that says nothing, and an existing record whose
+; optional ordering field is ABSENT, are both read as
+; correspondence-only -- a verifier MUST NEVER infer a stronger
+; ordering claim from silence (fail-closed reading direction).
+; external-mechanism NAMES the mechanism; whether its operator is
+; genuinely distinct from both parties is a structural deployment fact
+; checkable in substance at T+n, not a claim the wire can close.
+ordering-basis = &(
+  correspondence-only: 0,
+  single-boundary:     1,
+  external-mechanism:  2,
+)
+ordering-disclosure = {
+  1 : ordering-basis,
+  ? 2 : bstr,
+  ; boundary -- the single covering boundary (signer-id form); present
+  ; iff basis = single-boundary
+  ? 3 : bstr,
+  ; mechanism -- the external sequencing mechanism's identity; present
+  ; iff basis = external-mechanism
+  ? 4 : bstr,
+  ; relation -- the log relation binding this record under the
+  ; mechanism (e.g. the content id of the naalp-checkpoint-root the
+  ; record is included under); present only when basis =
+  ; external-mechanism
+}
+; Well-formedness (fail-closed, native): correspondence-only -> keys
+; 2/3/4 absent; single-boundary -> key 2 present, 3/4 absent;
+; external-mechanism -> key 3 present (4 optional), 2 absent. Any
+; violation is OrderingDisclosureMalformed on the whole record.
+
+term-disposition = {
+  1 : uint,
+  ; kind -- 1 observed / 2 reported (reuses the producing-boundary
+  ; kind codes)
+  ? 2 : bstr,
+  ; source -- the boundary the term was received from; present iff
+  ; kind = reported
+}
+
+enforcement-disposition = &(
+  enforced: 1,
+  advised:  2,
+)
+
+; THE GOVERNED-DECISION RECORD (S1). A naalp-decision-record is the
+; SIGNED record a governed decision point emits that it decided about
+; an action under a CLOSED, uniquely-selected condition set. It is the
+; carrier for the T/T+n accountability triple: UNIQUE SELECTION (field
+; 2, the governing set in the clear as content ids -- identification
+; AND availability); GOVERNED-AT-T (field 3, the consume-receipt spent
+; at decision time -- decision-time consumption, not
+; identity-to-the-act); BINDING-FIXED-BY-T (established off-record by
+; inclusion under a witnessed naalp-checkpoint-root). The record is
+; deliberately CLOCK-FREE: it carries no claimed time; both time
+; properties are POSITIONAL, never a self-asserted timestamp. The
+; signature binds THE DECISION, not a retrieval of it.
+naalp-decision-record = {
+  1 : bstr,
+  ; action -- content id of the action decided about
+  2 : [* bstr],
+  ; governing -- the CLOSED governing condition set, content ids, in
+  ; the clear; may be empty (a decision governed by standing policy
+  ; alone names that policy object's cid here)
+  ? 3 : bstr,
+  ; consume -- content id of the naalp-consume-receipt that spent the
+  ; governing authority at decision time. PRESENT for an allow that
+  ; consumed a single-use authority; ABSENT for deny/hold (a refusal
+  ; consumes nothing). A deny/hold body carrying a consume ref is
+  ; rejected DecisionMalformed -- nothing was consumed.
+  4 : gw-decision,
+  ; outcome -- allow / deny / hold (reuses the closed gw-decision set)
+  5 : ordering-disclosure,
+  ; ordering -- MANDATORY (R1 folded in from the start): the record
+  ; states its ordering basis or states correspondence-only; there is
+  ; no silent default
+  ? 6 : { * uint => term-disposition },
+  ; terms -- OPTIONAL per-term observed-vs-reported dispositions, keyed
+  ; by THIS record's own field numbers (1..5). A key outside the field
+  ; set is TermDispositionMalformed (fail-closed).
+  ? 7 : enforcement-disposition,
+  ; enforcement -- OPTIONAL: whether the producer ENFORCES the outcome
+  ; or only ADVISES it (the producer's own unverifiable self-account).
+}
+
+; THE NEITHER-PARTY ANCHOR PRIMITIVE (S3, RFC 9162-style). A
+; naalp-checkpoint-root is a log operator's SIGNED Merkle tree head
+; over a leaf set of record content ids. Tree construction follows RFC
+; 9162 Section 2.1: leaf hash = HASH(0x00 || leaf), interior node =
+; HASH(0x01 || left || right), instantiated with the profile hash
+; SHA-384 (48-byte heads), the 0x00/0x01 prefixes supplying leaf/node
+; domain separation. Checkpoints chain by prev (genesis = 48 zero
+; bytes) so a withheld or reordered checkpoint breaks a link.
+naalp-checkpoint-root = {
+  1 : bstr,
+  ; log -- the log operator's signer id
+  2 : uint,
+  ; size -- leaf count at this checkpoint
+  3 : bstr,
+  ; root -- the Merkle tree head over the leaf set (48 bytes)
+  4 : bstr,
+  ; prev -- the prior checkpoint root value (48 bytes; genesis zero)
+  5 : uint,
+  ; at -- the log's time anchor, epoch ms (advisory)
+}
+
+; A witness COUNTERSIGNS one exact checkpoint by content id. The wire
+; carries the cosignature; whether the witness's observational domain
+; is genuinely distinct from both parties is a structural deployment
+; fact a T+n verifier checks in substance -- the wire hook for the
+; neither-party property, stated honestly as a hook.
+naalp-witness-cosign = {
+  1 : bstr,
+  ; witness -- the witness's signer id
+  2 : bstr,
+  ; root -- content id of the exact naalp-checkpoint-root cosigned
+  3 : uint,
+  ; at -- the witness's own time anchor, epoch ms (advisory)
+}
+
+; Inclusion proof: a leaf existed in the tree the root commits to (RFC
+; 9162 Section 2.1.3.1 path recomputation, SHA-384-profiled). Record
+; cid as a leaf under a witnessed checkpoint = existed-no-later-than
+; the checkpoint (the binding-fixed-by-T leg). Verification recomputes
+; the path bottom-up and compares against the named root, fail-closed
+; (InclusionProofInvalid).
+naalp-inclusion-proof = {
+  1 : bstr,
+  ; root -- content id of the naalp-checkpoint-root proven against
+  2 : bstr,
+  ; leaf -- the included record's content id (the leaf value)
+  3 : uint,
+  ; index -- the leaf's 0-based position in the tree
+  4 : [* bstr],
+  ; path -- the audit path, leaf-to-root sibling hashes (48 bytes each)
+}
+
+; PORTABLE EGRESS EVIDENCE (E6.3). A naalp-egress-attestation is a
+; SIGNED attestation a gateway/sidecar emits that an object of a given
+; effect class, bound to a given audience, crossed an egress boundary
+; at a given time -- third-party re-serve, payload-free. content_bound:
+; digest is the crossed object's T1 content id. content_free: digest is
+; a hiding commitment SHA-384(content_id || salt), openable later by
+; the gateway revealing (content_id, salt).
+egress-binding = &(
+  content-bound: 0,
+  content-free:  1,
+)
+naalp-egress-attestation = {
+  1 : egress-binding,
+  ; binding -- content_bound vs content_free (closed set)
+  2 : bstr,
+  ; digest -- content id (content-bound) or commitment (content-free)
+  3 : effect,
+  ; effect -- the effect class of the crossed object
+  4 : bstr,
+  ; audience -- the bound destination (empty-permitted)
+  5 : uint,
+  ; at -- the gateway's egress timestamp, epoch ms
+  ? 6 : ordering-disclosure,
+  ; ordering -- OPTIONAL (R1); ABSENT is read correspondence-only
+}
+
+; MANUFACTURING PHYSICAL-HAZARD (Mfg-F). `hazard` is a dimension
+; ORTHOGONAL to `effect`: effect (field 7) is DATA reversibility (can
+; the state change be undone); hazard is PHYSICAL danger -- a
+; data-reversible action may still be a high physical hazard (e.g. a
+; tool re-approaching a work envelope). The two are never merged and
+; neither is derived from the other. A hazard CLAIM rides as the
+; critical cext key 16 (naalp-hazard-claim) on the acting object; a
+; hazard AUTHORIZATION is a standalone Governance (0x0004) kind 7
+; object (naalp-hazard-authorization), referenced by the acting
+; object's `causes`. Coverage: EXACT class match AND full containment
+; of the claim envelope in the grant envelope (frame id equal; same
+; axis count and order; every claim axis inside the matching grant
+; axis; claim speed_bound <= grant speed_bound; claim window a
+; sub-interval of the grant window); any single failing dimension
+; denies the whole claim (HazardNotCovered). All numeric bounds are
+; fixed-point integers (signed mm; unsigned mm/s) -- no floats, per the
+; spine's deterministic-CBOR subset. Map keys are 1-based.
+;
+; hazard-class is a CLOSED 0..4 enum. A DECODE-TIME rule (like effect's
+; unknown->destructive): an absent or unrecognized raw hazard value
+; MUST normalize to the HIGHEST class (4, motion-in-shared-space) --
+; never to none(0) or a weaker value -- so a missing declaration fails
+; safe (HazardUnknown when no claim exists; else HazardNotCovered
+; against a lower-class grant). CDDL cannot see the absence or
+; invalidity of a raw wire value, so this is a MUST on the decoder, not
+; this grammar.
+hazard-class = &(
+  none:                   0,
+  tool-actuation:         1,
+  thermal:                2,
+  energy-release:         3,
+  motion-in-shared-space: 4,
+)
+
+; A named coordinate frame plus a signed axis-aligned bounding region
+; in that frame, integer millimeters. `axes` MUST be non-empty and
+; every entry MUST satisfy min <= max (HazardMalformed otherwise). The
+; frame id is integrator-defined; N-AALP requires only that a claim's
+; frame id equal the grant's for containment to be checkable.
+spatial-bounds = {
+  1 : tstr,                        ; frame -- MUST be Unicode NFC
+                                    ; (NonNFC else)
+  2 : [ + [min: int, max: int] ],  ; axes -- per-axis [min,max], mm,
+                                    ; signed
+}
+
+; A validity window in the epoch-ms convention of the spine.
+hazard-window = {
+  1 : uint,   ; not_before -- epoch ms
+  2 : uint,   ; not_after  -- epoch ms
+}
+
+; The full physical envelope a hazard claim or authorization bounds
+; itself by. All three fields MANDATORY: a silently-absent axis, speed,
+; or window is a MALFORMED envelope (HazardMalformed), never
+; "unconstrained" (which would fail OPEN in a physical-safety context).
+hazard-envelope = {
+  1 : spatial-bounds,   ; spatial
+  2 : uint,             ; speed_bound -- max instantaneous speed, mm/s
+  3 : hazard-window,    ; window
+}
+
+; A signed physical-hazard claim, carried as cext key 16 on the acting
+; object. `class` and `envelope` are BOTH mandatory (HazardMalformed
+; otherwise).
+naalp-hazard-claim = {
+  1 : hazard-class,     ; class    -- the declared hazard class
+  2 : hazard-envelope,  ; envelope -- the bounds this claim asserts
+}
+
+; A signed physical-hazard authorization (a grant): a standalone
+; Governance (0x0004) kind 7 object. Same {class, envelope} shape as
+; the claim; coverage is the exact-class-match + full-containment rule
+; above (any failing dimension => HazardNotCovered).
+naalp-hazard-authorization = {
+  1 : hazard-class,     ; class    -- the class this authorization covers
+  2 : hazard-envelope,  ; envelope -- the bounds this authorization covers
+}

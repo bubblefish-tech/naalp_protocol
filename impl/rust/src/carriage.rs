@@ -34,13 +34,22 @@ pub fn class_name(c: u64) -> &'static str {
 }
 
 pub fn err_not_delivered() -> cose::Error {
-    cose::Error { kind: "NotDelivered", msg: "a below-foreign failure; the message was not delivered" }
+    cose::Error {
+        kind: "NotDelivered",
+        msg: "a below-foreign failure; the message was not delivered",
+    }
 }
 pub fn err_mapping_unrepresentable() -> cose::Error {
-    cose::Error { kind: "MappingError", msg: "an N-AALP semantic cannot be represented by this carriage class" }
+    cose::Error {
+        kind: "MappingError",
+        msg: "an N-AALP semantic cannot be represented by this carriage class",
+    }
 }
 pub fn err_malformed() -> cose::Error {
-    cose::Error { kind: "Malformed", msg: "malformed carriage body" }
+    cose::Error {
+        kind: "Malformed",
+        msg: "malformed carriage body",
+    }
 }
 
 /// The body of a carriage object (design.md §13.2).
@@ -89,7 +98,14 @@ pub fn carry(
     foreign: Vec<u8>,
 ) -> Result<CarriageBody, cose::Error> {
     validate_class(class)?;
-    Ok(CarriageBody { protocol_id, class, content_type, correlation, method, foreign })
+    Ok(CarriageBody {
+        protocol_id,
+        class,
+        content_type,
+        correlation,
+        method,
+        foreign,
+    })
 }
 
 /// Parse a carriage body from a CBOR value, recovering the foreign field octet-for-octet.
@@ -116,9 +132,23 @@ pub fn carriage_from_value(v: &Value) -> Result<CarriageBody, cose::Error> {
         }
     }
     match (pid, class, ct, corr, method, foreign) {
-        (Some(protocol_id), Some(class), Some(content_type), Some(correlation), Some(method), Some(foreign)) => {
+        (
+            Some(protocol_id),
+            Some(class),
+            Some(content_type),
+            Some(correlation),
+            Some(method),
+            Some(foreign),
+        ) => {
             validate_class(class)?;
-            Ok(CarriageBody { protocol_id, class, content_type, correlation, method, foreign })
+            Ok(CarriageBody {
+                protocol_id,
+                class,
+                content_type,
+                correlation,
+                method,
+                foreign,
+            })
         }
         _ => Err(err_malformed()),
     }
@@ -195,7 +225,12 @@ mod tests {
                 foreign.clone(),
             )
             .expect("carry");
-            assert_eq!(hex::encode(cb.bytes()), c["body_hex"].as_str().unwrap(), "{} body", dir);
+            assert_eq!(
+                hex::encode(cb.bytes()),
+                c["body_hex"].as_str().unwrap(),
+                "{} body",
+                dir
+            );
             let v = cbor::decode(&cb.bytes()).expect("decode");
             let rec = carriage_from_value(&v).expect("from value");
             assert_eq!(rec.foreign, foreign, "{} foreign not octet-identical", dir);
@@ -207,16 +242,28 @@ mod tests {
     #[test]
     fn opaque_undefined_protocol() {
         let c = load_class("opaque");
-        assert_eq!(protocol_range(c["protocol_id"].as_u64().unwrap()), "experimental");
+        assert_eq!(
+            protocol_range(c["protocol_id"].as_u64().unwrap()),
+            "experimental"
+        );
         let blob = vec![0x00u8, 0x01, 0x02, 0xFF, 0xFE, 0x7F, 0x80];
-        let cb = carry(c["protocol_id"].as_u64().unwrap(), CLASS_OPAQUE, 1, vec![], String::new(), blob.clone()).unwrap();
+        let cb = carry(
+            c["protocol_id"].as_u64().unwrap(),
+            CLASS_OPAQUE,
+            1,
+            vec![],
+            String::new(),
+            blob.clone(),
+        )
+        .unwrap();
         let rec = carriage_from_value(&cbor::decode(&cb.bytes()).unwrap()).unwrap();
         assert_eq!(rec.foreign, blob);
     }
 
     #[test]
     fn registry() {
-        let text = std::fs::read_to_string("../../vectors/registry/protocols.csv").expect("read csv");
+        let text =
+            std::fs::read_to_string("../../vectors/registry/protocols.csv").expect("read csv");
         let mut rows = 0;
         for line in text.lines().skip(1) {
             if line.trim().is_empty() {
@@ -229,14 +276,27 @@ mod tests {
             rows += 1;
         }
         assert!(rows > 0, "registry empty");
-        for (id, want) in [(0x00u64, "reserved"), (0x01, "standards"), (0x0F, "standards"), (0x10, "experimental"), (0x7F, "experimental"), (0x80, "private"), (0xFF, "private")] {
+        for (id, want) in [
+            (0x00u64, "reserved"),
+            (0x01, "standards"),
+            (0x0F, "standards"),
+            (0x10, "experimental"),
+            (0x7F, "experimental"),
+            (0x80, "private"),
+            (0xFF, "private"),
+        ] {
             assert_eq!(protocol_range(id), want, "range {:#x}", id);
         }
     }
 
     #[test]
     fn mapping_error_on_unknown_class() {
-        assert_eq!(carry(0x10, 99, 0, vec![], "x".into(), b"y".to_vec()).unwrap_err().kind, "MappingError");
+        assert_eq!(
+            carry(0x10, 99, 0, vec![], "x".into(), b"y".to_vec())
+                .unwrap_err()
+                .kind,
+            "MappingError"
+        );
     }
 
     #[test]
@@ -253,20 +313,47 @@ mod tests {
         let (v, s) = (cose::MlDsa65Verifier(pk), cose::MlDsa65Signer(sk));
         let kind_ok = |_c: u64, _k: u64| true;
 
-        let foreign = br#"{"jsonrpc":"2.0","method":"tools/call","params":{"from":"attacker-principal"}}"#.to_vec();
-        let cb = carry(0x01, CLASS_JSONRPC, 0, vec![1, 2, 3, 4], "tools/call".into(), foreign.clone()).unwrap();
+        let foreign =
+            br#"{"jsonrpc":"2.0","method":"tools/call","params":{"from":"attacker-principal"}}"#
+                .to_vec();
+        let cb = carry(
+            0x01,
+            CLASS_JSONRPC,
+            0,
+            vec![1, 2, 3, 4],
+            "tools/call".into(),
+            foreign.clone(),
+        )
+        .unwrap();
         let mut o = envelope::Object {
-            id: vec![], kind: 0, channel: 13, tier: 0, signer: pkb.clone(), created: 100,
-            effect: 0, causes: vec![], profile: cose::PROFILE_PUBLIC as u64,
-            body: cb.to_value(), ext: None, cext: None,
+            audience: String::new(),
+            suite: 0,
+            id: vec![],
+            kind: 0,
+            channel: 13,
+            tier: 0,
+            signer: pkb.clone(),
+            created: 100,
+            effect: 0,
+            causes: vec![],
+            profile: cose::PROFILE_PUBLIC as u64,
+            body: cb.to_value(),
+            ext: None,
+            cext: None,
         };
         let signed = envelope::sign(&mut o, &s);
-        let ov = envelope::verify(cose::PROFILE_PUBLIC, &v, &kind_ok, &[], &signed).expect("verify");
+        let ov =
+            envelope::verify(cose::PROFILE_PUBLIC, &v, &kind_ok, &[], &signed).expect("verify");
         // authority = the N-AALP signer, not the foreign principal.
         assert_eq!(carriage_authority(&ov), pkb.as_slice());
-        assert!(!carriage_authority(&ov).windows(b"attacker-principal".len()).any(|w| w == b"attacker-principal"));
+        assert!(!carriage_authority(&ov)
+            .windows(b"attacker-principal".len())
+            .any(|w| w == b"attacker-principal"));
         let rec = carriage_from_value(&ov.body).expect("carriage from body");
         assert_eq!(rec.foreign, foreign, "foreign not recovered octet-exact");
-        assert!(rec.foreign.windows(b"attacker-principal".len()).any(|w| w == b"attacker-principal"));
+        assert!(rec
+            .foreign
+            .windows(b"attacker-principal".len())
+            .any(|w| w == b"attacker-principal"));
     }
 }

@@ -69,9 +69,9 @@
       "status": "wired",
       "dir": "harness/adapters/php",
       "build": "",
-      "launch": "php -d extension=sodium -d extension=intl harness/adapters/php/adapter.php",
+      "launch": "php -d extension=ffi -d ffi.enable=1 -d extension=sodium -d extension=intl harness/adapters/php/adapter.php",
       "sdk": "impl/php",
-      "mldsa": "pure-only — no deterministic ML-DSA in PHP (liboqs/OpenSSL 3.5 are randomized-only). Grades all pure ops + Ed25519 (ext-sodium); skip-tracks mldsa.keygen/cose.sign1/cose.verify1 (235/239 graded, 4 honest skips)"
+      "mldsa": "full via PHP-FFI to OpenSSL >= 3.5: deterministic (rnd=0) ML-DSA-65/87 keygen-from-seed/sign/verify, byte-identical to the FIPS 204 consensus (proven vs dilithium-py). Grades all pure ops + Ed25519 + mldsa.keygen/cose.sign1/cose.verify1 where OpenSSL >= 3.5 is reachable; honestly skip-tracks ML-DSA where the runtime OpenSSL is older (never a false green)"
     },
     "ruby": {
       "status": "wired",
@@ -83,12 +83,12 @@
     },
     "swift": {
       "status": "wired",
-      "graded": "235 graded, 4 ML-DSA skip-tracked (built + graded on Swift 6.3.3 / Ubuntu 24.04 via WSL2; also graded in CI in a Swift container)",
+      "graded": "315 graded, 2 skip-tracked (forkproof.preimage/body, shared across all ports); full crypto incl. deterministic ML-DSA-65/87 + LAMPS composite. Graded in CI run 32097712833 (swift:6.1 container); also builds+tests on Swift 6.3.3",
       "dir": "harness/adapters/swift_adapter",
       "build": "swift build -c release --package-path harness/adapters/swift_adapter",
       "launch": "harness/adapters/swift_adapter/.build/release/naalp-adapter",
       "sdk": "impl/swift",
-      "mldsa": "pure-only — SwiftDilithium 3.6.0 has NO seed-based keygen (only random), so the corpus seed->pk / deterministic-sign path cannot be produced; grades all pure ops + Ed25519 (swift-crypto), skip-tracks the ML-DSA leg. Upgradable if a Swift ML-DSA lib adds seed keygen."
+      "mldsa": "swift-crypto 4.5.1 vendored BoringSSL — keygen-from-seed + verify via the public MLDSA65/MLDSA87 API; deterministic (rnd=0) signing via the CNaalpMldsa C shim reaching BoringSSL's internal BCM_mldsa{65,87}_sign_internal (the public swift-crypto signer is hedged-only). Byte-identical to the FIPS-204 / composite consensus (composite value ML-DSA leg ef8aa0a1..). swift-crypto pinned .exact(\"4.5.1\") because the shim reaches an internal symbol; the composite KAT is the canary on any bump."
     }
   }
 }

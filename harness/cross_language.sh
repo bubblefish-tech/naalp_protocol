@@ -31,8 +31,11 @@ else
 fi
 
 echo "== [2] build runner + go/rust reference adapters =="
-( cd harness/runner && GOWORK=off go build -o naalp-conform ./ ) || exit 1
-( cd harness/adapters/go && GOWORK=off go build -o naalp-adapter-go ./ ) || exit 1
+# GOEXE is empty on Linux and ".exe" on Windows; naming the output explicitly stops a stale
+# leftover naalp-conform.exe (from an earlier `-o name.exe` build) shadowing this fresh binary
+# via the bin() helper on Windows dev boxes. CI (Linux) is byte-unaffected.
+( cd harness/runner && GOWORK=off go build -o "naalp-conform$(go env GOEXE)" ./ ) || exit 1
+( cd harness/adapters/go && GOWORK=off go build -o "naalp-adapter-go$(go env GOEXE)" ./ ) || exit 1
 ( cd harness/adapters/rust && cargo build --release -q ) || exit 1
 RUNNER="$(bin ./harness/runner/naalp-conform)"
 
@@ -73,16 +76,17 @@ fi
 if have ruby && [ -f harness/adapters/ruby/adapter.rb ]; then
   add ruby "ruby harness/adapters/ruby/adapter.rb" 1
 fi
-# php (pure-only crypto: grades all pure ops + ed25519, skip-tracks ML-DSA sign/keygen/verify)
+# php (full crypto where OpenSSL >= 3.5 is reachable: grades all pure ops + ed25519 + deterministic
+# ML-DSA via PHP-FFI; honestly skip-tracks ML-DSA where the runtime OpenSSL is older than 3.5)
 if have php && [ -f harness/adapters/php/adapter.php ]; then
-  add php "php -d extension=sodium -d extension=intl harness/adapters/php/adapter.php" 0
+  add php "php -d extension=ffi -d ffi.enable=1 -d extension=sodium -d extension=intl harness/adapters/php/adapter.php" 1
 fi
 # kotlin (JVM + Bouncy Castle, same as Java; kotlinc build is slow so reuse the jar if present)
 if have kotlinc && [ -f harness/adapters/kotlin/Adapter.kt ]; then
   KJAR=harness/adapters/kotlin/lib/bcprov-jdk18on-1.85.jar
   [ -f "$KJAR" ] || { mkdir -p harness/adapters/kotlin/lib; cp harness/adapters/java/lib/bcprov-jdk18on-1.85.jar "$KJAR" 2>/dev/null || curl -fsSL -o "$KJAR" https://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk18on/1.85/bcprov-jdk18on-1.85.jar || true; }
   KAPP=harness/adapters/kotlin/naalp-adapter-kotlin.jar
-  if [ ! -f "$KAPP" ] && [ -f "$KJAR" ]; then
+  if [ -f "$KJAR" ]; then  # rebuild every run: reuse-if-present silently graded stale kotlin source for days (2026-09-06 board re-run) -- the only adapter that didn't rebuild unconditionally
     kotlinc -cp "$KJAR" impl/kotlin/src/main/kotlin/sh/bubblefish/naalp/*.kt harness/adapters/kotlin/Adapter.kt -include-runtime -d "$KAPP" 2>/dev/null || echo "  (kotlin build failed — SKIP)"
   fi
   [ -f "$KAPP" ] && add kotlin "java -cp ${KAPP}${SEP}${KJAR} sh.bubblefish.naalp.AdapterKt" 1

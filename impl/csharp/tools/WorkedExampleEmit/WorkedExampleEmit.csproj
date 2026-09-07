@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0. -->
+  <!-- A tiny console tool that emits the worked-example object hex for the cross-port
+       object ledger. Lives under tools/ (not packed) and references the library. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <AssemblyName>naalp-worked-example</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Bubblefish.Naalp.csproj" />
+  </ItemGroup>
+</Project>

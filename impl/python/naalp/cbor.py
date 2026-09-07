@@ -14,6 +14,12 @@ class NonCanonical(ValueError):
     kind = "NonCanonical"
 
 
+class DepthExceeded(ValueError):
+    """Raised when a decoded item nests deeper than the caller's maximum (design.md §3.4, R7).
+    The outermost item is depth 1."""
+    kind = "DepthExceeded"
+
+
 # --- value model (mirrors the Go/Rust cbor.Value variants) ---
 
 class U:
@@ -91,7 +97,17 @@ def encode(v):
     raise TypeError("not a cbor value: %r" % (v,))
 
 
-def _dec(data):
+# _UNBOUNDED_DEPTH is the sentinel used by the trusted-input decode() path: far beyond any
+# legitimate structure yet finite, so even the unbounded path cannot recurse without limit on a
+# pathological input (mirrors impl/go/cbor.maxDepthUnbounded).
+_UNBOUNDED_DEPTH = 1 << 20
+
+
+def _dec(data, depth=1, max_depth=_UNBOUNDED_DEPTH):
+    # CBOR nesting-depth bound (design.md §3.4, R7): the outermost item is depth 1; an item at
+    # depth max_depth+1 is rejected BEFORE it is materialized (RFC 8949 §10 decoder-memory guard).
+    if depth > max_depth:
+        raise DepthExceeded("CBOR nesting depth exceeds the maximum")
     if not data:
         raise NonCanonical("truncated")
     ib = data[0]
@@ -143,30 +159,43 @@ def _dec(data):
     if major == 4:
         items, cur = [], rest
         for _ in range(arg):
-            it, cur = _dec(cur)
+            it, cur = _dec(cur, depth + 1, max_depth)
             items.append(it)
         return A(items), cur
     if major == 5:
         pairs, cur, prev = [], rest, None
         for _ in range(arg):
             before = cur
-            k, cur = _dec(cur)
+            k, cur = _dec(cur, depth + 1, max_depth)
             kbytes = before[: len(before) - len(cur)]
-            val, cur = _dec(cur)
+            val, cur = _dec(cur, depth + 1, max_depth)
             if prev is not None and kbytes <= prev:
                 raise NonCanonical("map keys out of order or duplicate")
             prev = kbytes
             pairs.append((k, val))
         return M(pairs), cur
     if major == 6:
-        content, rest2 = _dec(rest)
+        content, rest2 = _dec(rest, depth + 1, max_depth)
         return Tag(arg, content), rest2
     raise NonCanonical("unsupported major type %d" % major)
 
 
 def decode(data):
-    """Strict canonical decode: rejects any non-canonical encoding with NonCanonical."""
-    v, rest = _dec(bytes(data))
+    """Strict canonical decode: rejects any non-canonical encoding with NonCanonical. Does not
+    bound nesting depth on this trusted-input path; the untrusted object decode path uses
+    decode_bounded (design.md §3.4 (R7))."""
+    v, rest = _dec(bytes(data), 1, _UNBOUNDED_DEPTH)
+    if rest:
+        raise NonCanonical("trailing bytes after top-level item")
+    return v
+
+
+def decode_bounded(data, max_depth):
+    """decode() with a maximum CBOR nesting depth (design.md §3.4 (R7)): the outermost item is
+    depth 1, each nested map key/value, array element, and tagged content is one deeper, and an
+    item at depth max_depth+1 is rejected with a DepthExceeded error BEFORE it is materialized
+    (RFC 8949 §10 decoder-memory guard)."""
+    v, rest = _dec(bytes(data), 1, max_depth)
     if rest:
         raise NonCanonical("trailing bytes after top-level item")
     return v

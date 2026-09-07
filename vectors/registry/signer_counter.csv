@@ -1,0 +1,2 @@
+ext_key,name,placement,tier,description
+14,signer-counter,ext,1,OPTIONAL forward-only per-signer position carried in the non-critical ext map; DETECTION of key duplication not prevention; signed by the signer's COSE_Sign1 (design.md §2.5.2, NAALP-REQ-120, T1.6)

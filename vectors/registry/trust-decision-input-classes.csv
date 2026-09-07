@@ -1,0 +1,11 @@
+class_id,class_name,safe_shape,design_anchor,description
+1,identifier,verifiable,design.md 25.2,the identifier a decision keys on; a self-certifying signer id = content-id of the key (5)
+2,object-parse,verifiable,design.md 25.2,the object bytes and their parse; deterministic CBOR with a single duplicate-key-rejecting parser (R-3)
+3,object-identity,verifiable,design.md 25.2,the object content-id; recomputed by any holder, a mismatch rejects (2.3)
+4,conformance-expectation,verifiable,design.md 25.2,the expected conformance value; from an independent oracle, never the impl under test (R-16.1)
+5,verification-procedure,verifiable,design.md 25.3 R-TDCS-2,the evaluator own procedure; deterministic, control flow independent of unverified content, no inference before accept
+6,delegated-authority,attenuating,design.md 25.2 R-DEL-4/7 R-TDCS-6,authority derived across a delegation hop; non-increasing on effect, scope, and depth (graded C15)
+7,approved-action,committed,design.md 25.2,which action an approval authorizes; bound under signature to the exact argument content-id plus a relying-party nonce (7)
+8,negotiated-parameters,committed,design.md 25.2,the negotiated profile and parameters; bound under signature and the transcript, accept descends from offer (R-15.2)
+9,validity-clock,committed,design.md 25.2 R-TDCS-4,when a credential validity is judged; against the ordering position, never the signer own clock (18.2)
+10,use-context,committed,design.md 25.3 R-TDCS-5,the context a portable verdict is valid in; named as an audience under signature, checked at use (AudienceMismatch)

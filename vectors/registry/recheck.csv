@@ -1,0 +1,5 @@
+procedure_id,procedure_name,tier,description
+1,recompute-content-id,1,recompute the content id from the body and compare (design.md §2.3)
+2,verify-cose-sign1,1,verify the COSE_Sign1 signature under the signer key (design.md §4)
+3,walk-causes,1,walk the signed causal partial order offline (design.md §8.2)
+4,replay-consume-check,1,replay the single-use consume ledger for the approval (design.md §7.2)

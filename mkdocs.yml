@@ -40,6 +40,7 @@ site_dir: ../site
 exclude_docs: |
   /site/
   /GitHub/
+  /_guides/
   /LICENSE.md
   /impl/**
   /harness/adapters/
@@ -51,6 +52,11 @@ exclude_docs: |
   /spec/
   /schema/
   /process/**
+  # Ecosystem packages carry per-package sources, tests, and examples that are not part of the
+  # published documentation site; none are nav'd, so left unexcluded they would render as
+  # URL-reachable orphan pages. No ecosystem page is currently published; if/when one is,
+  # re-include it explicitly below (matching the /impl/** SDK-QUICKSTART pattern).
+  /ecosystem/**
   /_git_lock_cleanup/
   /README.md
   /CHANGELOG.md
@@ -62,21 +68,21 @@ exclude_docs: |
   /TRADEMARKS.md
   /LINEAGE.md
   /NOTICE
-  # Moat-side hardening (2026-09-04 classification policy): never publish design/build
-  # process artifacts even if a future sync step adds them. The curated, renamed derivatives
-  # under docs/engineering-rigor/ are NOT matched by these patterns (different filenames).
-  /build_plans/
-  /research/
-  /decisions/
-  /_*.md
-  */_*.md
-  **/DESIGN.md
-  **/APPROVAL-LOG.md
-  **/DECISIONS.md
-  **/RED-EVIDENCE.md
-  **/OPEN-ITEMS.md
-  **/*roadmap*.md
-  **/*scoping*.md
+  /CLAUDE.md
+  /PLAN.md
+  /requirements.md
+  /design.md
+  /design-channels.md
+  /tasks.md
+  /ietf/README.md
+  /ietf/IANA.md
+  /ietf/SUBMISSION.md
+  /ietf/ISE-cover-letter.md
+  # Internal-only pages excluded from the public site (2026-09-01 #278 pre-publish sanitization):
+  # an internal submission runbook (names the submission process + package), and an internal
+  # requirement-to-gate tracking matrix (cites internal ledgers + live gate state).
+  /docs/ietf.md
+  /docs/conformance-matrix.md
   # Re-include the exact SDK pages the nav publishes (a file cannot be re-included if its
   # parent directory itself is excluded, hence '/impl/**' above, not '/impl/'). All ten SDKs.
   !/impl/go/QUICKSTART.md
@@ -160,6 +166,7 @@ nav:
   - Home: docs/index.md
   - Quickstart: docs/quickstart.md
   - Cookbook: docs/cookbook.md
+  - Internet-Draft: ietf/draft-bubblefish-naalp-01.md
   - Specification:
       - Overview: docs/spec/overview.md
       - Object model: docs/spec/object-model.md
@@ -167,9 +174,26 @@ nav:
       - Crypto agility and migration: docs/spec/crypto-agility.md
       - Worked example: docs/examples/worked-object.md
   - Channel surfaces:
+      - Control: docs/channels/control.md
+      - Memory: docs/channels/memory.md
       - Capability: docs/channels/capability.md
+      - Identity: docs/channels/identity.md
+      - Governance: docs/channels/governance.md
+      - Immune: docs/channels/immune.md
+      - Federation: docs/channels/federation.md
       - Settlement: docs/channels/settlement.md
+      - Compliance: docs/channels/compliance.md
+      - Sensory: docs/channels/sensory.md
+      - Telemetry: docs/channels/telemetry.md
+      - Audit: docs/channels/audit.md
+      - Stream: docs/channels/stream.md
+      - Bridge: docs/channels/bridge.md
+      - Commerce: docs/channels/commerce.md
       - Interaction: docs/channels/interaction.md
+      - Discovery: docs/channels/discovery.md
+      - Workflow: docs/channels/workflow.md
+      - Knowledge: docs/channels/knowledge.md
+      - Spatial: docs/channels/spatial.md
   - Protocol mappings:
       - MCP (Model Context Protocol): docs/mappings/mcp.md
       - A2A (Agent2Agent): docs/mappings/a2a.md
@@ -178,29 +202,8 @@ nav:
       - Error codes: docs/registries/error-codes.md
   - Conformance:
       - Overview: docs/conformance.md
+      - Evidence matrix: docs/conformance-evidence.md
       - Adapter contract: harness/INSTRUCTIONS.md
-  - Engineering rigor:
-      - Overview: docs/engineering-rigor/index.md
-      - A2A task-chain bridge: docs/engineering-rigor/naalp-a2a-bridge.md
-      - A2A framework-hook adapter: docs/engineering-rigor/naalp-a2a-hook.md
-      - ADK plugin adapter: docs/engineering-rigor/naalp-adk-plugin.md
-      - Go agent-pattern SDK: docs/engineering-rigor/naalp-agent-go.md
-      - Offline proof bundle: docs/engineering-rigor/naalp-bundle.md
-      - Deterministic-CBOR codec binding: docs/engineering-rigor/naalp-codec.md
-      - Evidentiality primitive: docs/engineering-rigor/naalp-evidentiality.md
-      - Signer-id fingerprint cache: docs/engineering-rigor/naalp-fingerprint-cache.md
-      - Governance chain verifier: docs/engineering-rigor/naalp-governance-verify.md
-      - Human-in-the-loop interceptor: docs/engineering-rigor/naalp-hitl.md
-      - MCP tool-integration bridge: docs/engineering-rigor/naalp-mcp-bridge.md
-      - MCP framework-hook adapter: docs/engineering-rigor/naalp-mcp-hook.md
-      - Mixed-mode HTTP discrimination SDK: docs/engineering-rigor/naalp-mixed-mode.md
-      - Multi-agent interaction shapes: docs/engineering-rigor/naalp-multiagent.md
-      - OPA/Rego policy integration: docs/engineering-rigor/naalp-opa-policy.md
-      - Plan-and-Execute orchestrator: docs/engineering-rigor/naalp-plan.md
-      - ReAct agent-pattern bridge: docs/engineering-rigor/naalp-react.md
-      - JSON-Schema to CDDL generator: docs/engineering-rigor/naalp-schemagen.md
-      - Semantic validator and firewall: docs/engineering-rigor/naalp-validator.md
-      - Verify-at-use guard: docs/engineering-rigor/naalp-verify-at-use.md
   - Implementations:
       - Overview: docs/implementations/index.md
       - Go: impl/go/QUICKSTART.md

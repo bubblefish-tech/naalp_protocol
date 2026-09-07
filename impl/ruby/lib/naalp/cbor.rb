@@ -14,6 +14,12 @@ module Naalp
       def kind; "NonCanonical"; end
     end
 
+    # DepthExceeded is raised when a decoded item nests deeper than the caller's maximum
+    # (design.md §3.4, R7). The outermost item is depth 1.
+    class DepthExceeded < StandardError
+      def kind; "DepthExceeded"; end
+    end
+
     # --- value model (mirrors the Go/Rust/Python cbor.Value variants) ---
 
     class U            # unsigned integer (major 0)
@@ -95,8 +101,16 @@ module Naalp
       end
     end
 
-    # Cursor-based strict decoder. Returns [value, new_pos].
-    def dec(data, pos)
+    # MAX_DEPTH_UNBOUNDED is the sentinel used by the trusted-input decode path: far beyond any
+    # legitimate structure yet finite, so even the unbounded path cannot recurse without limit on
+    # a pathological input.
+    MAX_DEPTH_UNBOUNDED = 1 << 20
+
+    # Cursor-based strict decoder. Returns [value, new_pos]. depth/max_depth thread the CBOR
+    # nesting-depth bound (design.md §3.4, R7): the outermost item is depth 1, and an item whose
+    # depth exceeds max_depth is rejected with DepthExceeded BEFORE it is materialized.
+    def dec(data, pos, depth = 1, max_depth = MAX_DEPTH_UNBOUNDED)
+      raise DepthExceeded, "CBOR nesting depth exceeds the maximum" if depth > max_depth
       raise NonCanonical, "truncated" if pos >= data.bytesize
       ib = data.getbyte(pos)
       major = ib >> 5
@@ -145,7 +159,7 @@ module Naalp
       when 4
         items = []
         arg.times do
-          it, pos = dec(data, pos)
+          it, pos = dec(data, pos, depth + 1, max_depth)
           items << it
         end
         [A.new(items), pos]
@@ -154,9 +168,9 @@ module Naalp
         prev = nil
         arg.times do
           before = pos
-          k, pos = dec(data, pos)
+          k, pos = dec(data, pos, depth + 1, max_depth)
           kbytes = data.byteslice(before, pos - before)
-          val, pos = dec(data, pos)
+          val, pos = dec(data, pos, depth + 1, max_depth)
           if !prev.nil? && (kbytes <=> prev) <= 0
             raise NonCanonical, "map keys out of order or duplicate"
           end
@@ -165,18 +179,33 @@ module Naalp
         end
         [M.new(pairs), pos]
       when 6
-        content, pos = dec(data, pos)
+        content, pos = dec(data, pos, depth + 1, max_depth)
         [Tag.new(arg, content), pos]
       else
         raise NonCanonical, "unsupported major type #{major}"
       end
     end
 
-    def decode(data)
+    def decode_top(data, max_depth)
       data = data.dup.force_encoding(Encoding::BINARY)
-      v, pos = dec(data, 0)
+      v, pos = dec(data, 0, 1, max_depth)
       raise NonCanonical, "trailing bytes after top-level item" if pos != data.bytesize
       v
+    end
+
+    # decode parses one deterministic-CBOR value and requires that data is exactly one canonical
+    # item with no trailing bytes. It does not bound nesting depth on the trusted-input path; the
+    # untrusted object decode path uses decode_bounded (design.md §3.4, R7).
+    def decode(data)
+      decode_top(data, MAX_DEPTH_UNBOUNDED)
+    end
+
+    # decode_bounded is decode with a maximum CBOR nesting depth (design.md §3.4, R7): the
+    # outermost item is depth 1, each nested map key/value, array element and tagged content is
+    # one deeper, and an item at depth max_depth+1 is rejected with DepthExceeded before it is
+    # materialized (RFC 8949 §10 decoder-memory guard).
+    def decode_bounded(data, max_depth)
+      decode_top(data, max_depth)
     end
 
     def content_id(body)

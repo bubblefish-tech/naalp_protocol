@@ -9,7 +9,7 @@ object model, the COSE_Sign1 cryptographic profiles, the identity, effect,
 approval, and audit objects, deterministic and federated ordering, delivery,
 streaming, the transport bindings, carriage-by-class with its registry and
 opaque class, and the twenty channel surfaces) and its ten reference SDKs. It
-implements draft-bubblefish-naalp-00. Standard cryptography only (deterministic
+implements draft-bubblefish-naalp-01. Standard cryptography only (deterministic
 CBOR per RFC 8949, COSE_Sign1 per RFC 9052, ML-DSA per FIPS 204, Ed25519 per
 RFC 8032).
 

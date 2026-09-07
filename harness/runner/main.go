@@ -315,11 +315,26 @@ func valEqual(a, b interface{}) bool {
 
 // numEqual compares an expected number to a value that may be a JSON number or a decimal string
 // (adapters are allowed to return 64-bit counters as strings).
+//
+// R12 (NAALP-01-03): a 64-bit counter carried as a decimal string compares to an integer-valued
+// expectation EXACTLY, never through float64 -- strconv.ParseFloat rounds every integer above 2^53,
+// so the earlier float-only string branch silently accepted a wrong low-octet counter. Only a
+// genuinely fractional expectation falls back to a float compare. The corpus-lint gate
+// (gate_corpus_lint) is the companion structural guarantee: no vector carries a bare integer > 2^53,
+// so an above-2^53 value only ever reaches here as a string and is compared exactly below.
 func numEqual(a float64, b interface{}) bool {
 	switch bv := b.(type) {
 	case float64:
 		return a == bv
 	case string:
+		if a == float64(int64(a)) { // a is an exact integer value (true for every expectation <= 2^53)
+			if i, err := strconv.ParseInt(bv, 10, 64); err == nil {
+				return int64(a) == i
+			}
+			if u, err := strconv.ParseUint(bv, 10, 64); err == nil {
+				return a >= 0 && uint64(int64(a)) == u
+			}
+		}
 		f, err := strconv.ParseFloat(bv, 64)
 		return err == nil && a == f
 	default:

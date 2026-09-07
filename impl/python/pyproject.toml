@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "naalp"
 version = "0.1.0"
-description = "Reference SDK for N-AALP (Native Agentic Application Layer Protocol), draft-bubblefish-naalp-00"
+description = "Reference SDK for N-AALP (Native Agentic Application Layer Protocol), draft-bubblefish-naalp-01"
 readme = "QUICKSTART.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
@@ -24,10 +24,13 @@ dependencies = [
   "cryptography>=42",      # Ed25519 (RFC 8032)
 ]
 
+[project.scripts]
+naalp = "naalp.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/bubblefish-tech/naalp_protocol"
 Repository = "https://github.com/bubblefish-tech/naalp_protocol"
-"Internet-Draft" = "https://datatracker.ietf.org/doc/draft-bubblefish-naalp-00/"
+"Internet-Draft" = "https://datatracker.ietf.org/doc/draft-bubblefish-naalp-01/"
 
 [tool.setuptools]
 packages = ["naalp"]

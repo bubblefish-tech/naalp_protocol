@@ -11,7 +11,7 @@ Non-circular authority (NOT the code under test):
   * The confidentiality boundary (§12.3/§12.4) is a decision matrix computed here independently:
     a sensitive object over a non-confidential transport is refused (ConfidentialTransportRequired);
     a transport lacking peer authentication where policy requires it is PeerUnauthenticated.
-  * The media type is application/naalp+cbor (§12.1).
+  * The media type is application/vnd.bubblefish.naalp+cbor (§12.1).
 
 Emits vectors/transport/cases.json (LF-normalized).
 """
@@ -57,8 +57,8 @@ def build():
         "source": ("design §12; one signed object = one message unit across N-PAMP/QUIC/"
                    "WebSocket/HTTP; binding adds only framing; sensitive object over a "
                    "non-confidential transport => ConfidentialTransportRequired; missing peer "
-                   "auth where required => PeerUnauthenticated; media type application/naalp+cbor."),
-        "media_type": "application/naalp+cbor",
+                   "auth where required => PeerUnauthenticated; media type application/vnd.bubblefish.naalp+cbor."),
+        "media_type": "application/vnd.bubblefish.naalp+cbor",
         "transports": transports,
         "emit_matrix": matrix,
     }

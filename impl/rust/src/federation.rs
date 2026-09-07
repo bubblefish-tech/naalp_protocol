@@ -16,7 +16,21 @@ use crate::cose;
 /// Federation's named error: overlapping authority scopes. At baseline an overlap is operator
 /// error; at tier 1 the causal-graph reconcile resolves it (each object ordered once).
 pub fn err_scope_overlap_conflict() -> cose::Error {
-    cose::Error { kind: "ScopeOverlapConflict", msg: "authorities' scopes overlap" }
+    cose::Error {
+        kind: "ScopeOverlapConflict",
+        msg: "authorities' scopes overlap",
+    }
+}
+
+/// ErrReconcileMismatch is the verify-event reject of the Reconcile state machine (draft "##
+/// Reconcile state machine", error code 61): an independent recomputation of the deterministic
+/// linearization disagrees with the total order a Reconcile record claims, so the record is
+/// rejected whole.
+pub fn err_reconcile_mismatch() -> cose::Error {
+    cose::Error {
+        kind: "ReconcileMismatch",
+        msg: "independent linearization disagrees with the reconcile record's claimed order",
+    }
 }
 
 /// Deterministically merge the objects of a shared causal graph into one total order (design
@@ -27,7 +41,12 @@ pub fn reconcile(nodes: &[CausalNode]) -> Result<Vec<Vec<u8>>, cose::Error> {
     let present: std::collections::HashSet<&[u8]> = nodes.iter().map(|n| n.id.as_slice()).collect();
     let mut indeg: Vec<usize> = nodes
         .iter()
-        .map(|n| n.causes.iter().filter(|c| present.contains(c.as_slice())).count())
+        .map(|n| {
+            n.causes
+                .iter()
+                .filter(|c| present.contains(c.as_slice()))
+                .count()
+        })
         .collect();
     let mut done = vec![false; nodes.len()];
     let mut order: Vec<Vec<u8>> = Vec::with_capacity(nodes.len());
@@ -59,8 +78,11 @@ pub fn reconcile(nodes: &[CausalNode]) -> Result<Vec<Vec<u8>>, cose::Error> {
 
 /// Whether an order places every object's (present) causes before it.
 pub fn causally_valid(order: &[Vec<u8>], nodes: &[CausalNode]) -> bool {
-    let pos: std::collections::HashMap<&[u8], usize> =
-        order.iter().enumerate().map(|(k, id)| (id.as_slice(), k)).collect();
+    let pos: std::collections::HashMap<&[u8], usize> = order
+        .iter()
+        .enumerate()
+        .map(|(k, id)| (id.as_slice(), k))
+        .collect();
     for n in nodes {
         if let Some(&np) = pos.get(n.id.as_slice()) {
             for c in &n.causes {
@@ -85,8 +107,19 @@ pub struct ReconcileRecord {
 impl ReconcileRecord {
     pub fn bytes(&self) -> Vec<u8> {
         cbor::encode(&Value::Map(vec![
-            (Value::Uint(1), Value::Arr(self.authorities.iter().map(|a| Value::Tstr(a.clone())).collect())),
-            (Value::Uint(2), Value::Arr(self.order.iter().map(|o| Value::Bstr(o.clone())).collect())),
+            (
+                Value::Uint(1),
+                Value::Arr(
+                    self.authorities
+                        .iter()
+                        .map(|a| Value::Tstr(a.clone()))
+                        .collect(),
+                ),
+            ),
+            (
+                Value::Uint(2),
+                Value::Arr(self.order.iter().map(|o| Value::Bstr(o.clone())).collect()),
+            ),
         ]))
         .expect("encode reconcile record")
     }
@@ -94,6 +127,28 @@ impl ReconcileRecord {
 
 pub fn sign_reconcile(r: &ReconcileRecord, s: &dyn cose::CoseSigner) -> Vec<u8> {
     s.sign(&r.bytes())
+}
+
+/// verify_reconcile_order is the verify-event choke point of the Reconcile state machine (draft "##
+/// Reconcile state machine"). A verifier independently re-runs the deterministic linearization
+/// over the identical causal graph and rejects the record whole (ReconcileMismatch) if the
+/// recomputed total order differs from the one the record claims. It MUST recompute via
+/// `reconcile` — the content-id tie-break — and NEVER a position-tie-broken topological sort,
+/// which would spuriously disagree on causally-concurrent objects. A node set that is not a
+/// valid partial order is rejected under that fault (CausalViolation), fail-closed. It returns
+/// `Ok(())` only when the record's claimed order is byte-for-byte the deterministic order
+/// (verified).
+pub fn verify_reconcile_order(r: &ReconcileRecord, nodes: &[CausalNode]) -> Result<(), cose::Error> {
+    let recomputed = reconcile(nodes)?; // CausalViolation: the graph is not a valid partial order
+    if recomputed.len() != r.order.len() {
+        return Err(err_reconcile_mismatch());
+    }
+    for i in 0..recomputed.len() {
+        if recomputed[i] != r.order[i] {
+            return Err(err_reconcile_mismatch());
+        }
+    }
+    Ok(()) // the claimed order is the deterministic order
 }
 
 #[cfg(test)]
@@ -106,7 +161,8 @@ mod tests {
     const VECTOR_PATH: &str = "../../vectors/federation/cases.json";
 
     fn load() -> J {
-        serde_json::from_str(&std::fs::read_to_string(VECTOR_PATH).expect("read corpus")).expect("parse")
+        serde_json::from_str(&std::fs::read_to_string(VECTOR_PATH).expect("read corpus"))
+            .expect("parse")
     }
 
     fn hexd(s: &str) -> Vec<u8> {
@@ -120,7 +176,12 @@ mod tests {
             .iter()
             .map(|n| CausalNode {
                 id: hexd(n["id_hex"].as_str().unwrap()),
-                causes: n["causes_hex"].as_array().unwrap().iter().map(|x| hexd(x.as_str().unwrap())).collect(),
+                causes: n["causes_hex"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|x| hexd(x.as_str().unwrap()))
+                    .collect(),
                 position: 0,
             })
             .collect()
@@ -132,11 +193,24 @@ mod tests {
         let nodes = nodes_of(&c);
         let order = reconcile(&nodes).expect("reconcile");
         let got: Vec<String> = order.iter().map(hex::encode).collect();
-        let want: Vec<String> = c["reconcile_order_hex"].as_array().unwrap().iter().map(|x| x.as_str().unwrap().to_string()).collect();
+        let want: Vec<String> = c["reconcile_order_hex"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| x.as_str().unwrap().to_string())
+            .collect();
         assert_eq!(got, want);
         assert!(causally_valid(&order, &nodes));
-        let auths: Vec<String> = c["authorities"].as_array().unwrap().iter().map(|x| x.as_str().unwrap().to_string()).collect();
-        let rec = ReconcileRecord { authorities: auths, order };
+        let auths: Vec<String> = c["authorities"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| x.as_str().unwrap().to_string())
+            .collect();
+        let rec = ReconcileRecord {
+            authorities: auths,
+            order,
+        };
         assert_eq!(hex::encode(rec.bytes()), c["record_hex"].as_str().unwrap());
     }
 
@@ -144,9 +218,20 @@ mod tests {
     fn naive_merge_fails_causality() {
         let c = load();
         let nodes = nodes_of(&c);
-        let naive: Vec<Vec<u8>> = c["naive_content_id_sort_hex"].as_array().unwrap().iter().map(|x| hexd(x.as_str().unwrap())).collect();
-        assert_eq!(causally_valid(&naive, &nodes), c["naive_causally_valid"].as_bool().unwrap());
-        assert!(!c["naive_causally_valid"].as_bool().unwrap(), "graph's naive sort should violate causality");
+        let naive: Vec<Vec<u8>> = c["naive_content_id_sort_hex"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| hexd(x.as_str().unwrap()))
+            .collect();
+        assert_eq!(
+            causally_valid(&naive, &nodes),
+            c["naive_causally_valid"].as_bool().unwrap()
+        );
+        assert!(
+            !c["naive_causally_valid"].as_bool().unwrap(),
+            "graph's naive sort should violate causality"
+        );
     }
 
     #[test]
@@ -172,8 +257,20 @@ mod tests {
         let kind_ok = |_c: u64, _k: u64| true;
         let mk = |causes: Vec<Vec<u8>>| -> (Vec<u8>, Vec<u8>) {
             let mut o = envelope::Object {
-                id: vec![], kind: 0, channel: 0, tier: 0, signer: pkb.clone(), created: 100,
-                effect: 0, causes, profile: cose::PROFILE_PUBLIC as u64, body: Value::Uint(0), ext: None, cext: None,
+                audience: String::new(),
+                suite: 0,
+                id: vec![],
+                kind: 0,
+                channel: 0,
+                tier: 0,
+                signer: pkb.clone(),
+                created: 100,
+                effect: 0,
+                causes,
+                profile: cose::PROFILE_PUBLIC as u64,
+                body: Value::Uint(0),
+                ext: None,
+                cext: None,
             };
             let cid = o.content_id();
             let signed = envelope::sign(&mut o, &s);
@@ -183,11 +280,25 @@ mod tests {
         let (cid2, s2) = mk(vec![cid1.clone()]);
         let (cid3, s3) = mk(vec![cid1.clone()]);
         let signed_by_id: std::collections::HashMap<Vec<u8>, Vec<u8>> =
-            [(cid1.clone(), s1), (cid2.clone(), s2), (cid3.clone(), s3)].into_iter().collect();
+            [(cid1.clone(), s1), (cid2.clone(), s2), (cid3.clone(), s3)]
+                .into_iter()
+                .collect();
         let nodes = vec![
-            CausalNode { id: cid1.clone(), causes: vec![], position: 0 },
-            CausalNode { id: cid2.clone(), causes: vec![cid1.clone()], position: 0 },
-            CausalNode { id: cid3.clone(), causes: vec![cid1.clone()], position: 0 },
+            CausalNode {
+                id: cid1.clone(),
+                causes: vec![],
+                position: 0,
+            },
+            CausalNode {
+                id: cid2.clone(),
+                causes: vec![cid1.clone()],
+                position: 0,
+            },
+            CausalNode {
+                id: cid3.clone(),
+                causes: vec![cid1.clone()],
+                position: 0,
+            },
         ];
         // single authority orders all three; two authorities split then reconcile
         let (_av, asig, _ap) = signer(101);
@@ -210,23 +321,138 @@ mod tests {
         assert_eq!(order.len(), 3);
     }
 
+    // test_verify_reconcile_order mirrors Go's TestVerifyReconcileOrder: an independent recomputation
+    // agrees with the record (verified), disagrees on a causally-valid but non-deterministic
+    // order (ReconcileMismatch), rejects a wrong-length claim (ReconcileMismatch), or rejects a
+    // node set that is not a valid partial order (CausalViolation). The mutation that neuters
+    // the order comparison flips the mismatch cases.
+    #[test]
+    fn test_verify_reconcile_order() {
+        // Two causally-INDEPENDENT objects (no cause between them). reconcile orders concurrent
+        // objects by content id bytewise-ascending, so id_a < id_b => the one deterministic order
+        // is [id_a, id_b].
+        let id_a: Vec<u8> = vec![0x01];
+        let id_b: Vec<u8> = vec![0x02];
+        let concurrent = vec![
+            CausalNode {
+                id: id_a.clone(),
+                causes: vec![],
+                position: 0,
+            },
+            CausalNode {
+                id: id_b.clone(),
+                causes: vec![],
+                position: 0,
+            },
+        ];
+
+        // verify agrees: the claimed order IS the deterministic order -> verified (Ok).
+        {
+            let rec = ReconcileRecord {
+                authorities: vec!["auth-1".to_string()],
+                order: vec![id_a.clone(), id_b.clone()],
+            };
+            assert!(
+                verify_reconcile_order(&rec, &concurrent).is_ok(),
+                "agreeing record rejected"
+            );
+        }
+
+        // verify ReconcileMismatch: a causally-VALID-but-different order (the two objects are
+        // concurrent, so [id_b, id_a] is causally valid) is not the deterministic order.
+        {
+            let rec = ReconcileRecord {
+                authorities: vec!["auth-1".to_string()],
+                order: vec![id_b.clone(), id_a.clone()],
+            };
+            let err = verify_reconcile_order(&rec, &concurrent)
+                .expect_err("a record claiming a non-deterministic order was accepted");
+            assert_eq!(err.kind, "ReconcileMismatch");
+        }
+
+        // verify wrong-length claim -> ReconcileMismatch (a claim that drops or adds an element).
+        {
+            let rec = ReconcileRecord {
+                authorities: vec!["auth-1".to_string()],
+                order: vec![id_a.clone()],
+            };
+            let err = verify_reconcile_order(&rec, &concurrent).expect_err("short claim accepted");
+            assert_eq!(err.kind, "ReconcileMismatch");
+        }
+
+        // CausalViolation: a cyclic node set is not a valid partial order; the recomputation
+        // rejects it before any order comparison, so the record is rejected under the graph
+        // fault, fail-closed.
+        {
+            let id_c: Vec<u8> = vec![0x03];
+            let id_d: Vec<u8> = vec![0x04];
+            let cyclic = vec![
+                CausalNode {
+                    id: id_c.clone(),
+                    causes: vec![id_d.clone()],
+                    position: 1,
+                },
+                CausalNode {
+                    id: id_d.clone(),
+                    causes: vec![id_c.clone()],
+                    position: 1,
+                },
+            ];
+            let rec = ReconcileRecord {
+                authorities: vec!["auth-1".to_string()],
+                order: vec![id_c, id_d],
+            };
+            let err = verify_reconcile_order(&rec, &cyclic).expect_err("cyclic graph accepted");
+            assert_eq!(err.kind, "CausalViolation");
+        }
+    }
+
     #[test]
     fn higher_tier_ext_mechanism() {
         let (v, s, pkb) = signer(103);
         let kind_ok = |_c: u64, _k: u64| true;
         // tier-1 object with a higher-tier NON-critical ext -> baseline ignores it
         let mut o1 = envelope::Object {
-            id: vec![], kind: 0, channel: 0, tier: 1, signer: pkb.clone(), created: 100,
-            effect: 0, causes: vec![], profile: cose::PROFILE_PUBLIC as u64, body: Value::Uint(0),
-            ext: Some(vec![(Value::Uint(7), Value::Tstr("higher-tier-hint".into()))]), cext: None,
+            audience: String::new(),
+            suite: 0,
+            id: vec![],
+            kind: 0,
+            channel: 0,
+            tier: 1,
+            signer: pkb.clone(),
+            created: 100,
+            effect: 0,
+            causes: vec![],
+            profile: cose::PROFILE_PUBLIC as u64,
+            body: Value::Uint(0),
+            ext: Some(vec![(
+                Value::Uint(7),
+                Value::Tstr("higher-tier-hint".into()),
+            )]),
+            cext: None,
         };
         let signed1 = envelope::sign(&mut o1, &s);
-        envelope::verify(cose::PROFILE_PUBLIC, &v, &kind_ok, &[], &signed1).expect("baseline accepts tier-1 spine");
+        envelope::verify(cose::PROFILE_PUBLIC, &v, &kind_ok, &[], &signed1)
+            .expect("baseline accepts tier-1 spine");
         // tier-1 object with an unknown CRITICAL ext -> baseline rejects, fail-closed
         let mut o2 = envelope::Object {
-            id: vec![], kind: 0, channel: 0, tier: 1, signer: pkb, created: 100,
-            effect: 0, causes: vec![], profile: cose::PROFILE_PUBLIC as u64, body: Value::Uint(0),
-            ext: None, cext: Some(vec![(Value::Uint(9), Value::Tstr("must-understand".into()))]),
+            audience: String::new(),
+            suite: 0,
+            id: vec![],
+            kind: 0,
+            channel: 0,
+            tier: 1,
+            signer: pkb,
+            created: 100,
+            effect: 0,
+            causes: vec![],
+            profile: cose::PROFILE_PUBLIC as u64,
+            body: Value::Uint(0),
+            ext: None,
+            cext: Some(vec![(
+                Value::Uint(9),
+                Value::Tstr("must-understand".into()),
+            )]),
         };
         let signed2 = envelope::sign(&mut o2, &s);
         match envelope::verify(cose::PROFILE_PUBLIC, &v, &kind_ok, &[], &signed2) {

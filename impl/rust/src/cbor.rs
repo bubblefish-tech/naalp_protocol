@@ -35,7 +35,18 @@ pub struct Error {
 }
 
 fn nc(msg: &'static str) -> Error {
-    Error { kind: "NonCanonical", msg }
+    Error {
+        kind: "NonCanonical",
+        msg,
+    }
+}
+
+/// A nesting-depth failure (design.md §3.4 (R7)). The outermost item is depth 1.
+fn depth_exceeded() -> Error {
+    Error {
+        kind: "DepthExceeded",
+        msg: "CBOR nesting depth exceeds the maximum",
+    }
 }
 
 /// Shortest-form head for a major type and argument `n`.
@@ -48,12 +59,24 @@ fn enc_head(major: u8, n: u64) -> Vec<u8> {
     } else if n < 0x1_0000 {
         vec![mt | 25, (n >> 8) as u8, n as u8]
     } else if n < 0x1_0000_0000 {
-        vec![mt | 26, (n >> 24) as u8, (n >> 16) as u8, (n >> 8) as u8, n as u8]
+        vec![
+            mt | 26,
+            (n >> 24) as u8,
+            (n >> 16) as u8,
+            (n >> 8) as u8,
+            n as u8,
+        ]
     } else {
         vec![
             mt | 27,
-            (n >> 56) as u8, (n >> 48) as u8, (n >> 40) as u8, (n >> 32) as u8,
-            (n >> 24) as u8, (n >> 16) as u8, (n >> 8) as u8, n as u8,
+            (n >> 56) as u8,
+            (n >> 48) as u8,
+            (n >> 40) as u8,
+            (n >> 32) as u8,
+            (n >> 24) as u8,
+            (n >> 16) as u8,
+            (n >> 8) as u8,
+            n as u8,
         ]
     }
 }
@@ -64,7 +87,10 @@ pub fn encode(v: &Value) -> Result<Vec<u8>, Error> {
         Value::Uint(n) => Ok(enc_head(0, *n)),
         Value::Nint(n) => {
             if *n >= 0 {
-                return Err(Error { kind: "Unencodable", msg: "Nint must be negative" });
+                return Err(Error {
+                    kind: "Unencodable",
+                    msg: "Nint must be negative",
+                });
             }
             Ok(enc_head(1, !*n as u64)) // !n == -1 - n (two's complement), no overflow
         }
@@ -127,16 +153,35 @@ pub fn content_id(body_without_id: &Value) -> Result<Vec<u8>, Error> {
 }
 
 /// Decode exactly one canonical CBOR item, rejecting any non-canonical input or
-/// trailing bytes (fail-closed, R-3.4).
+/// trailing bytes (fail-closed, R-3.4). This is the trusted-input path and does not
+/// bound nesting depth; the untrusted object decode path uses `decode_bounded`.
 pub fn decode(data: &[u8]) -> Result<Value, Error> {
-    let (v, rest) = decode_one(data)?;
+    decode_top(data, MAX_DEPTH_UNBOUNDED)
+}
+
+/// Decode with a maximum CBOR nesting depth (design.md §3.4 (R7)): the outermost item
+/// is depth 1, each nested map key/value, array element and tagged content is one
+/// deeper, and an item at depth `max_depth`+1 is rejected DepthExceeded before it is
+/// materialized (RFC 8949 §10 decoder-memory guard).
+pub fn decode_bounded(data: &[u8], max_depth: usize) -> Result<Value, Error> {
+    decode_top(data, max_depth)
+}
+
+/// Sentinel for the trusted-input path: far beyond any legitimate structure yet finite.
+const MAX_DEPTH_UNBOUNDED: usize = 1 << 20;
+
+fn decode_top(data: &[u8], max_depth: usize) -> Result<Value, Error> {
+    let (v, rest) = decode_one(data, 1, max_depth)?;
     if !rest.is_empty() {
         return Err(nc("trailing bytes after item"));
     }
     Ok(v)
 }
 
-fn decode_one(b: &[u8]) -> Result<(Value, &[u8]), Error> {
+fn decode_one(b: &[u8], depth: usize, max_depth: usize) -> Result<(Value, &[u8]), Error> {
+    if depth > max_depth {
+        return Err(depth_exceeded());
+    }
     if b.is_empty() {
         return Err(nc("unexpected end of input"));
     }
@@ -164,14 +209,15 @@ fn decode_one(b: &[u8]) -> Result<(Value, &[u8]), Error> {
             if rest.len() < n {
                 return Err(nc("text string longer than input"));
             }
-            let s = std::str::from_utf8(&rest[..n]).map_err(|_| nc("text string is not valid UTF-8"))?;
+            let s = std::str::from_utf8(&rest[..n])
+                .map_err(|_| nc("text string is not valid UTF-8"))?;
             Ok((Value::Tstr(s.to_string()), &rest[n..]))
         }
         4 => {
             let mut items = Vec::with_capacity(arg as usize);
             let mut cur = rest;
             for _ in 0..arg {
-                let (it, c) = decode_one(cur)?;
+                let (it, c) = decode_one(cur, depth + 1, max_depth)?;
                 items.push(it);
                 cur = c;
             }
@@ -183,25 +229,27 @@ fn decode_one(b: &[u8]) -> Result<(Value, &[u8]), Error> {
             let mut prev_key: Option<&[u8]> = None;
             for _ in 0..arg {
                 let key_start = cur;
-                let (k, c) = decode_one(cur)?;
+                let (k, c) = decode_one(cur, depth + 1, max_depth)?;
                 cur = c;
                 let kbytes = &key_start[..key_start.len() - cur.len()];
                 if let Some(pk) = prev_key {
                     match pk.cmp(kbytes) {
-                        std::cmp::Ordering::Greater => return Err(nc("map keys not in canonical order")),
+                        std::cmp::Ordering::Greater => {
+                            return Err(nc("map keys not in canonical order"))
+                        }
                         std::cmp::Ordering::Equal => return Err(nc("duplicate map key")),
                         std::cmp::Ordering::Less => {}
                     }
                 }
                 prev_key = Some(kbytes);
-                let (val, c2) = decode_one(cur)?;
+                let (val, c2) = decode_one(cur, depth + 1, max_depth)?;
                 cur = c2;
                 pairs.push((k, val));
             }
             Ok((Value::Map(pairs), cur))
         }
         6 => {
-            let (content, rest2) = decode_one(rest)?;
+            let (content, rest2) = decode_one(rest, depth + 1, max_depth)?;
             Ok((Value::Tag(arg, Box::new(content)), rest2))
         }
         _ => Err(nc("major type not used in the N-AALP spine")),
@@ -237,7 +285,8 @@ fn read_arg(ai: u8, b: &[u8]) -> Result<(u64, &[u8]), Error> {
             if b.len() < 4 {
                 return Err(nc("truncated 4-byte argument"));
             }
-            let n = ((b[0] as u64) << 24) | ((b[1] as u64) << 16) | ((b[2] as u64) << 8) | b[3] as u64;
+            let n =
+                ((b[0] as u64) << 24) | ((b[1] as u64) << 16) | ((b[2] as u64) << 8) | b[3] as u64;
             if n < 0x1_0000 {
                 return Err(nc("argument not in shortest form"));
             }
@@ -315,10 +364,18 @@ mod tests {
             let body = body_without_id(obj);
 
             let body_enc = encode(&body).unwrap();
-            assert_eq!(hex::encode(&body_enc), p["body_no1_hex"].as_str().unwrap(), "{name}: body_no1");
+            assert_eq!(
+                hex::encode(&body_enc),
+                p["body_no1_hex"].as_str().unwrap(),
+                "{name}: body_no1"
+            );
 
             let id = content_id(&body).unwrap();
-            assert_eq!(hex::encode(&id), p["id_hex"].as_str().unwrap(), "{name}: content-id");
+            assert_eq!(
+                hex::encode(&id),
+                p["id_hex"].as_str().unwrap(),
+                "{name}: content-id"
+            );
 
             let mut full_pairs = vec![(Value::Uint(1), Value::Bstr(id.clone()))];
             if let Value::Map(pairs) = &body {
@@ -365,11 +422,18 @@ mod tests {
     fn encode_is_not_constant() {
         let a = encode(&Value::Map(vec![(Value::Uint(1), Value::Uint(0))])).unwrap();
         let b = encode(&Value::Map(vec![(Value::Uint(1), Value::Uint(1))])).unwrap();
-        assert_ne!(a, b, "encoder produced identical bytes for different inputs");
+        assert_ne!(
+            a, b,
+            "encoder produced identical bytes for different inputs"
+        );
         let ida = content_id(&Value::Map(vec![(Value::Uint(2), Value::Tstr("x".into()))])).unwrap();
         let idb = content_id(&Value::Map(vec![(Value::Uint(2), Value::Tstr("y".into()))])).unwrap();
         assert_ne!(ida, idb, "content-id identical for different bodies");
-        assert_eq!((ida[0], ida[1], ida.len()), (0x20, 0x30, 50), "content-id framing");
+        assert_eq!(
+            (ida[0], ida[1], ida.len()),
+            (0x20, 0x30, 50),
+            "content-id framing"
+        );
     }
 
     // R-3.3 "absent != empty" edge case (design.md §3.3): an optional field present but
@@ -390,7 +454,10 @@ mod tests {
 
         let ea = encode(&absent).unwrap();
         let eb = encode(&empty).unwrap();
-        assert_ne!(ea, eb, "absent optional encoded identically to present-empty");
+        assert_ne!(
+            ea, eb,
+            "absent optional encoded identically to present-empty"
+        );
         assert_ne!(
             content_id(&absent).unwrap(),
             content_id(&empty).unwrap(),
@@ -425,17 +492,55 @@ mod tests {
     #[test]
     fn nint_rfc8949() {
         let cases: [(i64, &str); 7] = [
-            (-1, "20"), (-10, "29"), (-100, "3863"), (-1000, "3903e7"), // RFC 8949 App. A
-            (-49, "3830"), // COSE ML-DSA-65
-            (-50, "3831"), // COSE ML-DSA-87
-            (-19, "32"),   // COSE Ed25519
+            (-1, "20"),
+            (-10, "29"),
+            (-100, "3863"),
+            (-1000, "3903e7"), // RFC 8949 App. A
+            (-49, "3830"),     // COSE ML-DSA-65
+            (-50, "3831"),     // COSE ML-DSA-87
+            (-19, "32"),       // COSE Ed25519
         ];
         for (v, want) in cases {
             let enc = encode(&Value::Nint(v)).unwrap();
             assert_eq!(hex::encode(&enc), want, "encode Nint({v})");
             let dec = decode(&hex::decode(want).unwrap()).unwrap();
-            assert!(matches!(dec, Value::Nint(x) if x == v), "decode {want} -> Nint({v})");
+            assert!(
+                matches!(dec, Value::Nint(x) if x == v),
+                "decode {want} -> Nint({v})"
+            );
         }
-        assert!(encode(&Value::Nint(0)).is_err(), "Nint(0) must be unencodable");
+        assert!(
+            encode(&Value::Nint(0)).is_err(),
+            "Nint(0) must be unencodable"
+        );
+    }
+
+    /// Canonical CBOR for k single-element arrays wrapping a zero scalar: 0x81 repeated k
+    /// times then 0x00. The outermost array is depth 1, the innermost scalar depth k+1.
+    fn nested_arrays_cbor(k: usize) -> Vec<u8> {
+        let mut b = vec![0x81u8; k];
+        b.push(0x00);
+        b
+    }
+
+    #[test]
+    fn decode_bounded_depth() {
+        const D: usize = 3;
+        // deepest scalar at depth D (k = D-1): accepted at max_depth=D.
+        assert!(
+            decode_bounded(&nested_arrays_cbor(D - 1), D).is_ok(),
+            "depth {D} should decode at max_depth={D}"
+        );
+        // deepest scalar at depth D+1 (k = D): rejected DepthExceeded before materialization.
+        match decode_bounded(&nested_arrays_cbor(D), D) {
+            Err(e) => assert_eq!(e.kind, "DepthExceeded"),
+            Ok(_) => panic!("depth {} should be DepthExceeded at max_depth={D}", D + 1),
+        }
+        // the unbounded path accepts the same over-depth structure: the bound did the work.
+        assert!(
+            decode(&nested_arrays_cbor(D)).is_ok(),
+            "unbounded decode should accept the depth-{} structure",
+            D + 1
+        );
     }
 }

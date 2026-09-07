@@ -6,7 +6,7 @@
 // A binding carries exactly one signed object as one message unit, with identical object
 // semantics across N-PAMP, QUIC, WebSocket, and HTTP (R-13.1). The object is self-secured by
 // C2..C8; the binding adds only framing plus, from the transport, confidentiality and
-// connection authentication (R-13.2, R-13.3). The media type is application/naalp+cbor. The
+// connection authentication (R-13.2, R-13.3). The media type is application/vnd.bubblefish.naalp+cbor. The
 // confidentiality boundary is normative: an object marked sensitive MUST NOT be emitted in
 // cleartext over a non-confidential transport — the binding refuses it
 // (ConfidentialTransportRequired) and directs the deployment to a confidential transport
@@ -17,13 +17,13 @@ package transport
 import "github.com/bubblefish-tech/naalp_protocol/impl/go/cose"
 
 // MediaType is the one-object-per-representation N-AALP media type (§12.1).
-const MediaType = "application/naalp+cbor"
+const MediaType = "application/vnd.bubblefish.naalp+cbor"
 
 // Errors reuse the cose.Error type so every N-AALP error carries a stable Kind (§12.4).
 var (
 	ErrConfidentialTransportRequired = &cose.Error{Kind: "ConfidentialTransportRequired", Msg: "a sensitive object may not be emitted in cleartext over a non-confidential transport"}
 	ErrPeerUnauthenticated           = &cose.Error{Kind: "PeerUnauthenticated", Msg: "transport peer is not authenticated where policy requires it"}
-	ErrMalformed                     = &cose.Error{Kind: "Malformed", Msg: "message unit is not application/naalp+cbor"}
+	ErrMalformed                     = &cose.Error{Kind: "Malformed", Msg: "message unit is not application/vnd.bubblefish.naalp+cbor"}
 )
 
 // Transport names one binding and the two conditional guarantees it provides: confidentiality

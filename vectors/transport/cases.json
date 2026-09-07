@@ -1,6 +1,6 @@
 {
-  "source": "design \u00a712; one signed object = one message unit across N-PAMP/QUIC/WebSocket/HTTP; binding adds only framing; sensitive object over a non-confidential transport => ConfidentialTransportRequired; missing peer auth where required => PeerUnauthenticated; media type application/naalp+cbor.",
-  "media_type": "application/naalp+cbor",
+  "source": "design \u00a712; one signed object = one message unit across N-PAMP/QUIC/WebSocket/HTTP; binding adds only framing; sensitive object over a non-confidential transport => ConfidentialTransportRequired; missing peer auth where required => PeerUnauthenticated; media type application/vnd.bubblefish.naalp+cbor.",
+  "media_type": "application/vnd.bubblefish.naalp+cbor",
   "transports": [
     {
       "name": "npamp",

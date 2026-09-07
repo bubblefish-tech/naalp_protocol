@@ -1,0 +1,70 @@
+{
+	"Path": "github.com/bubblefish-tech/naalp_protocol/impl/go",
+	"Main": true,
+	"GoVersion": "1.25.0"
+}
+{
+	"Path": "github.com/bwesterb/go-ristretto",
+	"Version": "v1.2.3",
+	"Time": "2023-03-16T16:56:11Z",
+	"Indirect": true,
+	"GoVersion": "1.13",
+	"GoModSum": "h1:fUIoIZaG73pV5biE2Blr2xEzDoMj7NFEuV9ekS419A0="
+}
+{
+	"Path": "github.com/cloudflare/circl",
+	"Version": "v1.6.4",
+	"Time": "2026-06-19T13:00:30Z",
+	"GoVersion": "1.24.0",
+	"Sum": "h1:pOXuDTCEYyzydgUpQ0CQz3LsinKjiSk6nNP5Lt5K64U=",
+	"GoModSum": "h1:YxarevkLlbaHuWsxG6vmYNWBEsSp4pnp7j+4VljMavY="
+}
+{
+	"Path": "golang.org/x/crypto",
+	"Version": "v0.45.0",
+	"Time": "2025-11-19T19:55:48Z",
+	"Indirect": true,
+	"GoVersion": "1.24.0",
+	"GoModSum": "h1:XTGrrkGJve7CYK7J8PEww4aY7gM3qMCElcJQ8n8JdX4="
+}
+{
+	"Path": "golang.org/x/mod",
+	"Version": "v0.37.0",
+	"Time": "2026-06-08T15:10:58Z",
+	"Indirect": true,
+	"GoVersion": "1.25.0",
+	"GoModSum": "h1:m8S8VeM9r4dzDwjrKO0a1sZP3YjeMamRRlD+fmR2Q/0="
+}
+{
+	"Path": "golang.org/x/sync",
+	"Version": "v0.22.0",
+	"Time": "2026-07-01T17:29:34Z",
+	"Indirect": true,
+	"GoVersion": "1.25.0",
+	"GoModSum": "h1:9xrNwdLfx4jkKbNva9FpL6vEN7evnE43NNNJQ2LF3+0="
+}
+{
+	"Path": "golang.org/x/sys",
+	"Version": "v0.38.0",
+	"Time": "2025-11-04T21:29:36Z",
+	"Indirect": true,
+	"GoVersion": "1.24.0",
+	"Sum": "h1:3yZWxaJjBmCWXqhN1qh02AkOnCQ1poK6oF+a7xWL6Gc=",
+	"GoModSum": "h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks="
+}
+{
+	"Path": "golang.org/x/text",
+	"Version": "v0.40.0",
+	"Time": "2026-07-08T15:41:08Z",
+	"GoVersion": "1.25.0",
+	"Sum": "h1:Ub2Z6/xjgF1WrYQz2nuITOEegKFtiIy+rieRJ5lHZKs=",
+	"GoModSum": "h1:hpnzDAfGV753zIKo+wk3u1bVKCGPbrnF7+7LBF/UHVY="
+}
+{
+	"Path": "golang.org/x/tools",
+	"Version": "v0.47.0",
+	"Time": "2026-06-25T17:02:32Z",
+	"Indirect": true,
+	"GoVersion": "1.25.0",
+	"GoModSum": "h1:dFHnyTvFWY212G+h7ZY4Vsp/K3U4/7W9TyVaAul8uCA="
+}

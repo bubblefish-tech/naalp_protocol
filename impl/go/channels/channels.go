@@ -15,6 +15,7 @@ package channels
 
 import (
 	"encoding/binary"
+	"hash/crc32"
 	"io"
 	"os"
 	"sync"
@@ -62,13 +63,13 @@ var Table = []ChannelSpec{
 		[]string{"issued", "delegated", "revoked", "expired"}, [][2]string{{"issued", "delegated"}, {"delegated", "delegated"}, {"issued", "revoked"}, {"delegated", "revoked"}, {"issued", "expired"}, {"delegated", "expired"}}, []string{"CapExceedsParent", "CapRevoked"}},
 	{0x0003, "Identity", []KindSpec{{0, "Rotation", niw, false}, {1, "Revocation", de, false}, {2, "ForeignLink", iw, false}, {3, "KeyAnnounce", ro, false}},
 		[]string{"active", "rotated", "revoked"}, [][2]string{{"active", "rotated"}, {"rotated", "rotated"}, {"active", "revoked"}, {"rotated", "revoked"}}, []string{"RotationUnauthorized", "KeyRevoked", "SignerMismatch"}},
-	{0x0004, "Governance", []KindSpec{{0, "PolicyPublish", niw, false}, {1, "Approval", niw, false}, {2, "ApprovalHeld", ro, false}, {3, "Consume", niw, false}},
+	{0x0004, "Governance", []KindSpec{{0, "PolicyPublish", niw, false}, {1, "Approval", niw, false}, {2, "ApprovalHeld", ro, false}, {3, "Consume", niw, false}, {4, "GatewayDecision", niw, false}, {5, "DecisionRecord", niw, false}, {6, "EgressAttestation", niw, false}, {7, "HazardAuthorization", niw, false}},
 		[]string{"requested", "held", "approved", "consumed", "expired"}, [][2]string{{"requested", "held"}, {"requested", "approved"}, {"approved", "consumed"}, {"held", "approved"}, {"requested", "expired"}, {"approved", "expired"}}, []string{"ApprovalRequired", "ApprovalMismatch", "AlreadyConsumed", "EffectNotAuthorized"}},
 	{0x0005, "Immune", []KindSpec{{0, "AnomalyReport", ro, false}, {1, "Quarantine", de, false}, {2, "QuarantineLift", niw, false}},
 		[]string{"normal", "quarantined", "lifted", "permanent"}, [][2]string{{"normal", "quarantined"}, {"quarantined", "lifted"}, {"quarantined", "permanent"}}, []string{"AccessDenied"}},
 	{0x0006, "Federation", []KindSpec{{0, "AuthorityAnnounce", ro, false}, {1, "ScopeReceipt", niw, false}},
 		[]string{"announced", "ordering"}, [][2]string{{"announced", "ordering"}}, []string{"AuthorityUnknown", "ScopeOverlapConflict"}},
-	{0x0007, "Settlement", []KindSpec{{0, "SettleIntent", niw, false}, {1, "SettleReceipt", niw, false}, {2, "SettleReject", iw, false}},
+	{0x0007, "Settlement", []KindSpec{{0, "SettleIntent", niw, false}, {1, "SettleReceipt", niw, false}, {2, "SettleReject", iw, false}, {3, "PaymentImport", niw, false}, {4, "PaymentChargeBinding", niw, false}},
 		[]string{"intent", "receipt", "reject"}, [][2]string{{"intent", "receipt"}, {"intent", "reject"}}, []string{"ValueMismatch", "SettleExpired"}},
 	{0x0008, "Compliance", []KindSpec{{0, "ComplianceRecord", niw, false}, {1, "ComplianceQuery", ro, false}, {2, "ComplianceReport", ro, false}},
 		[]string{"appended"}, nil, []string{"RecordUnsigned", "JurisdictionUnknown"}},
@@ -76,7 +77,7 @@ var Table = []ChannelSpec{
 		[]string{"active", "cancelled"}, [][2]string{{"active", "cancelled"}}, []string{"SubscriptionUnknown"}},
 	{0x000A, "Telemetry", []KindSpec{{0, "Metric", ro, false}, {1, "HealthReport", ro, false}},
 		[]string{"stateless"}, nil, []string{"MetricMalformed"}},
-	{0x000B, "Audit", []KindSpec{{0, "Receipt", niw, false}, {1, "AuditQuery", ro, false}, {2, "ForkProof", ro, false}},
+	{0x000B, "Audit", []KindSpec{{0, "Receipt", niw, false}, {1, "AuditQuery", ro, false}, {2, "ForkProof", ro, false}, {3, "CheckpointRoot", niw, false}, {4, "WitnessCosign", niw, false}, {5, "InclusionProof", ro, false}},
 		[]string{"appended"}, nil, []string{"ChainBroken", "Equivocation", "ReceiptUnsigned"}},
 	{0x000C, "Stream", []KindSpec{{0, "StreamOpen", ro, true}, {1, "StreamCommit", ro, false}, {2, "StreamCheckpoint", ro, false}},
 		[]string{"open", "committed"}, [][2]string{{"open", "committed"}}, []string{"StreamDigestMismatch", "FlowControlError"}},
@@ -84,7 +85,7 @@ var Table = []ChannelSpec{
 		[]string{"carried"}, nil, []string{"EnvelopeMalformed", "ProtocolUnsupported", "MethodUnsupported", "NotDelivered", "EffectNotAuthorized"}},
 	{0x000E, "Commerce", []KindSpec{{0, "Offer", ro, false}, {1, "Order", niw, false}, {2, "Fulfil", niw, false}, {3, "Cancel", de, false}},
 		[]string{"offer", "order", "fulfil", "cancel"}, [][2]string{{"offer", "order"}, {"order", "fulfil"}, {"order", "cancel"}}, []string{"OfferExpired", "ApprovalRequired", "OrderMismatch"}},
-	{0x000F, "Interaction", []KindSpec{{0, "Elicit", ro, false}, {1, "Respond", iw, false}, {2, "Confirm", niw, false}},
+	{0x000F, "Interaction", []KindSpec{{0, "Elicit", ro, false}, {1, "Respond", iw, false}, {2, "Confirm", niw, false}, {3, "UiEvent", niw, false}},
 		[]string{"elicit", "respond", "confirm", "timeout"}, [][2]string{{"elicit", "respond"}, {"elicit", "confirm"}, {"elicit", "timeout"}}, []string{"InteractionTimeout", "ElicitUnauthorized"}},
 	{0x0010, "Discovery", []KindSpec{{0, "DiscoveryRecord", ro, false}, {1, "DiscoveryQuery", ro, false}},
 		[]string{"fresh", "stale"}, [][2]string{{"fresh", "stale"}}, []string{"RecordExpired", "TrustAnchorUnknown"}},
@@ -248,21 +249,72 @@ func OpenWorkflowGate(path string) (*WorkflowGate, error) {
 	return g, nil
 }
 
+// recordHeaderLen is the fixed-size prefix before each record's payload: a 4-byte
+// big-endian payload length, then a 4-byte big-endian CRC32-IEEE checksum OVER the payload.
+// The checksum lets replay distinguish a genuinely durable record from one that was only
+// PARTIALLY written before a crash even when the partial write happened to land on an exact
+// length-prefix boundary (a torn write is not required to stop at a "natural" byte count).
+const recordHeaderLen = 8
+
+// replay rebuilds g.status from the WAL, honoring design-channels.md §18's stated guarantee
+// that "a crash recovers to the last durable status": every record up to and including the
+// last one that was FULLY written and Sync'd (persist() below) is durable and MUST be
+// recovered; anything after that point was never acknowledged and MUST NOT be trusted, but its
+// mere presence on disk (a torn header, a torn payload, or a payload that fails its checksum)
+// MUST NOT make the whole WAL unopenable -- that would silently discard durable history the
+// spec promises survives a crash, turning a partial-write into a total-recovery failure. On
+// hitting the first unreadable/corrupt record, replay stops (keeping every record read so far)
+// and truncates the file at that exact byte offset, so the WAL is left in a clean state
+// (no dangling partial tail) for the next persist() to append to.
+//
+// STRENGTHENING, NOT WIRE-AFFECTING (#277 residual B): this WAL is a per-process, per-language
+// LOCAL persistence file for WorkflowGate's own crash recovery. It is never serialized onto the
+// wire, never part of any signed N-AALP object, and not covered by spec/naalp-draft-01.cddl or
+// the cross-language conformance corpus -- changing its on-disk record shape (adding the
+// checksum field) is purely internal to this Go reference implementation and requires no wire
+// freeze, and the WorkflowGate export surface + InputGateBypass BEHAVIOR itself already has
+// ten-port parity (present with tests in all ten ports; not an AUTHORITATIVE_CAPS or
+// parity-baseline.json gap -- this fix adds no new exported symbol, so the extractor sees
+// nothing to flag).
+//
+// RE-VERIFIED 2026-09-05: rust's impl/rust/src/channels.rs open_workflow_gate and
+// python's impl/python/naalp/channels.py WorkflowGate._replay both mirror this exact
+// pre-fix shape (a length-prefixed append-only WAL, fsync-before-ack, no checksum) and both
+// hard-fail the WHOLE open on a torn payload (rust: read_exact -> Err propagates out of
+// open_workflow_gate; python: raises WorkflowGateMalformed) rather than recovering to the
+// last durable record -- i.e. the same defect class this fix closes here, most likely shared
+// by the other 7 ports too since python's own docstring says it "Mirrors Go WorkflowGate /
+// Rust WorkflowGate". This is a REAL robustness gap against the design-channels.md §18 text
+// ("a crash recovers to the last durable status") in every port but this one, though it is a
+// fail-CLOSED refusal (the file is left intact, nothing is silently discarded) rather than an
+// InputGateBypass or a security hole. Recommend a dedicated torn-tail-hardening wave across
+// the 9 non-Go ports (rust, csharp, java, kotlin, php, python, ruby, swift, typescript) as a
+// follow-up -- framed as a robustness/availability fix, not a ten-port-parity requirement, so
+// it does not block on this file's own scope.
 func (g *WorkflowGate) replay() error {
 	if _, err := g.f.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
 	for {
-		var lb [4]byte
-		if _, err := io.ReadFull(g.f, lb[:]); err != nil {
-			if err == io.EOF {
-				break
-			}
+		recStart, err := g.f.Seek(0, io.SeekCurrent)
+		if err != nil {
 			return err
 		}
-		rec := make([]byte, binary.BigEndian.Uint32(lb[:]))
+		var hdr [recordHeaderLen]byte
+		if _, err := io.ReadFull(g.f, hdr[:]); err != nil {
+			if err == io.EOF {
+				return nil // clean end of a fully-written WAL: nothing torn to recover from
+			}
+			return g.truncateAt(recStart) // torn header: recover to everything read so far
+		}
+		n := binary.BigEndian.Uint32(hdr[0:4])
+		wantSum := binary.BigEndian.Uint32(hdr[4:8])
+		rec := make([]byte, n)
 		if _, err := io.ReadFull(g.f, rec); err != nil {
-			return err
+			return g.truncateAt(recStart) // torn payload: same recovery
+		}
+		if crc32.ChecksumIEEE(rec) != wantSum {
+			return g.truncateAt(recStart) // checksum mismatch on the tail record: same recovery
 		}
 		nul := -1
 		for i, b := range rec {
@@ -272,18 +324,30 @@ func (g *WorkflowGate) replay() error {
 			}
 		}
 		if nul < 0 {
-			return &cose.Error{Kind: "Malformed", Msg: "workflow gate record"}
+			return g.truncateAt(recStart) // structurally malformed tail record: same recovery
 		}
 		g.status[string(rec[:nul])] = string(rec[nul+1:])
 	}
-	return nil
+}
+
+// truncateAt drops everything at and after offset (an unreadable/unacknowledged tail record)
+// and repositions the file for the next persist() to append cleanly. It never discards a
+// record replay() already accepted into g.status -- only bytes replay() could not (or should
+// not) trust are removed.
+func (g *WorkflowGate) truncateAt(offset int64) error {
+	if err := g.f.Truncate(offset); err != nil {
+		return err
+	}
+	_, err := g.f.Seek(0, io.SeekEnd)
+	return err
 }
 
 func (g *WorkflowGate) persist(task, status string) error {
 	rec := append(append([]byte(task), 0), status...)
-	var lb [4]byte
-	binary.BigEndian.PutUint32(lb[:], uint32(len(rec)))
-	if _, err := g.f.Write(append(lb[:], rec...)); err != nil {
+	var hdr [recordHeaderLen]byte
+	binary.BigEndian.PutUint32(hdr[0:4], uint32(len(rec)))
+	binary.BigEndian.PutUint32(hdr[4:8], crc32.ChecksumIEEE(rec))
+	if _, err := g.f.Write(append(hdr[:], rec...)); err != nil {
 		return err
 	}
 	if err := g.f.Sync(); err != nil { // persist-before-ack (spine §9.2)

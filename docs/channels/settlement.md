@@ -17,7 +17,7 @@ Agent-to-agent settlement — the public half of a value transfer, composing wit
 | 4 | `PaymentChargeBinding` | `non_idempotent_write` | draft-01 addition — the exact value a §7 approval binds |
 
 This is the baseline+draft-01 registry `impl/go/channels/channels.go` carries verbatim
-([Table entry for Settlement](https://github.com/bubblefish-tech/naalp_protocol/blob/main/impl/go/channels/channels.go#L71-L72)).
+([Table entry for Settlement](https://github.com/bubblefish-tech/naalp_protocol/blob/main/impl/go/channels/channels.go#L72-L73)).
 
 ## State model
 

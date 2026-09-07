@@ -1,0 +1,7 @@
+channel_id,channel_name,kind_code,kind_name,effect,tier
+0x0004,Governance,16,RoomCreate,non_idempotent_write,1
+0x0004,Governance,17,RoomAddMember,non_idempotent_write,1
+0x0004,Governance,18,RoomRemoveMember,destructive,1
+0x0004,Governance,19,RoomChangeRole,non_idempotent_write,1
+0x0004,Governance,20,RoomAddOwner,non_idempotent_write,1
+0x0003,Identity,16,PrincipalBind,non_idempotent_write,1

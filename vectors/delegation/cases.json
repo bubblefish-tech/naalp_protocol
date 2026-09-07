@@ -1,0 +1,901 @@
+{
+  "note": "Independent oracle for C15 multi-hop agent delegation (design.md §18; R-DEL-1..8). grant body {1:subject,2:effect_cap,3:max_depth,4:not_before,5:not_after,?6:scope}; content id = multihash(0x20, SHA-384(body)); scope='' => field 6 absent (unconstrained). The chain verdicts come from a from-scratch D3 (design §18.2) model in this file, NOT from impl/go or impl/rust. Go and Rust reproduce every grant byte AND every verdict (with real ML-DSA-65 signed chains), so Go==Rust==oracle. Do not hand-edit.",
+  "effects": [
+    {
+      "value": 0,
+      "name": "read_only"
+    },
+    {
+      "value": 1,
+      "name": "idempotent_write"
+    },
+    {
+      "value": 2,
+      "name": "non_idempotent_write"
+    },
+    {
+      "value": 3,
+      "name": "destructive"
+    }
+  ],
+  "grants": [
+    {
+      "name": "full_scope",
+      "subject": "agent:b",
+      "effect_cap": 2,
+      "effect_cap_name": "non_idempotent_write",
+      "max_depth": 2,
+      "not_before": 1000,
+      "not_after": 2000,
+      "scope": "billing/reports",
+      "has_scope": true,
+      "body_hex": "a601676167656e743a6202020302041903e8051907d0066f62696c6c696e672f7265706f727473",
+      "content_id_hex": "2030aa06e8ccfeb10cf5752358cac5c0583bd04b0926298f6824501b0966169bc96ee0f5fa21fd5d71afa5d42f6f39db76e8"
+    },
+    {
+      "name": "no_scope",
+      "subject": "agent:m",
+      "effect_cap": 3,
+      "effect_cap_name": "destructive",
+      "max_depth": 1,
+      "not_before": 0,
+      "not_after": 9999999999999,
+      "scope": "",
+      "has_scope": false,
+      "body_hex": "a501676167656e743a6d020303010400051b000009184e729fff",
+      "content_id_hex": "2030561692073d101592baa959e78ef1e1b3ddd7c0e3e37034205ef1b195ac1952a85bbf9569dc1bedee1819a2d3a5173738"
+    },
+    {
+      "name": "read_only_leaf",
+      "subject": "reader",
+      "effect_cap": 0,
+      "effect_cap_name": "read_only",
+      "max_depth": 0,
+      "not_before": 100,
+      "not_after": 200,
+      "scope": "docs",
+      "has_scope": true,
+      "body_hex": "a60166726561646572020003000418640518c80664646f6373",
+      "content_id_hex": "20306d4f096ce503b78707824c2e57add1a7545c0b9b14ea4a48aa85ef3d6addd1767154886b8685c5729ae5b2091837b9eb"
+    },
+    {
+      "name": "deep_root",
+      "subject": "ops",
+      "effect_cap": 3,
+      "effect_cap_name": "destructive",
+      "max_depth": 5,
+      "not_before": 1,
+      "not_after": 2,
+      "scope": "",
+      "has_scope": false,
+      "body_hex": "a501636f70730203030504010502",
+      "content_id_hex": "2030a781f5c88b39772b295c35dd0b4230884c0e6833781017e9c9b655c24289a8aa5216f66f4d3f17f2b2efea346af9a011"
+    },
+    {
+      "name": "unicode_scope",
+      "subject": "délégué",
+      "effect_cap": 1,
+      "effect_cap_name": "idempotent_write",
+      "max_depth": 3,
+      "not_before": 42,
+      "not_after": 43,
+      "scope": "café/notes",
+      "has_scope": true,
+      "body_hex": "a6016a64c3a96cc3a96775c3a90201030304182a05182b066b636166c3a92f6e6f746573",
+      "content_id_hex": "2030cb11ae7ea2c6bf406f8eb8b480bd98c8074562db4df1ae93e29a81689d45148d7069b08a203bb6d0ae4450e579cce1a6"
+    }
+  ],
+  "scope_containment": [
+    {
+      "child": "billing/reports",
+      "parent": "billing",
+      "contained": true
+    },
+    {
+      "child": "billing",
+      "parent": "billing",
+      "contained": true
+    },
+    {
+      "child": "billing",
+      "parent": "",
+      "contained": true
+    },
+    {
+      "child": "",
+      "parent": "",
+      "contained": true
+    },
+    {
+      "child": "billingreports",
+      "parent": "billing",
+      "contained": false
+    },
+    {
+      "child": "",
+      "parent": "billing",
+      "contained": false
+    },
+    {
+      "child": "billing/a/b",
+      "parent": "billing/a",
+      "contained": true
+    },
+    {
+      "child": "other",
+      "parent": "billing",
+      "contained": false
+    },
+    {
+      "child": "café/notes",
+      "parent": "café",
+      "contained": true
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "valid_1hop",
+      "note": "A->B, A trusted, in-window; the minimal valid chain.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 0,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "",
+        "causes": [
+          0
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "authorized"
+    },
+    {
+      "name": "valid_2hop",
+      "note": "A->M->B, effects equal, depths attenuating (2 then 1); authorized.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 2,
+          "max_depth": 2,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "authorized"
+    },
+    {
+      "name": "valid_3hop",
+      "note": "A->M1->M2->B, effect attenuates de>niw>iw, depth 3->2->1; authorized.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M1",
+          "effect_cap": 3,
+          "max_depth": 3,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M1",
+          "subject": "M2",
+          "effect_cap": 2,
+          "max_depth": 2,
+          "scope": "",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M2",
+          "subject": "B",
+          "effect_cap": 1,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [
+            1
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 1,
+        "scope": "",
+        "causes": [
+          2
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "authorized"
+    },
+    {
+      "name": "untrusted_root",
+      "note": "A->M->B but only X is trusted; the root A is untrusted -> UntrustedChainRoot.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 2,
+          "max_depth": 2,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "X"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "UntrustedChainRoot"
+    },
+    {
+      "name": "leaf_expired",
+      "note": "leaf not_after=400 < now=500 -> GrantExpired.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 2,
+          "max_depth": 2,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 400
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "GrantExpired"
+    },
+    {
+      "name": "mid_not_yet_valid",
+      "note": "parent grant not_before=600 > now=500 -> GrantNotYetValid.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 2,
+          "max_depth": 2,
+          "scope": "",
+          "causes": [],
+          "not_before": 600,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "GrantNotYetValid"
+    },
+    {
+      "name": "leaf_revoked",
+      "note": "leaf grant revoked at pos 300 <= now 500 -> GrantRevoked.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 2,
+          "max_depth": 2,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [
+        {
+          "grant": 1,
+          "pos": 300
+        }
+      ],
+      "now": 500,
+      "expect": "GrantRevoked"
+    },
+    {
+      "name": "root_revoked",
+      "note": "root grant revoked at pos 500 == now 500 (inclusive) -> GrantRevoked.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 2,
+          "max_depth": 2,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [
+        {
+          "grant": 0,
+          "pos": 500
+        }
+      ],
+      "now": 500,
+      "expect": "GrantRevoked"
+    },
+    {
+      "name": "effect_exceeds_leaf",
+      "note": "action effect=destructive > leaf effect_cap=non_idempotent_write -> CapExceedsParent.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 2,
+          "max_depth": 2,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 3,
+        "scope": "",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "CapExceedsParent"
+    },
+    {
+      "name": "grant_effect_exceeds_parent",
+      "note": "leaf effect_cap=niw exceeds parent effect_cap=iw -> CapExceedsParent (across the grant edge).",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 1,
+          "max_depth": 2,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 1,
+        "scope": "",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "CapExceedsParent"
+    },
+    {
+      "name": "scope_not_contained",
+      "note": "leaf scope 'payroll' not contained in parent scope 'billing' -> CapExceedsParent.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 2,
+          "max_depth": 2,
+          "scope": "billing",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "payroll",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "payroll",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "CapExceedsParent"
+    },
+    {
+      "name": "missing_child_scope",
+      "note": "child grant has no scope under a scoped parent 'billing' -> widens -> CapExceedsParent.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 2,
+          "max_depth": 2,
+          "scope": "billing",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "billing/reports",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "CapExceedsParent"
+    },
+    {
+      "name": "depth_declared_exceeded",
+      "note": "parent max_depth=0 but a child grant exists -> DelegationDepthExceeded (step 8).",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 2,
+          "max_depth": 0,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 0,
+          "scope": "",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "DelegationDepthExceeded"
+    },
+    {
+      "name": "depth_boundary_ok",
+      "note": "root max_depth=1 admits exactly one further hop (leaf max_depth=0, acts); authorized boundary.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 0,
+          "scope": "",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "authorized"
+    },
+    {
+      "name": "no_grant_for_B",
+      "note": "the only grant in causes delegates to someone-else, not B -> EffectNotAuthorized.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "someone-else",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "",
+        "causes": [
+          0
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "EffectNotAuthorized"
+    },
+    {
+      "name": "ambiguous_leaf",
+      "note": "two distinct grants both name subject=B in the action's causes -> ChainBroken (step 2).",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 0,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "A",
+          "subject": "B",
+          "effect_cap": 3,
+          "max_depth": 0,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "",
+        "causes": [
+          0,
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "ChainBroken"
+    },
+    {
+      "name": "ambiguous_parent",
+      "note": "the leaf grant names two causes both delegating to its issuer M -> ChainBroken (step 7).",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 3,
+          "max_depth": 3,
+          "scope": "",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 3,
+          "max_depth": 3,
+          "scope": "billing",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "",
+          "causes": [
+            0,
+            1
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "",
+        "causes": [
+          2
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "ChainBroken"
+    },
+    {
+      "name": "valid_scope_prefix",
+      "note": "scopes nest billing >= billing/reports >= billing/reports/q3; authorized.",
+      "grants": [
+        {
+          "issuer": "A",
+          "subject": "M",
+          "effect_cap": 2,
+          "max_depth": 2,
+          "scope": "billing",
+          "causes": [],
+          "not_before": 100,
+          "not_after": 900
+        },
+        {
+          "issuer": "M",
+          "subject": "B",
+          "effect_cap": 2,
+          "max_depth": 1,
+          "scope": "billing/reports",
+          "causes": [
+            0
+          ],
+          "not_before": 100,
+          "not_after": 900
+        }
+      ],
+      "action": {
+        "signer": "B",
+        "effect": 2,
+        "scope": "billing/reports/q3",
+        "causes": [
+          1
+        ]
+      },
+      "anchors": [
+        "A"
+      ],
+      "revoked": [],
+      "now": 500,
+      "expect": "authorized"
+    }
+  ]
+}

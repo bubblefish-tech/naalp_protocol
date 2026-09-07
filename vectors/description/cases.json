@@ -1,0 +1,100 @@
+{
+  "source": "design \u00a721; naalp-description {1:service,2:[operation]} (full ML-DSA sig; operation {1:name,2:effect,3:requires_approval}); naalp-directory {1:directory,2:version,3:[member-content-id]} (full ML-DSA sig; fork = same directory+version from one signer with differing members, reported at the first-differing member position); naalp-description-import {1:importer,2:format,3:foreign,4:[operation]} (full ML-DSA sig; carriage octet-for-octet; the importer is the sole authorization identity, a foreign identity never becomes one). head = SHA-384(body); content-id = multihash(0x20, SHA-384). Effect lattice read_only=0<idempotent_write=1<non_idempotent_write=2<destructive=3; requires_approval is uint 1/0 (no CBOR bool).",
+  "description": {
+    "service_hex": "7376632d62696c6c696e672d30303031",
+    "operations": [
+      {
+        "name": "status",
+        "effect": 0,
+        "requires_approval": 0,
+        "body_hex": "a3016673746174757302000300"
+      },
+      {
+        "name": "write_record",
+        "effect": 2,
+        "requires_approval": 1,
+        "body_hex": "a3016c77726974655f7265636f726402020301"
+      },
+      {
+        "name": "purge",
+        "effect": 3,
+        "requires_approval": 1,
+        "body_hex": "a30165707572676502030301"
+      }
+    ],
+    "body_hex": "a201507376632d62696c6c696e672d303030310283a3016673746174757302000300a3016c77726974655f7265636f726402020301a30165707572676502030301",
+    "head_hex": "dc564d57a1a0f80b0b103959f2b76e7e2e0a42706c8bb97dc241a12ded3dc906785915eccd43b27cfac51cc460479d79",
+    "id_hex": "2030dc564d57a1a0f80b0b103959f2b76e7e2e0a42706c8bb97dc241a12ded3dc906785915eccd43b27cfac51cc460479d79"
+  },
+  "directory": {
+    "directory_hex": "6469722d636174616c6f672d30303031",
+    "version": 7,
+    "members_a_hex": [
+      "20307188c9bf18f5b6a8650d594736e1429f4c59aac58687d2f4c17c506dbf0b7362000d6190c5f632da718bf2737a936be8",
+      "20302d300715f691b2708f0ef6d2c2ce2e066f126315498f5e995a07bed0e1b4ac04cbcd0da46a08fe597fac131ca287a3ac",
+      "20309280addb2b8e12e8b5c2442ce211ff856486206a55195fbbf0624fc4f3479bbf8b6d2d8712f6c3ca6101409ad464edaf"
+    ],
+    "a": {
+      "body_hex": "a301506469722d636174616c6f672d3030303102070383583220307188c9bf18f5b6a8650d594736e1429f4c59aac58687d2f4c17c506dbf0b7362000d6190c5f632da718bf2737a936be8583220302d300715f691b2708f0ef6d2c2ce2e066f126315498f5e995a07bed0e1b4ac04cbcd0da46a08fe597fac131ca287a3ac583220309280addb2b8e12e8b5c2442ce211ff856486206a55195fbbf0624fc4f3479bbf8b6d2d8712f6c3ca6101409ad464edaf",
+      "head_hex": "2f078fa3361625b3470588c0518fe60cd3305a9f5bf29c202919683f8f24d64eeb7890469fffcc9e46631df064b4c959",
+      "id_hex": "20302f078fa3361625b3470588c0518fe60cd3305a9f5bf29c202919683f8f24d64eeb7890469fffcc9e46631df064b4c959"
+    },
+    "fork": {
+      "members_b_hex": [
+        "20307188c9bf18f5b6a8650d594736e1429f4c59aac58687d2f4c17c506dbf0b7362000d6190c5f632da718bf2737a936be8",
+        "20309e555235bf3f8b65d680dc2a2f021d6c2491875256ca9d06b88901cffb6e93a9d5983cb078f35955abd478757f5f5a3c",
+        "20309280addb2b8e12e8b5c2442ce211ff856486206a55195fbbf0624fc4f3479bbf8b6d2d8712f6c3ca6101409ad464edaf"
+      ],
+      "b": {
+        "body_hex": "a301506469722d636174616c6f672d3030303102070383583220307188c9bf18f5b6a8650d594736e1429f4c59aac58687d2f4c17c506dbf0b7362000d6190c5f632da718bf2737a936be8583220309e555235bf3f8b65d680dc2a2f021d6c2491875256ca9d06b88901cffb6e93a9d5983cb078f35955abd478757f5f5a3c583220309280addb2b8e12e8b5c2442ce211ff856486206a55195fbbf0624fc4f3479bbf8b6d2d8712f6c3ca6101409ad464edaf",
+        "head_hex": "3dace4f8580277a2150c74eb92309ffd4c7c494540312b3262bbc1690c406b1b67179c943efb9abc6537ea16fc849a38",
+        "id_hex": "20303dace4f8580277a2150c74eb92309ffd4c7c494540312b3262bbc1690c406b1b67179c943efb9abc6537ea16fc849a38"
+      },
+      "first_differing_position": 1,
+      "note": "same directory+version, member[1] differs (desc-B -> desc-X) => fork at position 1."
+    },
+    "length_fork": {
+      "members_short_hex": [
+        "20307188c9bf18f5b6a8650d594736e1429f4c59aac58687d2f4c17c506dbf0b7362000d6190c5f632da718bf2737a936be8"
+      ],
+      "body_hex": "a301506469722d636174616c6f672d3030303102070381583220307188c9bf18f5b6a8650d594736e1429f4c59aac58687d2f4c17c506dbf0b7362000d6190c5f632da718bf2737a936be8",
+      "first_differing_position": 1,
+      "note": "a truncated member list forks at the length of the shorter list (position 1)."
+    },
+    "different_version": {
+      "version": 8,
+      "body_hex": "a301506469722d636174616c6f672d3030303102080383583220307188c9bf18f5b6a8650d594736e1429f4c59aac58687d2f4c17c506dbf0b7362000d6190c5f632da718bf2737a936be8583220309e555235bf3f8b65d680dc2a2f021d6c2491875256ca9d06b88901cffb6e93a9d5983cb078f35955abd478757f5f5a3c583220309280addb2b8e12e8b5c2442ce211ff856486206a55195fbbf0624fc4f3479bbf8b6d2d8712f6c3ca6101409ad464edaf",
+      "note": "a different version is a legitimate succession, not a fork."
+    },
+    "duplicate_first_differing_position": -1
+  },
+  "import": {
+    "importer_hex": "494d504f525445525f49445f41",
+    "format": 2,
+    "foreign_hex": "7b2270726f746f636f6c54797065223a22414e50222c226964223a226469643a7762613a666f726569676e2e6578616d706c653a6167656e74222c226e616d65223a22636174616c6f672d6167656e74222c22696e7465726661636573223a5b222f7175657279222c222f7375626d6974225d7d",
+    "foreign_id_hex": "2030f303d2a909acb3922cd0e467c7136e1b10b85219a25383ec4b51118a2d7cd69de05ff11a25934f3221df441b942ee851",
+    "operations": [
+      {
+        "name": "query",
+        "effect": 0,
+        "requires_approval": 0
+      },
+      {
+        "name": "submit",
+        "effect": 1,
+        "requires_approval": 1
+      }
+    ],
+    "body_hex": "a4014d494d504f525445525f49445f4102020358747b2270726f746f636f6c54797065223a22414e50222c226964223a226469643a7762613a666f726569676e2e6578616d706c653a6167656e74222c226e616d65223a22636174616c6f672d6167656e74222c22696e7465726661636573223a5b222f7175657279222c222f7375626d6974225d7d0482a30165717565727902000300a301667375626d697402010301",
+    "head_hex": "a41c2d8ff1c6512d62273b1e1b9bf86313c8a4ccd32bc5f55896d5fed53fceb983640707cf18182d89f48953b9526a54",
+    "id_hex": "2030a41c2d8ff1c6512d62273b1e1b9bf86313c8a4ccd32bc5f55896d5fed53fceb983640707cf18182d89f48953b9526a54",
+    "foreign_asserted_identity": "did:wba:foreign.example:agent",
+    "note": "the importer (field 1) is the sole authorization identity; the foreign identity embedded in field 3 is bound by content-id but never authorizes (R-14.6).",
+    "unknown_format": {
+      "format": 99,
+      "body_hex": "a4014d494d504f525445525f49445f410218630358747b2270726f746f636f6c54797065223a22414e50222c226964223a226469643a7762613a666f726569676e2e6578616d706c653a6167656e74222c226e616d65223a22636174616c6f672d6167656e74222c22696e7465726661636573223a5b222f7175657279222c222f7375626d6974225d7d0482a30165717565727902000300a301667375626d697402010301",
+      "reject": "UnknownDescriptionFormat",
+      "note": "format 99 is outside the closed naalp-description-format set {1,2,3} -> rejected on decode."
+    }
+  }
+}

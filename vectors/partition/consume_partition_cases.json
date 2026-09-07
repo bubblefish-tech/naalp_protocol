@@ -1,0 +1,30 @@
+{
+  "source": "NAALP-REQ-103 (draft-01 ietf/draft-bubblefish-naalp-01.md, #Approval and #Security Considerations). Independent authority for the expected classification: the normative rule 'At the baseline tier, an executor that cannot reach the consume ledger SHALL deny the spend'. Expected values were derived by reading the specification text, NOT produced by any implementation under test (non-circular, per repo rule F3). These are test artifacts (behavioral transcripts) and are NOT a wire-format change; they are graded by scripts/partition_case.py, not by the pinned conformance corpus.",
+  "rule": "NAALP-REQ-103: at the baseline tier, an executor that cannot reach the consume ledger SHALL deny the spend. Local spend-and-reconcile-later is not a baseline behavior; a baseline consumer that spends locally while the ledger is unreachable is non-conforming.",
+  "cases": [
+    {
+      "case_id": "consume/partition/local-spend-unreachable-ledger",
+      "expected": "non-conforming",
+      "expected_reason": "REQ-103: baseline consumer completed a spend while the consume ledger was unreachable; the rule requires SHALL deny.",
+      "transcript": {
+        "tier": "baseline",
+        "approval_id_hex": "2030918e6d00173b64de4310620dee037aea611b5b01f52a6f556bf14f88131c88c3469a9361e05b6d8fbfa26e8610b61062",
+        "ledger_reachable": false,
+        "consumer_action": "spend",
+        "spend_completed": true
+      }
+    },
+    {
+      "case_id": "consume/partition/deny-unreachable-ledger",
+      "expected": "conforming",
+      "expected_reason": "REQ-103 satisfied: baseline consumer denied the spend (fail-closed) when the consume ledger was unreachable.",
+      "transcript": {
+        "tier": "baseline",
+        "approval_id_hex": "2030918e6d00173b64de4310620dee037aea611b5b01f52a6f556bf14f88131c88c3469a9361e05b6d8fbfa26e8610b61062",
+        "ledger_reachable": false,
+        "consumer_action": "deny",
+        "spend_completed": false
+      }
+    }
+  ]
+}

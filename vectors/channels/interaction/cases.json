@@ -20,6 +20,12 @@
       "name": "Confirm",
       "effect": 2,
       "variable": false
+    },
+    {
+      "code": 3,
+      "name": "UiEvent",
+      "effect": 2,
+      "variable": false
     }
   ],
   "states": [

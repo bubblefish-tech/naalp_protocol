@@ -2,7 +2,7 @@
 
 # N-AALP Java SDK
 
-The Java reference implementation of **N-AALP** (draft-bubblefish-naalp-00) — an
+The Java reference implementation of **N-AALP** (draft-bubblefish-naalp-01) — an
 application-layer object protocol for autonomous agents, package `sh.bubblefish.naalp`, Java 21.
 Every N-AALP object is a deterministically-encoded CBOR structure signed with COSE that carries,
 under one signature, its content identity, its signer, a closed effect label, optional
@@ -21,7 +21,7 @@ approval/audit bindings, and its causal derivation — **verifiable offline, ove
 
 Every construction is **graded byte-for-byte** against the shared conformance corpus
 (== Go == Rust == Python); the reference worked object is reproduced exactly
-(`src/test/java/sh/bubblefish/naalp/WorkedExampleKat.java`).
+(`src/test/java/sh/bubblefish/naalp/WorkedExampleKatTest.java`).
 
 ## What this SDK does NOT provide
 
@@ -47,7 +47,7 @@ Every construction is **graded byte-for-byte** against the shared conformance co
   - `Graph.java` — `verifyCausal`, deterministic `reconcile`, `reconcileRecord`.
   - `Channels.java` — the 20-channel / 65-kind table (`lookup`, `checkEffect`).
   - `Hex.java`, `NaalpException.java` — helpers.
-- `src/test/java/sh/bubblefish/naalp/` — `WorkedExampleKat` (byte-exact worked object),
+- `src/test/java/sh/bubblefish/naalp/` — `WorkedExampleKatTest` (byte-exact worked object),
   `PrimitivesSmoke` (standards-anchored primitives).
 - `examples/SecureObject.java` — a runnable build → sign → verify → tamper demo.
 
@@ -109,7 +109,7 @@ non-zero on failure:
 ```sh
 javac -cp "harness/adapters/java/lib/bcprov-jdk18on-1.85.jar" -d impl/java/tout \
     impl/java/src/main/java/sh/bubblefish/naalp/*.java impl/java/src/test/java/sh/bubblefish/naalp/*.java
-java -cp "impl/java/tout;harness/adapters/java/lib/bcprov-jdk18on-1.85.jar" sh.bubblefish.naalp.WorkedExampleKat
+java -cp "impl/java/tout;harness/adapters/java/lib/bcprov-jdk18on-1.85.jar" sh.bubblefish.naalp.WorkedExampleKatTest
 java -cp "impl/java/tout;harness/adapters/java/lib/bcprov-jdk18on-1.85.jar" sh.bubblefish.naalp.PrimitivesSmoke
 ```
 

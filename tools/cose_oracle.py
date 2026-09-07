@@ -21,6 +21,7 @@ mutual verification in the impl test suites, both anchored to NIST via the keyGe
 direct in-repo NIST sigGen byte-match needs NIST external-interface vectors and is tracked
 for T14 (see nist_acvp_mldsa.json._note).
 """
+import hashlib
 import io
 import json
 import os
@@ -78,6 +79,23 @@ def hx(b):
     return b.hex()
 
 
+# ---- opt-in LAMPS composite (design.md §4.2) ------------------------------------------
+# The IETF LAMPS composite construction (draft-ietf-lamps-pq-composite-sigs rev-19). This
+# oracle emits the message representative M' and the COSE ToBeSigned M — NOT the ML-DSA
+# signature bytes (a from-scratch Python ML-DSA is out of scope, same convention as §4.1);
+# the composite signature path is graded by Go==Rust deterministic byte-parity plus mutual
+# verification, and independently by the LAMPS-WG reference-vector cross-check (bar 1).
+COMPOSITE_PREFIX = b"CompositeAlgorithmSignatures2025"
+COMPOSITE_LABEL = b"COMPSIG-MLDSA65-Ed25519-SHA512"
+ALG_COMPOSITE = -65537
+
+
+def compute_mprime(label, ctx, m):
+    """LAMPS composite message representative: Prefix || Label || len(ctx) || ctx || SHA-512(M).
+    len(ctx) is a single length octet; for N-AALP ctx is EMPTY. Constructed from scratch here."""
+    return COMPOSITE_PREFIX + label + bytes([len(ctx)]) + ctx + hashlib.sha512(m).digest()
+
+
 def build():
     nist = json.load(open(os.path.join(HERE, "..", "vectors", "cose", "nist_acvp_mldsa.json")))
 
@@ -105,6 +123,25 @@ def build():
         "body_protected_hex": hx(body_prot),          # "" (empty protected)
         "ed": {"alg": -19, "protected_hex": hx(ed_prot), "tobesigned_hex": hx(ed_tbs)},
         "ml": {"alg": -49, "protected_hex": hx(ml_prot), "tobesigned_hex": hx(ml_tbs)},
+    }
+
+    # Composite (LAMPS) worked case for the Public/Enterprise suite: the COSE_Sign1 ToBeSigned
+    # M over the composite alg id (-65537) and the message representative M' = compute_mprime
+    # over M with an EMPTY composite context. Go and Rust MUST reproduce protected_hex,
+    # tobesigned_hex (M), and mprime_hex (M').
+    comp_tbs, comp_prot = sign1_tobesigned(ALG_COMPOSITE, payload)
+    composite = {
+        "alg": ALG_COMPOSITE,
+        "label": COMPOSITE_LABEL.decode("ascii"),
+        "label_hex": COMPOSITE_LABEL.hex(),
+        "prefix_hex": COMPOSITE_PREFIX.hex(),
+        "payload_hex": hx(payload),
+        "protected_hex": hx(comp_prot),
+        "tobesigned_hex": hx(comp_tbs),
+        "ctx_hex": "",  # the N-AALP composite context is empty
+        "mprime_hex": hx(compute_mprime(COMPOSITE_LABEL, b"", comp_tbs)),
+        "mldsa65_sig_size": 3309,
+        "ed25519_sig_size": 64,
     }
 
     mldsa_keygen = []
@@ -135,6 +172,7 @@ def build():
         "profiles": PROFILES,
         "sign1": sign1,
         "hybrid": hybrid,
+        "composite": composite,
         "mldsa_keygen": mldsa_keygen,
         "ed25519_rfc8032_test1": ed25519,
     }
@@ -152,6 +190,8 @@ def main():
         print(c["name"], "protected", c["protected_hex"], "tbs", len(c["tobesigned_hex"]) // 2, "bytes")
     print("hybrid ed tbs", len(data["hybrid"]["ed"]["tobesigned_hex"]) // 2, "bytes;",
           "ml tbs", len(data["hybrid"]["ml"]["tobesigned_hex"]) // 2, "bytes")
+    print("composite alg", data["composite"]["alg"], "M", len(data["composite"]["tobesigned_hex"]) // 2,
+          "bytes; M'", len(data["composite"]["mprime_hex"]) // 2, "bytes")
     for k in data["mldsa_keygen"]:
         print("keygen", k["param"], "pk", len(k["pk_hex"]) // 2, "bytes")
     print("wrote", path)

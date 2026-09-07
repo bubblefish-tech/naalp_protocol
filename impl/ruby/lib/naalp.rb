@@ -1,6 +1,6 @@
 # Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
 #
-# naalp — the Ruby reference SDK for N-AALP (draft-bubblefish-naalp-00).
+# naalp — the Ruby reference SDK for N-AALP (draft-bubblefish-naalp-01).
 #
 # N-AALP makes the *object*, not the connection, the unit of security: every message is a
 # deterministically-encoded CBOR structure signed with COSE that carries, under one signature,
@@ -36,6 +36,25 @@ require_relative 'naalp/policy'
 require_relative 'naalp/records'
 require_relative 'naalp/graph'
 require_relative 'naalp/channels'
+require_relative 'naalp/transport'
+require_relative 'naalp/federation'
+require_relative 'naalp/gateway'
+require_relative 'naalp/audit'
+require_relative 'naalp/delivery'
+require_relative 'naalp/payment'
+require_relative 'naalp/approval'
+require_relative 'naalp/continuation'
+require_relative 'naalp/delegation'
+require_relative 'naalp/mcp'
+require_relative 'naalp/description'
+require_relative 'naalp/agui'
+require_relative 'naalp/naming'
+require_relative 'naalp/rooms'
+require_relative 'naalp/negotiation'
+require_relative 'naalp/streaming'
+require_relative 'naalp/carriage'
+require_relative 'naalp/naalperror'
+require_relative 'naalp/hazard'
 
 module Naalp
   VERSION = "0.1.0".freeze

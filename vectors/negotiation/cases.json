@@ -1,0 +1,331 @@
+{
+  "source": "design \u00a723; naalp-negotiation-{offer,counter,accept} {1:negotiation,2:role,3:profile,4:[cause]} (signed, causally-linked; accept must descend from offer via the causes DAG; profile from the closed pre-registered set; unknown profile/role rejected); naalp-risk-label {1:code,2:critical} + naalp-labeled-object {1:effect,2:[risk-label]} (advisory; effect class unchanged by labels; unknown critical rejected, unknown non-critical ignored per R-2.5); naalp-trust-ref {1:registry,2:reference,3:subject} (checkable by content-id recompute; never weighed on the wire). head=SHA-384(body); content-id=multihash(0x20,SHA-384).",
+  "negotiation": {
+    "negotiation_hex": "6e65672d30303031",
+    "roles": {
+      "offer": 0,
+      "counter": 1,
+      "accept": 2
+    },
+    "profiles": {
+      "baseline": 0,
+      "streaming": 1,
+      "batch": 2
+    },
+    "unknown_profile": 99,
+    "offer": {
+      "role": 0,
+      "profile": 0,
+      "causes_hex": [],
+      "body_hex": "a401486e65672d30303031020003000480",
+      "head_hex": "508721a8689764c26b106619498e90a7e713de2c5ca55794f68b5f34e7fc22c4cb8f682d63e8f9976d06c86e39b7edf9",
+      "id_hex": "2030508721a8689764c26b106619498e90a7e713de2c5ca55794f68b5f34e7fc22c4cb8f682d63e8f9976d06c86e39b7edf9"
+    },
+    "counter": {
+      "role": 1,
+      "profile": 1,
+      "causes_hex": [
+        "2030508721a8689764c26b106619498e90a7e713de2c5ca55794f68b5f34e7fc22c4cb8f682d63e8f9976d06c86e39b7edf9"
+      ],
+      "body_hex": "a401486e65672d3030303102010301048158322030508721a8689764c26b106619498e90a7e713de2c5ca55794f68b5f34e7fc22c4cb8f682d63e8f9976d06c86e39b7edf9",
+      "head_hex": "ec35b244e32b7ae4f115f54bdb3b178f9ecd53bb3934c52ac70df0cfd5fc3c7321ef6694fff9e4fa90fb97a43c998a4a",
+      "id_hex": "2030ec35b244e32b7ae4f115f54bdb3b178f9ecd53bb3934c52ac70df0cfd5fc3c7321ef6694fff9e4fa90fb97a43c998a4a"
+    },
+    "accept": {
+      "role": 2,
+      "profile": 1,
+      "causes_hex": [
+        "2030ec35b244e32b7ae4f115f54bdb3b178f9ecd53bb3934c52ac70df0cfd5fc3c7321ef6694fff9e4fa90fb97a43c998a4a"
+      ],
+      "body_hex": "a401486e65672d3030303102020301048158322030ec35b244e32b7ae4f115f54bdb3b178f9ecd53bb3934c52ac70df0cfd5fc3c7321ef6694fff9e4fa90fb97a43c998a4a",
+      "head_hex": "ce2445c89761302799e0022a889be6dfff30a877129bf92e82faf05171778c0c967a394552f3da561e21953237f93c63",
+      "id_hex": "2030ce2445c89761302799e0022a889be6dfff30a877129bf92e82faf05171778c0c967a394552f3da561e21953237f93c63"
+    },
+    "offer2": {
+      "role": 0,
+      "profile": 2,
+      "causes_hex": [],
+      "body_hex": "a401486e65672d30303031020003020480",
+      "head_hex": "c825de75e5c7d1f8c8950803b8e7836a14aaf33c48e8c8ff09b1c21af49d1913423ef78785b8821dafabf6b6f007c07d",
+      "id_hex": "2030c825de75e5c7d1f8c8950803b8e7836a14aaf33c48e8c8ff09b1c21af49d1913423ef78785b8821dafabf6b6f007c07d"
+    },
+    "accept_not_descended": {
+      "role": 2,
+      "profile": 2,
+      "causes_hex": [
+        "2030c825de75e5c7d1f8c8950803b8e7836a14aaf33c48e8c8ff09b1c21af49d1913423ef78785b8821dafabf6b6f007c07d"
+      ],
+      "body_hex": "a401486e65672d3030303102020302048158322030c825de75e5c7d1f8c8950803b8e7836a14aaf33c48e8c8ff09b1c21af49d1913423ef78785b8821dafabf6b6f007c07d",
+      "head_hex": "e54df76a879610bad9b94e9726f2794019355e700e815572b856706911da4289576c43aee8a12ff60d36c12d47602424",
+      "id_hex": "2030e54df76a879610bad9b94e9726f2794019355e700e815572b856706911da4289576c43aee8a12ff60d36c12d47602424"
+    },
+    "unknown_profile_offer": {
+      "role": 0,
+      "profile": 99,
+      "causes_hex": [],
+      "body_hex": "a401486e65672d3030303102000318630480",
+      "head_hex": "c943ea1066037ece254c1c84fc826ffdf4dacf5a184721cc7335cfed184c7a5f6eb1f8af61441b2171d9457f4b204e4a",
+      "id_hex": "2030c943ea1066037ece254c1c84fc826ffdf4dacf5a184721cc7335cfed184c7a5f6eb1f8af61441b2171d9457f4b204e4a"
+    },
+    "unknown_role_message": {
+      "role": 9,
+      "profile": 0,
+      "causes_hex": [],
+      "body_hex": "a401486e65672d30303031020903000480",
+      "head_hex": "512df765038b9cf03a9870c65b1edea7c4a98a3b75d56676d4ad873b99fe15eb87fb8ce997aa1de4a1322671da654443",
+      "id_hex": "2030512df765038b9cf03a9870c65b1edea7c4a98a3b75d56676d4ad873b99fe15eb87fb8ce997aa1de4a1322671da654443"
+    },
+    "descends": {
+      "accept_from_offer": true,
+      "accept_bad_from_offer": false
+    },
+    "agreed_profile": 1,
+    "note": "offer/counter/accept are signed causally-linked objects; the accept descends from the offer by walking the causes DAG; the selected profile is one of the closed pre-registered set; unknown profile/role and a non-descended accept are rejected."
+  },
+  "risk": {
+    "vocabulary": [
+      {
+        "name": "sensitive",
+        "code": 1,
+        "class": "gating"
+      },
+      {
+        "name": "egress",
+        "code": 2,
+        "class": "gating"
+      },
+      {
+        "name": "reversible",
+        "code": 3,
+        "class": "informing"
+      }
+    ],
+    "extensible_range_start": 4096,
+    "sample_labels": {
+      "sensitive_critical": {
+        "code": 1,
+        "critical": 1,
+        "body_hex": "a201010201"
+      },
+      "egress_noncritical": {
+        "code": 2,
+        "critical": 0,
+        "body_hex": "a201020200"
+      },
+      "reversible_noncritical": {
+        "code": 3,
+        "critical": 0,
+        "body_hex": "a201030200"
+      },
+      "unknown_critical": {
+        "code": 4096,
+        "critical": 1,
+        "body_hex": "a2011910000201"
+      },
+      "unknown_noncritical": {
+        "code": 8192,
+        "critical": 0,
+        "body_hex": "a2011920000200"
+      }
+    },
+    "carried_on_labeled_objects": [
+      {
+        "code": 1,
+        "critical": 1
+      },
+      {
+        "code": 2,
+        "critical": 0
+      }
+    ],
+    "labeled_objects": [
+      {
+        "effect": 0,
+        "effect_name": "read_only",
+        "effect_class": 0,
+        "with_labels": {
+          "body_hex": "a201000282a201010201a201020200",
+          "head_hex": "affdb222e2312c36896232bd9a42d224c8c17a6718325d99d22aa23e7118689dc09b123fdbb732b4f3519e12f24f5e95",
+          "id_hex": "2030affdb222e2312c36896232bd9a42d224c8c17a6718325d99d22aa23e7118689dc09b123fdbb732b4f3519e12f24f5e95"
+        },
+        "without_labels": {
+          "body_hex": "a201000280",
+          "head_hex": "54baca053fe48a79434b92117802f1970b0338eb2a585c00ddb44743156ab4c5456427d99a4604c2d6220d24914c09a2",
+          "id_hex": "203054baca053fe48a79434b92117802f1970b0338eb2a585c00ddb44743156ab4c5456427d99a4604c2d6220d24914c09a2"
+        }
+      },
+      {
+        "effect": 1,
+        "effect_name": "idempotent_write",
+        "effect_class": 1,
+        "with_labels": {
+          "body_hex": "a201010282a201010201a201020200",
+          "head_hex": "6632416d443da4b48a771eee52a87fa4e5d7953b216f6921304cf54d9f4cfdd749fcabc510fd86ab7eaf60b2f5dc704a",
+          "id_hex": "20306632416d443da4b48a771eee52a87fa4e5d7953b216f6921304cf54d9f4cfdd749fcabc510fd86ab7eaf60b2f5dc704a"
+        },
+        "without_labels": {
+          "body_hex": "a201010280",
+          "head_hex": "153c5bef22f65380a14118b6643cf670a9987e6c84cd9a00735cbb441ca78483f59e05c3abecd3816582b7fe808a59c4",
+          "id_hex": "2030153c5bef22f65380a14118b6643cf670a9987e6c84cd9a00735cbb441ca78483f59e05c3abecd3816582b7fe808a59c4"
+        }
+      },
+      {
+        "effect": 2,
+        "effect_name": "non_idempotent_write",
+        "effect_class": 2,
+        "with_labels": {
+          "body_hex": "a201020282a201010201a201020200",
+          "head_hex": "a87c4c1d2f85c2ab57bafa38c6c4ce4e5813ef588d700a1d2ef6816a1de8936a8bb582db852ff103604fba90fbc1c23b",
+          "id_hex": "2030a87c4c1d2f85c2ab57bafa38c6c4ce4e5813ef588d700a1d2ef6816a1de8936a8bb582db852ff103604fba90fbc1c23b"
+        },
+        "without_labels": {
+          "body_hex": "a201020280",
+          "head_hex": "5fd0baa8d0355c2a8a44b8d3106ba3d42216f3e2b855a6350713293d00aa736fe8e4b3d71f7088ec841f1b283e37b8f1",
+          "id_hex": "20305fd0baa8d0355c2a8a44b8d3106ba3d42216f3e2b855a6350713293d00aa736fe8e4b3d71f7088ec841f1b283e37b8f1"
+        }
+      },
+      {
+        "effect": 3,
+        "effect_name": "destructive",
+        "effect_class": 3,
+        "with_labels": {
+          "body_hex": "a201030282a201010201a201020200",
+          "head_hex": "285c5d744837d8c79c46c209d9f8bf7a8b831a33186f1fe69bf01f7746cbe587b82e76300ab09497d1edfe400de5bb05",
+          "id_hex": "2030285c5d744837d8c79c46c209d9f8bf7a8b831a33186f1fe69bf01f7746cbe587b82e76300ab09497d1edfe400de5bb05"
+        },
+        "without_labels": {
+          "body_hex": "a201030280",
+          "head_hex": "8f3cc43a0453f1f36111e0d294b8ed1ebee4a420d0a64e83bff021d9bc30f4e16c89dcf9c2e388bacf116c723cf09e86",
+          "id_hex": "20308f3cc43a0453f1f36111e0d294b8ed1ebee4a420d0a64e83bff021d9bc30f4e16c89dcf9c2e388bacf116c723cf09e86"
+        }
+      }
+    ],
+    "validate": {
+      "recognized_set": {
+        "carried": [
+          {
+            "code": 1,
+            "critical": 1
+          },
+          {
+            "code": 3,
+            "critical": 0
+          },
+          {
+            "code": 8192,
+            "critical": 0
+          }
+        ],
+        "recognized_codes": [
+          1,
+          3
+        ],
+        "error": null
+      },
+      "unknown_critical_rejected": {
+        "carried": [
+          {
+            "code": 4096,
+            "critical": 1
+          }
+        ],
+        "error": "UnknownCriticalRisk"
+      }
+    },
+    "note": "risk labels are an ADVISORY dimension: carrying one NEVER changes the effect class (the closed C5 lattice is untouched). An unknown critical label is rejected (R-2.5); an unknown non-critical one is ignored. gating/informing is a vocabulary attribute; critical/non-critical is a per-carriage flag."
+  },
+  "trust": {
+    "registry_a_hex": "6572632d383030343a72657075746174696f6e",
+    "registry_b_hex": "6572632d383030343a6964656e74697479",
+    "subject_hex": "6167656e742d62696c6c696e672d30303031",
+    "external_record_hex": "7b22736368656d61223a226572632d383030342d72657075746174696f6e222c227375626a656374223a226167656e742d62696c6c696e672d30303031222c2273636f7265223a223837222c226174746573746f72223a226469643a6578616d706c653a72656769737472792d61227d",
+    "reference_hex": "20301d496285693fd11be8dcda313cef982a982f1725f3f4da611f4ee6b630a466baf69765cb538958fa0ef2634c9e023a1a",
+    "tampered_record_hex": "7b22736368656d61223a226572632d383030342d72657075746174696f6e222c227375626a656374223a226167656e742d62696c6c696e672d30303031222c2273636f7265223a223939222c226174746573746f72223a226469643a6578616d706c653a72656769737472792d61227d",
+    "tampered_reference_hex": "203065c8c2212cbe71010f64544c1376f81180a5690350c1e98d66a38d20795ee7aef6f2e1bf608316dce15fa6f59341ad3f",
+    "ref_a": {
+      "body_hex": "a301536572632d383030343a72657075746174696f6e02583220301d496285693fd11be8dcda313cef982a982f1725f3f4da611f4ee6b630a466baf69765cb538958fa0ef2634c9e023a1a03526167656e742d62696c6c696e672d30303031",
+      "head_hex": "5e90bbb8d1dc6c1bb8e521284ec34b740d6fbd52cda48d08a1f535a74ddc63381ef26677186b525536068d8fba7b13ad",
+      "id_hex": "20305e90bbb8d1dc6c1bb8e521284ec34b740d6fbd52cda48d08a1f535a74ddc63381ef26677186b525536068d8fba7b13ad"
+    },
+    "ref_b": {
+      "body_hex": "a301516572632d383030343a6964656e7469747902583220301d496285693fd11be8dcda313cef982a982f1725f3f4da611f4ee6b630a466baf69765cb538958fa0ef2634c9e023a1a03526167656e742d62696c6c696e672d30303031",
+      "head_hex": "497efe537fc04718feaddbe5a67cc2132ada2259340baef1a0a391e9f51f2b674bd63adbf08e481dae357949f492149b",
+      "id_hex": "2030497efe537fc04718feaddbe5a67cc2132ada2259340baef1a0a391e9f51f2b674bd63adbf08e481dae357949f492149b"
+    },
+    "note": "a carried reputation/registry reference verifies by recomputing its content-id over the external record; NO wire field scores it. Two registries referencing the same record verify symmetrically \u2014 the wire weighs neither; resolution is the relying party's, never a wire computation."
+  },
+  "edge_cases": {
+    "keys_out_of_order": {
+      "canonical_offer_body_hex": "a401486e65672d30303031020003000480",
+      "noncanonical_offer_body_hex": "a404800300020001486e65672d30303031",
+      "reject": "NonCanonical",
+      "note": "same content, top-level keys emitted descending (4,3,2,1) - the strict decoder rejects NonCanonical."
+    },
+    "empty_vs_absent": {
+      "causes": {
+        "empty_present": {
+          "body_hex": "a401486e65672d30303031020003000480",
+          "id_hex": "2030508721a8689764c26b106619498e90a7e713de2c5ca55794f68b5f34e7fc22c4cb8f682d63e8f9976d06c86e39b7edf9"
+        },
+        "one_cause": {
+          "cause_hex": "20300ae456785fc2f81ceea1be5cf4350ec90698ed9a6b6e4fbf78086e3e59aed9443e469b150d7ac41aeae46ea6bd424ad0",
+          "body_hex": "a401486e65672d30303031020003000481583220300ae456785fc2f81ceea1be5cf4350ec90698ed9a6b6e4fbf78086e3e59aed9443e469b150d7ac41aeae46ea6bd424ad0",
+          "id_hex": "2030e7ebfffab64ecd579809c59ff015c65e6ba4d8d88ee001045c754dda395fe678e67cec3a17f500e1cc42f18e9056764e"
+        },
+        "absent_field": {
+          "body_hex": "a301486e65672d3030303102000300",
+          "reject": "NegMalformed"
+        }
+      },
+      "labels": {
+        "empty_present": {
+          "body_hex": "a201000280",
+          "id_hex": "203054baca053fe48a79434b92117802f1970b0338eb2a585c00ddb44743156ab4c5456427d99a4604c2d6220d24914c09a2"
+        },
+        "one_label": {
+          "code": 1,
+          "critical": 1,
+          "body_hex": "a201000281a201010201",
+          "id_hex": "203062e6a7606f5ddc128c0f457f52192f89f72e6d23743593f094507ed87c47c3bd5735b8a2130fffdb973d0f6c77f6a37e"
+        },
+        "absent_field": {
+          "body_hex": "a10100",
+          "reject": "NegMalformed"
+        }
+      },
+      "note": "an empty causes[]/labels[] is distinct by content-id from a populated one; both differ from a body whose field is absent (rejected - the field is mandatory)."
+    },
+    "minimal": {
+      "offer": {
+        "negotiation_hex": "",
+        "role": 0,
+        "profile": 0,
+        "body_hex": "a40140020003000480",
+        "id_hex": "2030e73d9f188dc61f832f4e0aacbb6d37b81114f573288aa7b7457d3a5dbf28cddf05978857f4e882c7a877a95b03c965d8"
+      },
+      "labeled_object": {
+        "effect": 0,
+        "body_hex": "a201000280",
+        "id_hex": "203054baca053fe48a79434b92117802f1970b0338eb2a585c00ddb44743156ab4c5456427d99a4604c2d6220d24914c09a2"
+      },
+      "trust_ref": {
+        "body_hex": "a3014002400340",
+        "id_hex": "20300e680b2e494ee14272c5f7e634b9e99a07f58d1fe106f15caa7d5a0c457bea9aaf8a7c1efcbdf34e6812f08f7687db7c"
+      },
+      "note": "smallest legal offer (empty neg id), labeled-object (read_only, no labels), trust-ref (empty fields)."
+    },
+    "look_alike": {
+      "trust_ref_as_message": {
+        "body_hex": "a301536572632d383030343a72657075746174696f6e0258322030e038e41b9328b218d05b1524bdfdba5c92bfd429a67656eae567ee40a7623109f1698637b68324f4cf93c6a1f66fda6503497375626a6563742d78",
+        "reject": "NegMalformed",
+        "note": "a {1:bstr,2:bstr,3:bstr} trust-ref fed to ParseMessage: field 2 is not the uint role."
+      },
+      "message_as_trust_ref": {
+        "body_hex": "a401486e65672d30303031020003000480",
+        "reject": "NegMalformed",
+        "note": "a {1:bstr,2:uint,3:uint,4:arr} message fed to ParseTrustRef: field 2 is not a bstr reference."
+      }
+    },
+    "oversized_note": "edge case #3 (oversized >2^53 counter) is N/A: the C20 bodies carry no 64-bit counter."
+  }
+}

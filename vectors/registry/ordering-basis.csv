@@ -1,0 +1,4 @@
+basis_code,basis_name,description
+0,correspondence-only,"the record orders only its own two-party construction; the weakest claim, and the fail-closed default read from an absent ordering field"
+1,single-boundary,"one boundary observed both terms and is named (ordering-disclosure field 2)"
+2,external-mechanism,"an external sequencing mechanism is named, with its log relation (ordering-disclosure fields 3-4)"

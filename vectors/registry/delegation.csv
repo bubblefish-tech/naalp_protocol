@@ -1,0 +1,2 @@
+channel_id,channel_name,kind_code,kind_name,effect,tier
+0x0002,Capability,4,DelegationGrant,non_idempotent_write,1

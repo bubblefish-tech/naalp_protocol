@@ -67,6 +67,12 @@ def encode(v):
         for it in v:
             out += encode(it)
         return out
+    if isinstance(v, tuple) and len(v) == 2 and v[0] == "raw":
+        # Verbatim byte injection: lets a MUST-REJECT oracle (e.g. determinism_oracle.py) place a
+        # non-canonical item — a CBOR float, or a duplicate-keyed map — inside an otherwise-valid
+        # object, to grade the decoder's reject. Never used by a positive vector: the N-AALP spine
+        # has no floats (§3.1.1) and the map path below rejects duplicate keys outright.
+        return v[1]
     if isinstance(v, tuple) and len(v) == 3 and v[0] == "tag":
         # CBOR tag (major type 6): ("tag", number, content) — COSE_Sign1 = 18, COSE_Sign = 98.
         return enc_head(6, v[1]) + encode(v[2])
@@ -194,6 +200,9 @@ def build():
         {"name": "int_notshortest","bytes_hex": "1800",                         "expect": "NonCanonical"},
         {"name": "indefinite_arr", "bytes_hex": "9f00ff",                       "expect": "NonCanonical"},
         {"name": "duplicate_key",  "bytes_hex": "a2010001 01".replace(" ", ""), "expect": "NonCanonical"},
+        # §3.1.1 (R5): a CBOR float (major type 7) is forbidden anywhere in N-AALP. f93e00 is the
+        # float16 encoding of 1.5; a strict decoder rejects any major-7 item (float or simple).
+        {"name": "float_half",     "bytes_hex": "f93e00",                        "expect": "NonCanonical"},
     ]
 
     sha_kat = {

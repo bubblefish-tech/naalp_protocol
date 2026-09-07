@@ -16,6 +16,10 @@ export * as records from './records.mjs';
 export * as graph from './graph.mjs';
 export * as channels from './channels.mjs';
 export * as envelope from './envelope.mjs';
+export * as quick from './quick.mjs';
 
 // the ergonomic surface, re-exported at the top level
 export { Object_ as Object, sign, verify, EnvelopeError } from './envelope.mjs';
+// the convenience Signer (quick.Signer) at the top level; quick.verify stays namespaced to avoid
+// colliding with the raw envelope.verify re-exported above.
+export { Signer } from './quick.mjs';

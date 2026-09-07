@@ -16,7 +16,7 @@ channel-local encoding, signature, or identity (the draft's Channel Surfaces sec
 | 3 | `CapLookup` | `read_only` | look up a capability's status |
 
 This is the baseline registry `impl/go/channels/channels.go` carries verbatim
-([Table entry for Capability](https://github.com/bubblefish-tech/naalp_protocol/blob/main/impl/go/channels/channels.go#L61-L62)),
+([Table entry for Capability](https://github.com/bubblefish-tech/naalp_protocol/blob/main/impl/go/channels/channels.go#L62-L63)),
 cross-checked against an independent per-channel oracle so Go, Rust, and the oracle agree on
 every kind code and effect.
 

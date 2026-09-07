@@ -13,6 +13,12 @@ export class NonCanonical extends Error {
   constructor(msg) { super(msg); this.kind = 'NonCanonical'; }
 }
 
+// DepthExceeded is thrown by decodeBounded when a decoded item nests deeper than the caller's
+// maximum (design.md §3.4, R7). The outermost item is depth 1.
+export class DepthExceeded extends Error {
+  constructor(msg) { super(msg); this.kind = 'DepthExceeded'; }
+}
+
 // --- value model (mirrors the Go/Rust/Python cbor.Value variants) ---
 
 export class U { constructor(v) { this.v = BigInt(v); } }       // unsigned integer (major 0)
@@ -84,7 +90,8 @@ export function encode(v) {
   throw new TypeError('not a cbor value');
 }
 
-function dec1(data) {
+function dec1(data, depth, maxDepth) {
+  if (depth > maxDepth) throw new DepthExceeded('CBOR nesting depth exceeds the maximum');
   if (data.length < 1) throw new NonCanonical('truncated');
   const ib = data[0];
   const major = ib >> 5;
@@ -128,16 +135,16 @@ function dec1(data) {
   }
   if (major === 4) {
     const items = []; let cur = rest;
-    for (let i = 0; i < argN; i++) { const [it, nx] = dec1(cur); items.push(it); cur = nx; }
+    for (let i = 0; i < argN; i++) { const [it, nx] = dec1(cur, depth + 1, maxDepth); items.push(it); cur = nx; }
     return [new A(items), cur];
   }
   if (major === 5) {
     const pairs = []; let cur = rest; let prev = null;
     for (let i = 0; i < argN; i++) {
       const before = cur;
-      const [k, afterK] = dec1(cur);
+      const [k, afterK] = dec1(cur, depth + 1, maxDepth);
       const kbytes = before.subarray(0, before.length - afterK.length);
-      const [val, afterV] = dec1(afterK);
+      const [val, afterV] = dec1(afterK, depth + 1, maxDepth);
       cur = afterV;
       if (prev !== null && cmpBytes(kbytes, prev) <= 0) throw new NonCanonical('map keys out of order or duplicate');
       prev = kbytes;
@@ -146,17 +153,36 @@ function dec1(data) {
     return [new M(pairs), cur];
   }
   if (major === 6) {
-    const [content, rest2] = dec1(rest);
+    const [content, rest2] = dec1(rest, depth + 1, maxDepth);
     return [new Tag(arg, content), rest2];
   }
   throw new NonCanonical('unsupported major type ' + major);
 }
 
-export function decode(data) {
+// maxDepthUnbounded is the sentinel used by the trusted-input decode() path: far beyond any
+// legitimate structure yet finite, so even the unbounded path cannot recurse without limit on a
+// pathological input (mirrors impl/go/cbor.maxDepthUnbounded).
+const MAX_DEPTH_UNBOUNDED = 1 << 20;
+
+function decodeTop(data, maxDepth) {
   const buf = Uint8Array.from(data);
-  const [v, rest] = dec1(buf);
+  const [v, rest] = dec1(buf, 1, maxDepth);
   if (rest.length) throw new NonCanonical('trailing bytes after top-level item');
   return v;
+}
+
+// decode() parses one deterministic-CBOR value with no nesting-depth bound (the trusted-input
+// path); the untrusted object decode path uses decodeBounded (design.md §3.4 (R7)).
+export function decode(data) {
+  return decodeTop(data, MAX_DEPTH_UNBOUNDED);
+}
+
+// decodeBounded is decode() with a maximum CBOR nesting depth (design.md §3.4 (R7)): the
+// outermost item is depth 1, each nested map key/value, array element and tagged content is one
+// deeper, and an item at depth maxDepth+1 is rejected with DepthExceeded BEFORE it is
+// materialized (RFC 8949 §10 decoder-memory guard).
+export function decodeBounded(data, maxDepth) {
+  return decodeTop(data, maxDepth);
 }
 
 export function contentId(body) {

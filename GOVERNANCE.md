@@ -32,9 +32,10 @@ private reporting path for a design weakness is [`SECURITY.md`](SECURITY.md).
 
 This repository is the **public reference home** of N-AALP — the Native Agentic
 Application Layer Protocol: the Internet-Draft
-(`draft-bubblefish-naalp-00`, offered through the IETF Independent Submission
+(`draft-bubblefish-naalp-01`, offered through the IETF Independent Submission
 stream), the spine design and per-channel interface references, the byte-level
-CDDL wire authority, the machine-readable code-point registries, the conformance
+CDDL wire grammar (normative in the draft's Appendix A; mirrored as
+`spec/naalp-draft-01.cddl`), the machine-readable code-point registries, the conformance
 corpus and standards-anchored oracles, the cross-implementation conformance
 harness, and the ten reference implementations.
 
@@ -52,7 +53,7 @@ with the tier:
 
 | Tier | Artifact | Governs what | Change weight |
 |---|---|---|---|
-| **Normative wire** | The Internet-Draft, the spine design, the channel interface references, `spec/naalp-draft-00.cddl`, the code-point registries | What an implementation MUST do on the wire | Heaviest — see [§4](#4-normative-vs-editorial-changes) and [§6](#6-code-point-governance) |
+| **Normative wire** | The Internet-Draft (whose Appendix A holds the normative CDDL, mirrored as `spec/naalp-draft-01.cddl`), the spine design, the channel interface references, the code-point registries | What an implementation MUST do on the wire | Heaviest — see [§4](#4-normative-vs-editorial-changes) and [§6](#6-code-point-governance) |
 | **Conformance oracle** | The independent Python oracles in `tools/`, the pinned corpus in `vectors/`, the CDDL schema, the harness | What "conforms" means and how it is graded | Heavy — see [§7](#7-conformance-gates-done) |
 | **Reference & tooling** | The ten implementations under `impl/`, quickstarts, scripts, CI, the docs site | How the protocol is demonstrated and tested | Ordinary open-source change |
 
@@ -124,10 +125,10 @@ weighed on its merits, not on the contributor's status ([§3](#3-how-decisions-a
 The IANA registrations tied to N-AALP fall into two groups, and one of them is
 governed **outside** this project by IANA's own process:
 
-- The **media type** `application/naalp+cbor` is registered under **Specification
-  Required / Expert Review** (RFC 6838, RFC 8126 §4.6), reviewed by the
+- The **media type** `application/vnd.bubblefish.naalp+cbor` is registered in the
+  **vendor tree** under **Expert Review** (RFC 6838 §3.2), reviewed by the
   media-types Designated Expert via `media-types@iana.org`. The project supplies
-  the completed registration template (stated in the Internet-Draft's IANA Considerations); it does
+  the completed registration template ([`ietf/IANA.md`](ietf/IANA.md)); it does
   not appoint that expert and cannot register the value itself.
 - N-AALP **reuses** the existing IANA **COSE Algorithms** registry for its
   signature identifiers (ML-DSA per RFC 9964, Ed25519 per RFC 9864) and requests
@@ -244,7 +245,7 @@ distinction exists to prevent.
 > declared *done* until it has a reference implementation in both primary
 > languages and machine-gradable, non-circular conformance vectors that grade it
 > ([§7](#7-conformance-gates-done)). A single additive registration in an existing
-> *Specification Required* range does **not** need this ceremony — it follows the
+> *RFC-Required* range does **not** need this ceremony — it follows the
 > code-point procedure of [§6.2](#62-how-a-code-point-is-assigned).
 
 ### 4.3 Wire-compatibility consequence
@@ -265,7 +266,7 @@ A normative change carries a **compatibility class**:
 Note the honest boundary with the substrate: N-AALP carries **no transport
 identifier of its own**. Transport identity — the ALPN token, the negotiated
 suite — belongs to N-PAMP, and an N-AALP wire-major bump is expressed in the
-`naalp-version` octet and the `application/naalp+cbor` media type, **not** in an
+`naalp-version` octet and the `application/vnd.bubblefish.naalp+cbor` media type, **not** in an
 ALPN digit. The Author/Editor MUST state the compatibility class in the ADR for
 any normative change, so a downstream implementer can tell an additive
 registration from a breaking one at a glance.
@@ -308,17 +309,23 @@ recommends (RFC 8874), applied to an independent submission.
 
 ## 6. Code-point governance
 
-The five N-AALP registries carry the protocol's public code points. Their
+The eight N-AALP registries carry the protocol's public code points. Their
 governance follows **RFC 8126** (the IANA-registration-policy vocabulary),
-applied to the project's own managed number spaces. The registries are:
+applied to the project's own managed number spaces. Because N-AALP is offered
+through the Independent Submission stream, which appoints no Designated Expert,
+each registry the draft creates uses **RFC Required** (RFC 8126 §4.7) — the
+strictest ISE-permissible policy. The registries are:
 
 | Registry | Home | Number space | Policy shape |
 |---|---|---|---|
-| **N-AALP Channels** | [`vectors/registry/channels.csv`](vectors/registry/channels.csv) | `0x0000`–`0x0013` (20 channels) | Specification Required |
-| **N-AALP Object Kinds** | [`vectors/registry/channels.csv`](vectors/registry/channels.csv) | per-channel kind codes (65 baseline kinds) | Specification Required |
-| **N-AALP Effects** | the closed set in the draft | `0`–`3` (`read_only`, `idempotent_write`, `non_idempotent_write`, `destructive`) | Specification Required — **closed set** |
+| **N-AALP Channels** | [`vectors/registry/channels.csv`](vectors/registry/channels.csv) | `0x0000`–`0x0013` (20 channels) | RFC Required (FCFS) |
+| **N-AALP Object Kinds** | [`vectors/registry/channels.csv`](vectors/registry/channels.csv) | per-channel kind codes (65 baseline kinds) | RFC Required (FCFS) |
+| **N-AALP Effects** | the closed set in the draft | `0`–`3` (`read_only`, `idempotent_write`, `non_idempotent_write`, `destructive`) | RFC Required (FCFS) — **closed set** |
 | **N-AALP Carriage Protocol Ids** | [`vectors/registry/protocols.csv`](vectors/registry/protocols.csv) | one octet, banded (below) | mixed, per band |
-| **N-AALP Error Codes** | the named errors of the draft | 34 named codes | Specification Required |
+| **N-AALP Error Codes** | the named errors of the draft | 119 numeric codes | RFC Required (FCFS) |
+| **N-AALP Extension Keys** | [`vectors/registry/extension-keys.csv`](vectors/registry/extension-keys.csv) | `ext` / `cext` map keys | RFC Required (FCFS) |
+| **N-AALP Carriage Content Types** | [`vectors/registry/carriage-content-types.csv`](vectors/registry/carriage-content-types.csv) | one octet, banded | RFC Required (FCFS) standards; no-reg experimental/private |
+| **N-AALP Trust-Decision Input Classes** | [`vectors/registry/trust-decision-input-classes.csv`](vectors/registry/trust-decision-input-classes.csv) | 10 closed input classes | RFC Required (FCFS) |
 
 The signature-suite mapping ([`vectors/registry/signatures.csv`](vectors/registry/signatures.csv))
 and the multicodec table ([`vectors/registry/multicodec.csv`](vectors/registry/multicodec.csv))
@@ -326,14 +333,14 @@ record values N-AALP **reuses** from external authorities (the IANA COSE
 Algorithms registry and the multiformats multicodec table) rather than assigning
 itself; they are governed by their source registries, and this project only
 records the values it depends on. The submission-form registration package for
-all of the above is stated in the Internet-Draft's IANA Considerations.
+all of the above is [`ietf/IANA.md`](ietf/IANA.md).
 
 Two things are true at once and must not be confused:
 
 - The **project-internal** registries (channels, object kinds, effects, carriage
   protocol ids, error codes) are managed *here*, by the Author/Editor, under the
   policies each registry states.
-- The **IANA-managed** identifiers tied to N-AALP (the `application/naalp+cbor`
+- The **IANA-managed** identifiers tied to N-AALP (the `application/vnd.bubblefish.naalp+cbor`
   media type under Expert Review; the COSE algorithm identifiers N-AALP reuses)
   are managed by **IANA**, not by this project ([§2.4](#24-designated-experts)).
 
@@ -346,14 +353,14 @@ worked example:
 
 | Band | Policy (RFC 8126) | Who assigns | What it means |
 |---|---|---|---|
-| **Standards / assigned** (`0x01`–`0x0F`) | **Specification Required** (RFC 8126 §4.6) | Author/Editor, via the code-point procedure | A permanent, readily available public specification with enough detail for interoperable independent implementations is required before a value is assigned; the assignment is recorded and MUST NOT be reassigned. |
+| **Standards / assigned** (`0x01`–`0x0F`) | **RFC Required** (RFC 8126 §4.7) | Author/Editor, via the code-point procedure | The value is carried by a permanent, publicly available specification (the draft, and the published RFC once it issues), with enough detail for interoperable independent implementations; the assignment is recorded and MUST NOT be reassigned. |
 | **Experimental** (`0x10`–`0x7F`) | **Experimental Use** (RFC 8126 §4.2) | No one — unregistered | Usable without registration for experiments; carries no guaranteed cross-domain meaning; MUST NOT be emitted toward a peer without out-of-band agreement. The project records nothing here. |
 | **Private use** (`0x80`–`0xFF`) | **Private Use** (RFC 8126 §4.1) | No one — unregistered | Usable inside a single administrative domain without registration; never assigned by this registry; MUST NOT be emitted toward a peer outside that domain. |
 
 The initial standards-range contents of that registry are `0x01` MCP (JSONRPC),
 `0x02` A2A (JSONRPC), `0x03` HTTP (HTTP), `0x04` WebSocket (STREAM). The Channels,
-Object Kinds, Effects, and Error Codes registries are wholly Specification
-Required — their code points are fixed by the draft and requested as-is — with the
+Object Kinds, Effects, and Error Codes registries are wholly RFC Required
+(FCFS) — their code points are fixed by the draft and requested as-is — with the
 additional constraint that an Effects addition MUST preserve the fail-closed
 lattice with `destructive` at the top. The exact numeric boundaries are
 authoritative **in the registry CSV and the IANA package**, not here; this table
@@ -363,7 +370,7 @@ shows the *policy shape*.
 
 1. Open an issue proposing the registration, labeled `design` (a code-point
    assignment is normative, [§4.1](#41-what-makes-a-change-normative)).
-2. Provide the **Specification Required** material: a stable, public description
+2. Provide the registration material: a stable, public description
    detailed enough for two independent implementations to interoperate — for a
    carriage mapping, this is the mapping written against the foreign protocol's
    own published specification; for a signature suite, the construction and its
@@ -392,7 +399,7 @@ passing build: a construction is graded only when **two independent
 implementations agree with an independent, non-circular oracle** and, where the
 construction has a wire production, **the CDDL validates its bytes**. The
 additional-language SDKs are graded against the same shared corpus. The
-conformance model is defined in the [conformance docs](docs/conformance.md); governance only
+conformance model is defined in the Internet-Draft (Section 14); governance only
 states how it gates the project.
 
 ### 7.1 The grading surfaces
@@ -522,10 +529,10 @@ primary sources (consulted directly, not from memory):
   voting.
 - **RFC 8126 — "Guidelines for Writing an IANA Considerations Section in RFCs."**
   The registration-policy vocabulary of [§6](#6-code-point-governance):
-  Specification Required (§4.6), Experimental Use (§4.2), Private Use (§4.1), and
+  RFC Required (§4.7), Experimental Use (§4.2), Private Use (§4.1), and
   the Expert Review policy of the IANA-managed media type.
 - **RFC 6838 — "Media Type Specifications and Registration Procedures."** The
-  registration path for `application/naalp+cbor` ([§2.4](#24-designated-experts),
+  registration path for `application/vnd.bubblefish.naalp+cbor` ([§2.4](#24-designated-experts),
   [§6](#6-code-point-governance)), reviewed by the media-types Designated Expert.
 - **RFC 4846 — "Independent Submissions to the RFC Editor."** The
   repository-vs-submission relationship of [§5](#5-relationship-to-the-ietf--ise-submission-track):

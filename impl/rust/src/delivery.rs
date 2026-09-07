@@ -29,8 +29,12 @@ pub const STAGE_ACCEPTED_RELAY: u64 = 1;
 pub const STAGE_PERSISTED_TARGET: u64 = 2;
 pub const STAGE_PRESENTED: u64 = 3;
 
-const STAGE_NAMES: [&str; 4] =
-    ["persisted_origin", "accepted_relay", "persisted_target", "presented"];
+const STAGE_NAMES: [&str; 4] = [
+    "persisted_origin",
+    "accepted_relay",
+    "persisted_target",
+    "presented",
+];
 
 /// Name of a stage value (0..3), or "unknown".
 pub fn stage_name(stage: u64) -> &'static str {
@@ -45,7 +49,10 @@ fn err(kind: &'static str, msg: &'static str) -> cose::Error {
     cose::Error { kind, msg }
 }
 pub fn err_stage_out_of_order() -> cose::Error {
-    err("StageOutOfOrder", "a delivery stage regressed to an earlier stage")
+    err(
+        "StageOutOfOrder",
+        "a delivery stage regressed to an earlier stage",
+    )
 }
 fn err_malformed() -> cose::Error {
     err("Malformed", "malformed delivery update")
@@ -172,19 +179,34 @@ impl Tracker {
     /// stage earlier than the one already reached is StageOutOfOrder (no state change);
     /// re-reporting the current stage is an idempotent no-op; a later stage is persisted (WAL
     /// fsync) before the update is returned. Skipping ahead is permitted; only regression errs.
-    pub fn advance(&mut self, obj: &[u8], stage: u64, at: u64) -> Result<DeliveryUpdate, DeliveryError> {
+    pub fn advance(
+        &mut self,
+        obj: &[u8],
+        stage: u64,
+        at: u64,
+    ) -> Result<DeliveryUpdate, DeliveryError> {
         if let Some(&cur) = self.current.get(obj) {
             if stage < cur {
                 return Err(DeliveryError::Cose(err_stage_out_of_order()));
             }
             if stage == cur {
-                return Ok(DeliveryUpdate { obj: obj.to_vec(), stage, at });
+                return Ok(DeliveryUpdate {
+                    obj: obj.to_vec(),
+                    stage,
+                    at,
+                });
             }
         }
-        let u = DeliveryUpdate { obj: obj.to_vec(), stage, at };
+        let u = DeliveryUpdate {
+            obj: obj.to_vec(),
+            stage,
+            at,
+        };
         let rec = u.bytes();
         self.f.seek(SeekFrom::End(0)).map_err(DeliveryError::Io)?;
-        self.f.write_all(&(rec.len() as u32).to_be_bytes()).map_err(DeliveryError::Io)?;
+        self.f
+            .write_all(&(rec.len() as u32).to_be_bytes())
+            .map_err(DeliveryError::Io)?;
         self.f.write_all(&rec).map_err(DeliveryError::Io)?;
         self.f.sync_all().map_err(DeliveryError::Io)?; // persist-before-ack (R-9.2)
         self.current.insert(obj.to_vec(), stage);
@@ -257,9 +279,21 @@ pub fn new_switchboard(capacity: usize) -> (Endpoint, Endpoint, Switchboard) {
         }
     });
 
-    let left = Endpoint { tx: la_tx, rx: lb_rx };
-    let right = Endpoint { tx: ra_tx, rx: rb_rx };
-    (left, right, Switchboard { pumps: vec![pump_l2r, pump_r2l] })
+    let left = Endpoint {
+        tx: la_tx,
+        rx: lb_rx,
+    };
+    let right = Endpoint {
+        tx: ra_tx,
+        rx: rb_rx,
+    };
+    (
+        left,
+        right,
+        Switchboard {
+            pumps: vec![pump_l2r, pump_r2l],
+        },
+    )
 }
 
 /// Routes objects while retaining no payload at rest: for each routed object it appends an audit
@@ -273,7 +307,11 @@ pub struct ContentFreeRelay {
 
 impl Default for ContentFreeRelay {
     fn default() -> Self {
-        ContentFreeRelay { auth: audit::Authority::new(), receipts: Vec::new(), sigs: Vec::new() }
+        ContentFreeRelay {
+            auth: audit::Authority::new(),
+            receipts: Vec::new(),
+            sigs: Vec::new(),
+        }
     }
 }
 
@@ -331,7 +369,10 @@ mod tests {
         let c = load();
         let obj = hexd(c["obj_content_id_hex"].as_str().unwrap());
         for s in c["stages"].as_array().unwrap() {
-            assert_eq!(stage_name(s["value"].as_u64().unwrap()), s["name"].as_str().unwrap());
+            assert_eq!(
+                stage_name(s["value"].as_u64().unwrap()),
+                s["name"].as_str().unwrap()
+            );
         }
         for u in c["updates"].as_array().unwrap() {
             let du = DeliveryUpdate {
@@ -348,15 +389,23 @@ mod tests {
         let c = load();
         let obj = hexd(c["obj_content_id_hex"].as_str().unwrap());
         let mut tr = open_tracker(&tmp_wal("mono")).unwrap();
-        for s in [STAGE_PERSISTED_ORIGIN, STAGE_ACCEPTED_RELAY, STAGE_PERSISTED_TARGET] {
+        for s in [
+            STAGE_PERSISTED_ORIGIN,
+            STAGE_ACCEPTED_RELAY,
+            STAGE_PERSISTED_TARGET,
+        ] {
             tr.advance(&obj, s, 100 + s).expect("advance");
         }
-        tr.advance(&obj, STAGE_PERSISTED_TARGET, 999).expect("idempotent re-report"); // == current
+        tr.advance(&obj, STAGE_PERSISTED_TARGET, 999)
+            .expect("idempotent re-report"); // == current
         assert_eq!(
-            tr.advance(&obj, STAGE_ACCEPTED_RELAY, 999).unwrap_err().cose_kind(),
+            tr.advance(&obj, STAGE_ACCEPTED_RELAY, 999)
+                .unwrap_err()
+                .cose_kind(),
             Some("StageOutOfOrder")
         );
-        tr.advance(&obj, STAGE_PRESENTED, 104).expect("advance to presented");
+        tr.advance(&obj, STAGE_PRESENTED, 104)
+            .expect("advance to presented");
         assert_eq!(tr.stage(&obj), Some(STAGE_PRESENTED));
     }
 
@@ -373,12 +422,19 @@ mod tests {
             acked = ack.stage;
         } // drop closes the WAL — simulates a crash right after the ack
         let mut tr2 = open_tracker(&path).unwrap();
-        assert_eq!(tr2.stage(&obj), Some(acked), "acked stage did not survive crash");
         assert_eq!(
-            tr2.advance(&obj, STAGE_PERSISTED_ORIGIN, 200).unwrap_err().cose_kind(),
+            tr2.stage(&obj),
+            Some(acked),
+            "acked stage did not survive crash"
+        );
+        assert_eq!(
+            tr2.advance(&obj, STAGE_PERSISTED_ORIGIN, 200)
+                .unwrap_err()
+                .cose_kind(),
             Some("StageOutOfOrder")
         );
-        tr2.advance(&obj, STAGE_PRESENTED, 203).expect("advance after recovery");
+        tr2.advance(&obj, STAGE_PRESENTED, 203)
+            .expect("advance after recovery");
         let _ = std::fs::remove_file(&path);
     }
 
@@ -394,17 +450,13 @@ mod tests {
                 la_tx.send(vec![(i % 251) as u8, 0xAB]).unwrap();
             }
         });
-        let h_br = thread::spawn(move || {
-            (0..N).map(|_| rb_rx.recv().unwrap()).collect::<Vec<_>>()
-        });
+        let h_br = thread::spawn(move || (0..N).map(|_| rb_rx.recv().unwrap()).collect::<Vec<_>>());
         let h_bs = thread::spawn(move || {
             for i in 0..N {
                 ra_tx.send(vec![(i % 251) as u8, 0xBA]).unwrap();
             }
         });
-        let h_ar = thread::spawn(move || {
-            (0..N).map(|_| lb_rx.recv().unwrap()).collect::<Vec<_>>()
-        });
+        let h_ar = thread::spawn(move || (0..N).map(|_| lb_rx.recv().unwrap()).collect::<Vec<_>>());
 
         h_as.join().unwrap();
         h_bs.join().unwrap();
@@ -415,8 +467,18 @@ mod tests {
         assert_eq!(got_ab.len(), N);
         assert_eq!(got_ba.len(), N);
         for i in 0..N {
-            assert_eq!(got_ab[i], vec![(i % 251) as u8, 0xAB], "A->B order/content at {}", i);
-            assert_eq!(got_ba[i], vec![(i % 251) as u8, 0xBA], "B->A order/content at {}", i);
+            assert_eq!(
+                got_ab[i],
+                vec![(i % 251) as u8, 0xAB],
+                "A->B order/content at {}",
+                i
+            );
+            assert_eq!(
+                got_ba[i],
+                vec![(i % 251) as u8, 0xBA],
+                "B->A order/content at {}",
+                i
+            );
         }
     }
 
@@ -437,7 +499,10 @@ mod tests {
         for (i, p) in payloads.iter().enumerate() {
             assert_eq!(receipts[i].obj, content_id(p), "receipt {} content id", i);
             // the receipt carries the content id, not the payload bytes.
-            assert!(!receipts[i].obj.windows(p.len()).any(|w| w == *p), "payload retained at rest");
+            assert!(
+                !receipts[i].obj.windows(p.len()).any(|w| w == *p),
+                "payload retained at rest"
+            );
         }
     }
 }

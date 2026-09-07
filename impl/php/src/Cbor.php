@@ -23,6 +23,20 @@ class NonCanonical extends \RuntimeException
     public string $kind = "NonCanonical";
 }
 
+/**
+ * Raised when a decoded item nests deeper than the caller's maximum (design.md §3.4, R7).
+ * The outermost item is depth 1.
+ */
+class DepthExceeded extends \RuntimeException
+{
+    public string $kind = "DepthExceeded";
+
+    public function __construct(string $msg = "CBOR nesting depth exceeds the maximum")
+    {
+        parent::__construct($msg);
+    }
+}
+
 // --- value model (mirrors the Go/Rust/Python cbor.Value variants) ---
 
 /** CBOR unsigned integer (major 0). */
@@ -85,6 +99,13 @@ final class Cbor
     private static function head(int $major, int $n): string
     {
         $m = $major << 5;
+        if ($n < 0) {
+            // $n < 0 means the uint64 has its high bit set (value >= 2^63); PHP int is signed 64-bit and
+            // carries it as the two's-complement bit pattern, and pack('J', $n) emits the 8-byte
+            // big-endian uint64 bytes (pack('J', -1) == ff..ff). The non-negative branches below are the
+            // shortest-form thresholds for the rest of the range.
+            return \chr($m | 27) . \pack('J', $n);
+        }
         if ($n < 24) {
             return \chr($m | $n);
         }
@@ -104,9 +125,9 @@ final class Cbor
     public static function encode(mixed $v): string
     {
         if ($v instanceof U) {
-            if ($v->v < 0) {
-                throw new NonCanonical("uint is negative");
-            }
+            // U is a CBOR unsigned integer; $v->v carries the uint64 bit pattern (a value >= 2^63 is a
+            // negative PHP int). head() emits the 8-byte form for the high-bit-set case, so all uint64
+            // values encode correctly, matching the Go/Rust reference -- nothing to reject here.
             return self::head(0, $v->v);
         }
         if ($v instanceof N) {
@@ -149,14 +170,24 @@ final class Cbor
         throw new \TypeError("not a cbor value");
     }
 
+    /** Sentinel maxDepth for the trusted-input decode() path: far beyond any legitimate structure
+     * yet finite, so even the unbounded path cannot recurse without limit on a pathological input. */
+    private const MAX_DEPTH_UNBOUNDED = 1 << 20;
+
     /**
-     * Decode one item at $off. Returns [value, newOffset]. Strict: rejects any non-canonical
-     * encoding (non-shortest int, indefinite length, out-of-order/duplicate map keys, trailing bytes).
+     * Decode one item at $off, at nesting $depth (the outermost item is depth 1), rejecting an item
+     * whose depth exceeds $maxDepth with a DepthExceeded error BEFORE it is materialized (design.md
+     * §3.4 (R7); RFC 8949 §10 decoder-memory guard). Returns [value, newOffset]. Strict: rejects any
+     * non-canonical encoding (non-shortest int, indefinite length, out-of-order/duplicate map keys,
+     * trailing bytes).
      *
      * @return array{0:mixed,1:int}
      */
-    private static function dec(string $data, int $off): array
+    private static function dec(string $data, int $off, int $depth, int $maxDepth): array
     {
+        if ($depth > $maxDepth) {
+            throw new DepthExceeded();
+        }
         $len = \strlen($data);
         if ($off >= $len) {
             throw new NonCanonical("truncated");
@@ -234,7 +265,7 @@ final class Cbor
             case 4:
                 $items = [];
                 for ($i = 0; $i < $arg; $i++) {
-                    [$it, $p] = self::dec($data, $p);
+                    [$it, $p] = self::dec($data, $p, $depth + 1, $maxDepth);
                     $items[] = $it;
                 }
                 return [new A($items), $p];
@@ -243,9 +274,9 @@ final class Cbor
                 $prev = null;
                 for ($i = 0; $i < $arg; $i++) {
                     $before = $p;
-                    [$k, $p] = self::dec($data, $p);
+                    [$k, $p] = self::dec($data, $p, $depth + 1, $maxDepth);
                     $kbytes = \substr($data, $before, $p - $before);
-                    [$val, $p] = self::dec($data, $p);
+                    [$val, $p] = self::dec($data, $p, $depth + 1, $maxDepth);
                     if ($prev !== null && \strcmp($kbytes, $prev) <= 0) {
                         throw new NonCanonical("map keys out of order or duplicate");
                     }
@@ -254,17 +285,37 @@ final class Cbor
                 }
                 return [new M($pairs), $p];
             case 6:
-                [$content, $p] = self::dec($data, $p);
+                [$content, $p] = self::dec($data, $p, $depth + 1, $maxDepth);
                 return [new Tag($arg, $content), $p];
             default:
                 throw new NonCanonical("unsupported major type");
         }
     }
 
-    /** Strict canonical decode: rejects any non-canonical encoding with NonCanonical. */
+    /**
+     * Strict canonical decode: rejects any non-canonical encoding with NonCanonical. Does not bound
+     * nesting depth on the trusted-input path; the untrusted object decode path uses decodeBounded
+     * (design.md §3.4 (R7)).
+     */
     public static function decode(string $data): mixed
     {
-        [$v, $off] = self::dec($data, 0);
+        return self::decodeTop($data, self::MAX_DEPTH_UNBOUNDED);
+    }
+
+    /**
+     * decode() with a maximum CBOR nesting depth (design.md §3.4 (R7)): the outermost item is depth
+     * 1, each nested map key/value, array element, and tagged content is one deeper, and an item at
+     * depth $maxDepth+1 is rejected with a DepthExceeded error BEFORE it is materialized (RFC 8949
+     * §10 decoder-memory guard).
+     */
+    public static function decodeBounded(string $data, int $maxDepth): mixed
+    {
+        return self::decodeTop($data, $maxDepth);
+    }
+
+    private static function decodeTop(string $data, int $maxDepth): mixed
+    {
+        [$v, $off] = self::dec($data, 0, 1, $maxDepth);
         if ($off !== \strlen($data)) {
             throw new NonCanonical("trailing bytes after top-level item");
         }

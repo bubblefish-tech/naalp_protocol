@@ -21,8 +21,9 @@ import cbor_oracle  # shared deterministic-CBOR encoder (Nint/Tag/tstr-key aware
 
 enc = cbor_oracle.encode
 
-VERSION = 1
+VERSION = 2  # draft-01 wire revision (anchored by the audience envelope field 13, T1.1 / design.md §2.5.3)
 ALG_MLDSA65 = -49
+AUDIENCE = "consuming-authority-xyz"  # the field-13 single-use consume binding (§2.5.3)
 
 
 def content_id(body_no_id_pairs):
@@ -51,6 +52,16 @@ def build():
 
     tbs = enc(["Signature1", protected, b"", payload])
 
+    # Audience variant (§2.5.3): the SAME worked object PLUS the field-13 audience. It proves the
+    # field-13 encoding and shows a consume-once object gets a NEW content id, while the base object
+    # above stays byte-identical (omit-when-empty additivity). Field 13 sorts after 10 (ascending
+    # integer key order); the protected header is unchanged (alg/signer/profile/version do not move).
+    body_no_id_aud = body_no_id + [(13, AUDIENCE)]
+    body_no_id_aud_hex = enc(("map", body_no_id_aud)).hex()
+    cid_aud = content_id(body_no_id_aud)
+    payload_aud = enc(("map", [(1, cid_aud)] + body_no_id_aud))
+    tbs_aud = enc(["Signature1", protected, b"", payload_aud])
+
     return {
         "note": "Independent oracle output for N-AALP C3 (object envelope). Go and Rust MUST "
                 "reproduce content_id_hex, payload_hex, protected_hex, and tobesigned_hex for the "
@@ -66,6 +77,14 @@ def build():
             "payload_hex": payload.hex(),
             "protected_hex": protected.hex(),
             "tobesigned_hex": tbs.hex(),
+        },
+        "object_with_audience": {
+            "audience": AUDIENCE,
+            "body_no_id_hex": body_no_id_aud_hex,
+            "content_id_hex": cid_aud.hex(),
+            "payload_hex": payload_aud.hex(),
+            "protected_hex": protected.hex(),
+            "tobesigned_hex": tbs_aud.hex(),
         },
     }
 

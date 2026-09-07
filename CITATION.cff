@@ -10,7 +10,7 @@ repository-code: "https://github.com/bubblefish-tech/naalp_protocol"
 url: "https://datatracker.ietf.org/doc/draft-bubblefish-naalp/"
 identifiers:
   - type: other
-    value: "draft-bubblefish-naalp-00"
+    value: "draft-bubblefish-naalp-01"
     description: "IETF Internet-Draft (Independent Submission stream, Informational)"
 keywords:
   - agents

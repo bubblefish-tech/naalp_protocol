@@ -21,8 +21,12 @@ pub const IDEMPOTENT_WRITE: u8 = 1;
 pub const NON_IDEMPOTENT_WRITE: u8 = 2;
 pub const DESTRUCTIVE: u8 = 3;
 
-const SAFETY_LABEL_NAMES: [&str; 4] =
-    ["read_only", "idempotent_write", "non_idempotent_write", "destructive"];
+const SAFETY_LABEL_NAMES: [&str; 4] = [
+    "read_only",
+    "idempotent_write",
+    "non_idempotent_write",
+    "destructive",
+];
 
 /// N-PAMP SafetyLabel name for a normalized effect (0..3).
 pub fn safety_label_name(e: u8) -> &'static str {
@@ -63,7 +67,10 @@ fn err(kind: &'static str, msg: &'static str) -> cose::Error {
     cose::Error { kind, msg }
 }
 pub fn err_effect_not_authorized() -> cose::Error {
-    err("EffectNotAuthorized", "object effect exceeds the granted capability")
+    err(
+        "EffectNotAuthorized",
+        "object effect exceeds the granted capability",
+    )
 }
 pub fn err_unauthenticated_principal() -> cose::Error {
     err(
@@ -72,7 +79,10 @@ pub fn err_unauthenticated_principal() -> cose::Error {
     )
 }
 pub fn err_malformed_safety_label() -> cose::Error {
-    err("MalformedSafetyLabel", "safety label is not {1:tstr risk, 2:tstr scope}")
+    err(
+        "MalformedSafetyLabel",
+        "safety label is not {1:tstr risk, 2:tstr scope}",
+    )
 }
 
 /// Where a claimed identity came from. Only a signature-derived identity is an
@@ -225,7 +235,10 @@ mod tests {
         }
         for m in c["bridge_mapping"].as_array().unwrap() {
             let u8v = m["npamp_u8"].as_u64().unwrap() as u8;
-            assert_eq!(effect_from_safety_label_byte(u8v), m["effect"].as_u64().unwrap() as u8);
+            assert_eq!(
+                effect_from_safety_label_byte(u8v),
+                m["effect"].as_u64().unwrap() as u8
+            );
         }
     }
 
@@ -258,11 +271,20 @@ mod tests {
             let granted = r["granted"].as_u64().unwrap() as u8;
             let effect = r["effect"].as_u64().unwrap();
             let allow = r["allow"].as_bool().unwrap();
-            let g = Grant { principal: "pA".into(), max_effect: granted };
+            let g = Grant {
+                principal: "pA".into(),
+                max_effect: granted,
+            };
             let res = g.authorize_object(PrincipalSource::Signature, "pA", effect);
             if allow {
                 allows += 1;
-                assert!(res.is_ok(), "granted={} effect={}: want allow, got {:?}", granted, effect, res);
+                assert!(
+                    res.is_ok(),
+                    "granted={} effect={}: want allow, got {:?}",
+                    granted,
+                    effect,
+                    res
+                );
             } else {
                 denies += 1;
                 assert_eq!(res.unwrap_err().kind, "EffectNotAuthorized");
@@ -283,7 +305,10 @@ mod tests {
             "client_name" => PrincipalSource::ClientName,
             other => panic!("unknown source {}", other),
         };
-        let g = Grant { principal: "pA".into(), max_effect: DESTRUCTIVE };
+        let g = Grant {
+            principal: "pA".into(),
+            max_effect: DESTRUCTIVE,
+        };
         for ps in c["principal_sources"].as_array().unwrap() {
             let src = src_of(ps["source"].as_str().unwrap());
             let accepted = ps["accepted"].as_bool().unwrap();
@@ -306,7 +331,10 @@ mod tests {
             risk: sl["risk"].as_str().unwrap().into(),
             scope: sl["scope"].as_str().unwrap().into(),
         };
-        assert_eq!(hex::encode(label.encode()), sl["cbor_hex"].as_str().unwrap());
+        assert_eq!(
+            hex::encode(label.encode()),
+            sl["cbor_hex"].as_str().unwrap()
+        );
     }
 
     fn keypair(seed_byte: u8) -> (cose::MlDsa65Verifier, cose::MlDsa65Signer, Vec<u8>) {
@@ -318,6 +346,8 @@ mod tests {
 
     fn mk_obj(signer: &[u8], label: &SafetyLabel) -> envelope::Object {
         envelope::Object {
+            audience: String::new(),
+            suite: 0,
             id: vec![],
             kind: 0,
             channel: 0,
@@ -340,20 +370,35 @@ mod tests {
     fn safety_label_bound_under_signature() {
         let (v, s, signer) = keypair(5);
         let kind_ok = |_c: u64, _k: u64| true;
-        let low = SafetyLabel { risk: "low".into(), scope: "cache".into() };
-        let high = SafetyLabel { risk: "elevated".into(), scope: "billing-records".into() };
+        let low = SafetyLabel {
+            risk: "low".into(),
+            scope: "cache".into(),
+        };
+        let high = SafetyLabel {
+            risk: "elevated".into(),
+            scope: "billing-records".into(),
+        };
 
         let mut oa = mk_obj(&signer, &low);
         let signed_a = envelope::sign(&mut oa, &s);
         let mut ob = mk_obj(&signer, &high);
         let signed_b = envelope::sign(&mut ob, &s);
-        assert_ne!(signed_a, signed_b, "differing labels produced identical signed bytes");
+        assert_ne!(
+            signed_a, signed_b,
+            "differing labels produced identical signed bytes"
+        );
 
-        let ra = envelope::verify(cose::PROFILE_PUBLIC, &v, &kind_ok, &[], &signed_a).expect("verify a");
-        let got_a = safety_label_from_ext(ra.ext.as_deref().unwrap_or(&[])).unwrap().unwrap();
+        let ra =
+            envelope::verify(cose::PROFILE_PUBLIC, &v, &kind_ok, &[], &signed_a).expect("verify a");
+        let got_a = safety_label_from_ext(ra.ext.as_deref().unwrap_or(&[]))
+            .unwrap()
+            .unwrap();
         assert_eq!(got_a, low);
-        let rb = envelope::verify(cose::PROFILE_PUBLIC, &v, &kind_ok, &[], &signed_b).expect("verify b");
-        let got_b = safety_label_from_ext(rb.ext.as_deref().unwrap_or(&[])).unwrap().unwrap();
+        let rb =
+            envelope::verify(cose::PROFILE_PUBLIC, &v, &kind_ok, &[], &signed_b).expect("verify b");
+        let got_b = safety_label_from_ext(rb.ext.as_deref().unwrap_or(&[]))
+            .unwrap()
+            .unwrap();
         assert_eq!(got_b, high);
 
         let (prot_a, _pa, sig_a) = cose::parse_sign1_raw(&signed_a).unwrap();
@@ -370,7 +415,10 @@ mod tests {
     fn safety_label_ext_errors() {
         assert_eq!(safety_label_from_ext(&[]).unwrap(), None);
         let bad = vec![(Value::Uint(SAFETY_LABEL_EXT_KEY), Value::Uint(9))];
-        assert_eq!(safety_label_from_ext(&bad).unwrap_err().kind, "MalformedSafetyLabel");
+        assert_eq!(
+            safety_label_from_ext(&bad).unwrap_err().kind,
+            "MalformedSafetyLabel"
+        );
         let bad2 = vec![(
             Value::Uint(SAFETY_LABEL_EXT_KEY),
             Value::Map(vec![(Value::Uint(1), Value::Tstr("x".into()))]),

@@ -16,7 +16,7 @@ one object model (the draft's Channel Surfaces section).
 | 3 | `UiEvent` | `non_idempotent_write` | draft-01 addition — a receipt-chained UI-consent event (§ below) |
 
 This is the baseline+draft-01 registry `impl/go/channels/channels.go` carries verbatim
-([Table entry for Interaction](https://github.com/bubblefish-tech/naalp_protocol/blob/main/impl/go/channels/channels.go#L87-L88)).
+([Table entry for Interaction](https://github.com/bubblefish-tech/naalp_protocol/blob/main/impl/go/channels/channels.go#L88-L89)).
 
 ## State model
 

@@ -2,7 +2,7 @@
 
 # N-AALP Swift SDK
 
-The Swift reference implementation of **N-AALP** (draft-bubblefish-naalp-00) — an
+The Swift reference implementation of **N-AALP** (draft-bubblefish-naalp-01) — an
 application-layer object protocol for autonomous agents. SwiftPM package, module `Naalp`. Every
 N-AALP object is a deterministically-encoded CBOR structure signed with COSE that carries, under
 one signature, its content identity, its signer, a closed effect label, optional approval/audit

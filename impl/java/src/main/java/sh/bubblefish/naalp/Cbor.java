@@ -79,17 +79,21 @@ public final class Cbor {
     // --- encoder ---
 
     private static byte[] head(int major, long n) {
+        // n is the CBOR argument as an UNSIGNED 64-bit value; Java has no unsigned long, so values in
+        // [2^63, 2^64-1] arrive as a "negative" long. Select the shortest head by unsigned magnitude
+        // (Long.compareUnsigned) so the full uint64 range encodes correctly; the >>> shifts below are
+        // already unsigned, so the 8-byte body is the correct big-endian bit pattern.
         int m = major << 5;
-        if (n < 24) {
+        if (Long.compareUnsigned(n, 24) < 0) {
             return new byte[]{(byte) (m | (int) n)};
         }
-        if (n < 256) {
+        if (Long.compareUnsigned(n, 256) < 0) {
             return new byte[]{(byte) (m | 24), (byte) n};
         }
-        if (n < 65536L) {
+        if (Long.compareUnsigned(n, 65536L) < 0) {
             return new byte[]{(byte) (m | 25), (byte) (n >>> 8), (byte) n};
         }
-        if (n < 4294967296L) {
+        if (Long.compareUnsigned(n, 4294967296L) < 0) {
             return new byte[]{(byte) (m | 26),
                     (byte) (n >>> 24), (byte) (n >>> 16), (byte) (n >>> 8), (byte) n};
         }
@@ -107,9 +111,9 @@ public final class Cbor {
 
     private static void encodeInto(Value v, ByteArrayOutputStream out) {
         if (v instanceof U u) {
-            if (u.v < 0) {
-                throw new NaalpException("NonCanonical", "uint is negative");
-            }
+            // U is a CBOR unsigned integer; u.v carries the uint64 bit pattern (a value >= 2^63 is a
+            // "negative" long). All bit patterns are valid uint64, matching the Go/Rust uint64 reference,
+            // so there is no negative to reject here — head() emits the shortest form by unsigned magnitude.
             out.writeBytes(head(0, u.v));
         } else if (v instanceof N n) {
             out.writeBytes(head(1, -1 - n.v));
@@ -178,7 +182,18 @@ public final class Cbor {
         int remaining() { return data.length - pos; }
     }
 
-    private static Value dec(Cursor c) {
+    // maxDepthUnbounded is the sentinel used by the trusted-input decode() path: far beyond any
+    // legitimate structure yet finite, so even the unbounded path cannot recurse without limit on
+    // a pathological input (mirrors impl/go/cbor.maxDepthUnbounded).
+    private static final long MAX_DEPTH_UNBOUNDED = 1L << 20;
+
+    private static Value dec(Cursor c, long depth, long maxDepth) {
+        // Decoder nesting-depth bound (design.md §3.4, R7): the outermost item is depth 1, and an
+        // item at depth maxDepth+1 is rejected BEFORE it is materialized (RFC 8949 §10
+        // decoder-memory guard).
+        if (depth > maxDepth) {
+            throw new NaalpException("DepthExceeded", "CBOR nesting depth exceeds the maximum");
+        }
         if (c.remaining() < 1) {
             throw new NaalpException("NonCanonical", "truncated");
         }
@@ -255,7 +270,7 @@ public final class Cbor {
                 int len = lenOf(arg);
                 List<Value> items = new ArrayList<>(len);
                 for (int i = 0; i < len; i++) {
-                    items.add(dec(c));
+                    items.add(dec(c, depth + 1, maxDepth));
                 }
                 return new A(items);
             }
@@ -265,10 +280,10 @@ public final class Cbor {
                 byte[] prev = null;
                 for (int i = 0; i < len; i++) {
                     int before = c.pos;
-                    Value k = dec(c);
+                    Value k = dec(c, depth + 1, maxDepth);
                     byte[] kbytes = new byte[c.pos - before];
                     System.arraycopy(c.data, before, kbytes, 0, kbytes.length);
-                    Value val = dec(c);
+                    Value val = dec(c, depth + 1, maxDepth);
                     if (prev != null && compareBytes(kbytes, prev) <= 0) {
                         throw new NaalpException("NonCanonical", "map keys out of order or duplicate");
                     }
@@ -278,7 +293,7 @@ public final class Cbor {
                 return new M(pairs);
             }
             case 6: {
-                Value content = dec(c);
+                Value content = dec(c, depth + 1, maxDepth);
                 return new Tag(arg, content);
             }
             default:
@@ -301,10 +316,24 @@ public final class Cbor {
         return (int) arg;
     }
 
-    /** Strict canonical decode: rejects any non-canonical encoding with a NonCanonical error. */
+    /**
+     * Strict canonical decode: rejects any non-canonical encoding with a NonCanonical error. Does
+     * not bound nesting depth on the trusted-input path; the untrusted object decode path uses
+     * {@link #decodeBounded} (design.md §3.4, R7).
+     */
     public static Value decode(byte[] data) {
+        return decodeBounded(data, MAX_DEPTH_UNBOUNDED);
+    }
+
+    /**
+     * {@link #decode} with a maximum CBOR nesting depth (design.md §3.4, R7): the outermost item
+     * is depth 1, each nested map key/value, array element, and tagged content is one deeper, and
+     * an item at depth maxDepth+1 is rejected with a {@code DepthExceeded} error BEFORE it is
+     * materialized (RFC 8949 §10 decoder-memory guard).
+     */
+    public static Value decodeBounded(byte[] data, long maxDepth) {
         Cursor c = new Cursor(data);
-        Value v = dec(c);
+        Value v = dec(c, 1, maxDepth);
         if (c.remaining() != 0) {
             throw new NaalpException("NonCanonical", "trailing bytes after top-level item");
         }

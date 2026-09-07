@@ -1,0 +1,900 @@
+{
+  "from_code": [
+    {
+      "code": null,
+      "class": 4,
+      "class_name": "motion_in_shared_space"
+    },
+    {
+      "code": 0,
+      "class": 0,
+      "class_name": "none"
+    },
+    {
+      "code": 1,
+      "class": 1,
+      "class_name": "tool_actuation"
+    },
+    {
+      "code": 2,
+      "class": 2,
+      "class_name": "thermal"
+    },
+    {
+      "code": 3,
+      "class": 3,
+      "class_name": "energy_release"
+    },
+    {
+      "code": 4,
+      "class": 4,
+      "class_name": "motion_in_shared_space"
+    },
+    {
+      "code": 5,
+      "class": 4,
+      "class_name": "motion_in_shared_space"
+    },
+    {
+      "code": 9,
+      "class": 4,
+      "class_name": "motion_in_shared_space"
+    },
+    {
+      "code": 99,
+      "class": 4,
+      "class_name": "motion_in_shared_space"
+    },
+    {
+      "code": 4294967296,
+      "class": 4,
+      "class_name": "motion_in_shared_space"
+    },
+    {
+      "code": "9223372036854775808",
+      "class": 4,
+      "class_name": "motion_in_shared_space"
+    }
+  ],
+  "bodies": [
+    {
+      "name": "class0_none",
+      "class": 0,
+      "class_name": "none",
+      "frame": "cell-1/world",
+      "axes": [
+        [
+          0,
+          100
+        ],
+        [
+          0,
+          100
+        ],
+        [
+          0,
+          50
+        ]
+      ],
+      "speed_bound_mm_s": 0,
+      "not_before": 0,
+      "not_after": 1000,
+      "body_hex": "a2010002a301a2016c63656c6c2d312f776f726c640283820018648200186482001832020003a20100021903e8",
+      "content_id_hex": "20301658381b80ad2d9cff4b458decdf940425c7499bd5109414f8a0fc8d717f277890d7210e1d2d1a7c5c41328df93687f8"
+    },
+    {
+      "name": "class1_tool",
+      "class": 1,
+      "class_name": "tool_actuation",
+      "frame": "cell-2/world",
+      "axes": [
+        [
+          -50,
+          50
+        ],
+        [
+          -50,
+          50
+        ],
+        [
+          0,
+          200
+        ]
+      ],
+      "speed_bound_mm_s": 250,
+      "not_before": 100,
+      "not_after": 2000,
+      "body_hex": "a2010102a301a2016c63656c6c2d322f776f726c64028382383118328238311832820018c80218fa03a2011864021907d0",
+      "content_id_hex": "20301be87ae6e32f75d381c4f186ebfb51882d12631302d5df836e7879f782d3638a99df9b43e8b80786593ead2df20f0d0d"
+    },
+    {
+      "name": "class2_thermal",
+      "class": 2,
+      "class_name": "thermal",
+      "frame": "cell-3/world",
+      "axes": [
+        [
+          0,
+          1000
+        ],
+        [
+          0,
+          1000
+        ],
+        [
+          0,
+          1000
+        ]
+      ],
+      "speed_bound_mm_s": 0,
+      "not_before": 0,
+      "not_after": 3600000,
+      "body_hex": "a2010202a301a2016c63656c6c2d332f776f726c64028382001903e882001903e882001903e8020003a20100021a0036ee80",
+      "content_id_hex": "20307532ea5e2caf7628a4a44e20754f1691f1b21b818d56f8fbe6e21c9a77e1c1f090265b597c53540516aa46bd8a409c29"
+    },
+    {
+      "name": "class3_energy",
+      "class": 3,
+      "class_name": "energy_release",
+      "frame": "cell-4/world",
+      "axes": [
+        [
+          -1000,
+          1000
+        ]
+      ],
+      "speed_bound_mm_s": 1500,
+      "not_before": 0,
+      "not_after": 999999999,
+      "body_hex": "a2010302a301a2016c63656c6c2d342f776f726c640281823903e71903e8021905dc03a20100021a3b9ac9ff",
+      "content_id_hex": "2030a1c7e02d272e2313d9bad67c627d35fd6f2878128de87ca378bea2ad89c0929f7c31ba1784067737340349475152fa6a"
+    },
+    {
+      "name": "class4_motion",
+      "class": 4,
+      "class_name": "motion_in_shared_space",
+      "frame": "cell-5/world",
+      "axes": [
+        [
+          -2000,
+          2000
+        ],
+        [
+          -2000,
+          2000
+        ],
+        [
+          0,
+          3000
+        ]
+      ],
+      "speed_bound_mm_s": 4000,
+      "not_before": 500,
+      "not_after": 987654321000,
+      "body_hex": "a2010402a301a2016c63656c6c2d352f776f726c640283823907cf1907d0823907cf1907d08200190bb802190fa003a2011901f4021b000000e5f4c8f368",
+      "content_id_hex": "203029c63651b39f1a1e5e313741255cd5bfa3849dc085013a231b56ae167a492722deb075594dc237c7cd20beb0d25c6bb3"
+    },
+    {
+      "name": "unicode_frame",
+      "class": 1,
+      "class_name": "tool_actuation",
+      "frame": "cellule-caf\u00e9/monde",
+      "axes": [
+        [
+          0,
+          10
+        ]
+      ],
+      "speed_bound_mm_s": 10,
+      "not_before": 0,
+      "not_after": 10,
+      "body_hex": "a2010102a301a2017363656c6c756c652d636166c3a92f6d6f6e6465028182000a020a03a20100020a",
+      "content_id_hex": "2030810097ff958a296030a515863950420b3aeac41b1ba1387709f256f10378839c71fa05e7071e7683d27c0e346c901ca0"
+    },
+    {
+      "name": "negative_only_axis",
+      "class": 2,
+      "class_name": "thermal",
+      "frame": "cell-6/world",
+      "axes": [
+        [
+          -500,
+          -100
+        ]
+      ],
+      "speed_bound_mm_s": 5,
+      "not_before": 0,
+      "not_after": 1,
+      "body_hex": "a2010202a301a2016c63656c6c2d362f776f726c640281823901f33863020503a201000201",
+      "content_id_hex": "20304daaa828e9a52560d6057a47c6b324835293ae19c6e53bad90b79ddf2e5a98d594b3a75fb633dcef487f2c9958c19f6d"
+    }
+  ],
+  "coverage": [
+    {
+      "name": "class0_none_authorized",
+      "claim_class_code": 0,
+      "grant_class_code": 0,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ],
+          [
+            100,
+            1900
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 100,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": true
+    },
+    {
+      "name": "class1_tool_actuation_authorized",
+      "claim_class_code": 1,
+      "grant_class_code": 1,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ],
+          [
+            100,
+            1900
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 100,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": true
+    },
+    {
+      "name": "class2_thermal_authorized",
+      "claim_class_code": 2,
+      "grant_class_code": 2,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ],
+          [
+            100,
+            1900
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 100,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": true
+    },
+    {
+      "name": "class3_energy_release_authorized",
+      "claim_class_code": 3,
+      "grant_class_code": 3,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ],
+          [
+            100,
+            1900
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 100,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": true
+    },
+    {
+      "name": "class4_motion_in_shared_space_authorized",
+      "claim_class_code": 4,
+      "grant_class_code": 4,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ],
+          [
+            100,
+            1900
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 100,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": true
+    },
+    {
+      "name": "absent_fail_closed",
+      "claim_class_code": null,
+      "grant_class_code": 1,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ],
+          [
+            100,
+            1900
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 100,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": false
+    },
+    {
+      "name": "unknown_fail_closed",
+      "claim_class_code": 9,
+      "grant_class_code": 1,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ],
+          [
+            100,
+            1900
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 100,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": false
+    },
+    {
+      "name": "exact_edges_authorized",
+      "claim_class_code": 4,
+      "grant_class_code": 4,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": true
+    },
+    {
+      "name": "frame_mismatch_denied",
+      "claim_class_code": 2,
+      "grant_class_code": 2,
+      "claim_envelope": {
+        "frame": "cell-9/OTHER-FRAME",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ],
+          [
+            100,
+            1900
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 100,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": false
+    },
+    {
+      "name": "spatial_axis_outside_denied",
+      "claim_class_code": 3,
+      "grant_class_code": 3,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2001
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 100,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": false
+    },
+    {
+      "name": "axis_count_mismatch_denied",
+      "claim_class_code": 1,
+      "grant_class_code": 1,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 100,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": false
+    },
+    {
+      "name": "speed_exceeds_denied",
+      "claim_class_code": 4,
+      "grant_class_code": 4,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ],
+          [
+            100,
+            1900
+          ]
+        ],
+        "speed_bound_mm_s": 1001,
+        "not_before": 100,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": false
+    },
+    {
+      "name": "window_ends_after_grant_denied",
+      "claim_class_code": 2,
+      "grant_class_code": 2,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ],
+          [
+            100,
+            1900
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 100,
+        "not_after": 10000001
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": false
+    },
+    {
+      "name": "window_starts_before_grant_denied",
+      "claim_class_code": 1,
+      "grant_class_code": 1,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ],
+          [
+            600,
+            1900
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 400,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            500,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 500,
+        "not_after": 10000000
+      },
+      "authorized": false
+    },
+    {
+      "name": "class_mismatch_denied",
+      "claim_class_code": 1,
+      "grant_class_code": 2,
+      "claim_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -500,
+            500
+          ],
+          [
+            -500,
+            500
+          ],
+          [
+            100,
+            1900
+          ]
+        ],
+        "speed_bound_mm_s": 500,
+        "not_before": 100,
+        "not_after": 9000000
+      },
+      "grant_envelope": {
+        "frame": "cell-9/world",
+        "axes": [
+          [
+            -1000,
+            1000
+          ],
+          [
+            -1000,
+            1000
+          ],
+          [
+            0,
+            2000
+          ]
+        ],
+        "speed_bound_mm_s": 1000,
+        "not_before": 0,
+        "not_after": 10000000
+      },
+      "authorized": false
+    }
+  ]
+}

@@ -8,7 +8,7 @@ gates, each backed by an independent authority (never the code under test):
 | gate | script | what it proves |
 |---|---|---|
 | two-implementation parity | `scripts/verify.sh` | every non-circular oracle regenerates the committed corpus; Go and Rust both build/vet/test (`-race`) and produce **byte-identical** COSE_Sign1 and object-envelope bytes (R-16.2); no vector drift |
-| CDDL conformance | `scripts/cddl_check.sh` | `spec/naalp-draft-00.cddl` is well-formed in the Bormann `cddl` tool and **validates the committed vectors** against their production (10 positive), rejecting cross-rule mismatches (3 negative) |
+| CDDL conformance | `scripts/cddl_check.sh` | `spec/naalp-draft-01.cddl` is well-formed in the Bormann `cddl` tool and **validates the committed vectors** against their production (10 positive), rejecting cross-rule mismatches (3 negative) |
 | registry drift | `scripts/registry_drift.py` | the machine-readable registries (`vectors/registry/*.csv`) stay consistent with the graded vectors — signatures, multicodec, all 65 channel kinds (both directions), carriage protocol ids |
 
 ## Non-circular oracles

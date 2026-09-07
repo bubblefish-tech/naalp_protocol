@@ -1,0 +1,196 @@
+{
+  "source": "N-AALP collaboration/rooms membership (feature #64), a tier-1 additive surface over the frozen draft-00 spine. room-op body {1:room,2:op,3:epoch,4:subject,5:role}; op codes 0 create/1 add_member/2 remove_member/3 change_role/4 add_owner; role codes 0 member/1 admin/2 owner. The room log is the frozen naalp-receipt chain over op content ids (design \u00a78.1); content id = multihash(0x20, SHA-384(body)). principal binding {1:principal,2:handle,3:epoch,4:prev}, per-principal SHA-384 chain (Delivery Model B, R-1.4). Signatures/behaviour graded in Go+Rust with real crypto.",
+  "rooms": {
+    "room_id_hex": "2030d39f4f7ed8f11696a94e7a75a38efd5210df728f4ddddfa0d25fb1f60c1e6b52756e8da3afd87b2cee84831535e826d3",
+    "genesis_prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "ops": [
+      {
+        "seq": 0,
+        "op": 0,
+        "op_name": "create",
+        "epoch_at_build": 0,
+        "subject": "alice",
+        "role": 2,
+        "role_name": "owner",
+        "body_hex": "a50158322030d39f4f7ed8f11696a94e7a75a38efd5210df728f4ddddfa0d25fb1f60c1e6b52756e8da3afd87b2cee84831535e826d3020003000465616c6963650502",
+        "op_content_id_hex": "203088bc727cdecfa4e95e0c4647dc89a6bf53aaa905625c0654cf76eca80047a014b49929cd0384e3d8620c9dbb88f55a8d",
+        "epoch_after": 1
+      },
+      {
+        "seq": 1,
+        "op": 1,
+        "op_name": "add_member",
+        "epoch_at_build": 1,
+        "subject": "bob",
+        "role": 0,
+        "role_name": "member",
+        "body_hex": "a50158322030d39f4f7ed8f11696a94e7a75a38efd5210df728f4ddddfa0d25fb1f60c1e6b52756e8da3afd87b2cee84831535e826d3020103010463626f620500",
+        "op_content_id_hex": "2030684f6d7f638f5d0f49d34cb5a5f24a9336d434512987cc8bad0d64315c9c0ad22e95dea3a460de2a2036487c635d0f06",
+        "epoch_after": 2
+      },
+      {
+        "seq": 2,
+        "op": 1,
+        "op_name": "add_member",
+        "epoch_at_build": 2,
+        "subject": "carol",
+        "role": 1,
+        "role_name": "admin",
+        "body_hex": "a50158322030d39f4f7ed8f11696a94e7a75a38efd5210df728f4ddddfa0d25fb1f60c1e6b52756e8da3afd87b2cee84831535e826d30201030204656361726f6c0501",
+        "op_content_id_hex": "2030cf6b55e668ddd5edf7d060bdddf7151774e7be7cd22f51b0572146c60b515e47e46328d2ec2bd32d8187889b026896bc",
+        "epoch_after": 3
+      },
+      {
+        "seq": 3,
+        "op": 4,
+        "op_name": "add_owner",
+        "epoch_at_build": 3,
+        "subject": "bob",
+        "role": 2,
+        "role_name": "owner",
+        "body_hex": "a50158322030d39f4f7ed8f11696a94e7a75a38efd5210df728f4ddddfa0d25fb1f60c1e6b52756e8da3afd87b2cee84831535e826d3020403030463626f620502",
+        "op_content_id_hex": "2030f067f5e6e6fe8517f6f6b6eb4cf2b167a29c00582b4a71d822789d22208f5280bd12aa8edd35e6cd226a4a1ec578b529",
+        "epoch_after": 4
+      },
+      {
+        "seq": 4,
+        "op": 3,
+        "op_name": "change_role",
+        "epoch_at_build": 4,
+        "subject": "carol",
+        "role": 0,
+        "role_name": "member",
+        "body_hex": "a50158322030d39f4f7ed8f11696a94e7a75a38efd5210df728f4ddddfa0d25fb1f60c1e6b52756e8da3afd87b2cee84831535e826d30203030404656361726f6c0500",
+        "op_content_id_hex": "20301f4c51ce2dc06b29b07c3532b5c04ee4c74eb82e269fb01b0cb84c347e3068e3c9caeb84e56b6971ca231a5caf75a2c1",
+        "epoch_after": 5
+      },
+      {
+        "seq": 5,
+        "op": 2,
+        "op_name": "remove_member",
+        "epoch_at_build": 5,
+        "subject": "carol",
+        "role": 0,
+        "role_name": "member",
+        "body_hex": "a50158322030d39f4f7ed8f11696a94e7a75a38efd5210df728f4ddddfa0d25fb1f60c1e6b52756e8da3afd87b2cee84831535e826d30202030504656361726f6c0500",
+        "op_content_id_hex": "203090dd9c6affdef4149103f9b97c4f317635797430724fd9aac1b283b4c24d50187628d1294ca01fc8a562cbc6941e2a0b",
+        "epoch_after": 6
+      }
+    ],
+    "room_log": [
+      {
+        "seq": 0,
+        "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "obj_hex": "203088bc727cdecfa4e95e0c4647dc89a6bf53aaa905625c0654cf76eca80047a014b49929cd0384e3d8620c9dbb88f55a8d",
+        "at": 200,
+        "body_hex": "a4015830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000025832203088bc727cdecfa4e95e0c4647dc89a6bf53aaa905625c0654cf76eca80047a014b49929cd0384e3d8620c9dbb88f55a8d03000418c8",
+        "head_after_hex": "cda814ecd2ea04dd752179dc55ae40e15b8e929d47df4de6b5439fb45ab9c944642603b92d558a1a4e4ada748c7d2128"
+      },
+      {
+        "seq": 1,
+        "prev_hex": "cda814ecd2ea04dd752179dc55ae40e15b8e929d47df4de6b5439fb45ab9c944642603b92d558a1a4e4ada748c7d2128",
+        "obj_hex": "2030684f6d7f638f5d0f49d34cb5a5f24a9336d434512987cc8bad0d64315c9c0ad22e95dea3a460de2a2036487c635d0f06",
+        "at": 201,
+        "body_hex": "a4015830cda814ecd2ea04dd752179dc55ae40e15b8e929d47df4de6b5439fb45ab9c944642603b92d558a1a4e4ada748c7d21280258322030684f6d7f638f5d0f49d34cb5a5f24a9336d434512987cc8bad0d64315c9c0ad22e95dea3a460de2a2036487c635d0f0603010418c9",
+        "head_after_hex": "53a0915d98e1751db14b5fd0ef7e706a45d0130c7a6bf02f7c51a6fd371d28962eb10ec48c845449a1562aa4e4d3b997"
+      },
+      {
+        "seq": 2,
+        "prev_hex": "53a0915d98e1751db14b5fd0ef7e706a45d0130c7a6bf02f7c51a6fd371d28962eb10ec48c845449a1562aa4e4d3b997",
+        "obj_hex": "2030cf6b55e668ddd5edf7d060bdddf7151774e7be7cd22f51b0572146c60b515e47e46328d2ec2bd32d8187889b026896bc",
+        "at": 202,
+        "body_hex": "a401583053a0915d98e1751db14b5fd0ef7e706a45d0130c7a6bf02f7c51a6fd371d28962eb10ec48c845449a1562aa4e4d3b9970258322030cf6b55e668ddd5edf7d060bdddf7151774e7be7cd22f51b0572146c60b515e47e46328d2ec2bd32d8187889b026896bc03020418ca",
+        "head_after_hex": "27cea065149ace145605aafc196234b54480a2e2c44f68085a2723d396de39f83606d8370c8e9e66e24b3958ca4b8c90"
+      },
+      {
+        "seq": 3,
+        "prev_hex": "27cea065149ace145605aafc196234b54480a2e2c44f68085a2723d396de39f83606d8370c8e9e66e24b3958ca4b8c90",
+        "obj_hex": "2030f067f5e6e6fe8517f6f6b6eb4cf2b167a29c00582b4a71d822789d22208f5280bd12aa8edd35e6cd226a4a1ec578b529",
+        "at": 203,
+        "body_hex": "a401583027cea065149ace145605aafc196234b54480a2e2c44f68085a2723d396de39f83606d8370c8e9e66e24b3958ca4b8c900258322030f067f5e6e6fe8517f6f6b6eb4cf2b167a29c00582b4a71d822789d22208f5280bd12aa8edd35e6cd226a4a1ec578b52903030418cb",
+        "head_after_hex": "3a441c08ebf99a6a1e6e7b9030829406c04b7695e05fd39a76a4ebb8f497d64ce903715898dff9ffd61570d029577786"
+      },
+      {
+        "seq": 4,
+        "prev_hex": "3a441c08ebf99a6a1e6e7b9030829406c04b7695e05fd39a76a4ebb8f497d64ce903715898dff9ffd61570d029577786",
+        "obj_hex": "20301f4c51ce2dc06b29b07c3532b5c04ee4c74eb82e269fb01b0cb84c347e3068e3c9caeb84e56b6971ca231a5caf75a2c1",
+        "at": 204,
+        "body_hex": "a40158303a441c08ebf99a6a1e6e7b9030829406c04b7695e05fd39a76a4ebb8f497d64ce903715898dff9ffd61570d02957778602583220301f4c51ce2dc06b29b07c3532b5c04ee4c74eb82e269fb01b0cb84c347e3068e3c9caeb84e56b6971ca231a5caf75a2c103040418cc",
+        "head_after_hex": "ae0a9038a2303d2132f3a159d17d1814b1266b93f4f69482684ca6bc8c70d3153d168666e062354e517d2c022ea00880"
+      },
+      {
+        "seq": 5,
+        "prev_hex": "ae0a9038a2303d2132f3a159d17d1814b1266b93f4f69482684ca6bc8c70d3153d168666e062354e517d2c022ea00880",
+        "obj_hex": "203090dd9c6affdef4149103f9b97c4f317635797430724fd9aac1b283b4c24d50187628d1294ca01fc8a562cbc6941e2a0b",
+        "at": 205,
+        "body_hex": "a4015830ae0a9038a2303d2132f3a159d17d1814b1266b93f4f69482684ca6bc8c70d3153d168666e062354e517d2c022ea00880025832203090dd9c6affdef4149103f9b97c4f317635797430724fd9aac1b283b4c24d50187628d1294ca01fc8a562cbc6941e2a0b03050418cd",
+        "head_after_hex": "a70704beba45ce81aaa9f0eb8e24744971ffeb91aa49ed410766febe47aea72f9f322c87f769d44dc34e045e4d57b51f"
+      }
+    ],
+    "final_log_head_hex": "a70704beba45ce81aaa9f0eb8e24744971ffeb91aa49ed410766febe47aea72f9f322c87f769d44dc34e045e4d57b51f",
+    "final_epoch": 6,
+    "final_members": [
+      {
+        "subject": "alice",
+        "role": 2,
+        "role_name": "owner"
+      },
+      {
+        "subject": "bob",
+        "role": 2,
+        "role_name": "owner"
+      }
+    ],
+    "final_owners": [
+      "alice",
+      "bob"
+    ],
+    "stale_epoch_case": {
+      "built_epoch": 1,
+      "room_epoch_after_first_accept": 2,
+      "expect": "StaleEpoch"
+    },
+    "owner_immutable_case": {
+      "owner": "alice",
+      "expect": "OwnerImmutable"
+    }
+  },
+  "registry": {
+    "bindings": [
+      {
+        "principal": "agent:alice",
+        "handle": "handle-alice-v1",
+        "epoch": 0,
+        "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "body_hex": "a4016b6167656e743a616c696365026f68616e646c652d616c6963652d76310300045830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "head_after_hex": "2c6eb51dac053846315350549684c3cdc84434a0d4d0b0072052ba21dbb35a66a0c9cbe5116994be5e094f2bec0aba92"
+      },
+      {
+        "principal": "agent:bob",
+        "handle": "handle-bob-v1",
+        "epoch": 0,
+        "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "body_hex": "a401696167656e743a626f62026d68616e646c652d626f622d76310300045830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "head_after_hex": "e6f2d8647792a76244fa04800f04128304df70a1c2750f1e801d3a1a4ed300eb6c579801ea9dbe18c93122a306f9614b"
+      },
+      {
+        "principal": "agent:alice",
+        "handle": "handle-alice-v2",
+        "epoch": 1,
+        "prev_hex": "2c6eb51dac053846315350549684c3cdc84434a0d4d0b0072052ba21dbb35a66a0c9cbe5116994be5e094f2bec0aba92",
+        "body_hex": "a4016b6167656e743a616c696365026f68616e646c652d616c6963652d763203010458302c6eb51dac053846315350549684c3cdc84434a0d4d0b0072052ba21dbb35a66a0c9cbe5116994be5e094f2bec0aba92",
+        "head_after_hex": "87131242f3e76369a06285265717f74694f27f2042d870bd189a7aace0c9a5d2840e13e22d917d1232188086c81242bc"
+      }
+    ],
+    "resolve": {
+      "agent:alice": "handle-alice-v2",
+      "agent:bob": "handle-bob-v1"
+    },
+    "stale_rebind_case": {
+      "principal": "agent:alice",
+      "built_epoch": 1,
+      "principal_epoch_after": 2,
+      "expect": "StaleEpoch"
+    }
+  }
+}

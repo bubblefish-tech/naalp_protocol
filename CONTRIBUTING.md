@@ -22,17 +22,18 @@ formatting, examples). Label them accordingly.
 
 ## Editing the draft
 
-The prose specification is the Internet-Draft, maintained through the IETF Independent
-Submission stream; contributions in this repository target the byte-level wire authority
-`spec/naalp-draft-00.cddl`, the reference implementations, the conformance corpus, and the
-docs. When you change the wire grammar:
+The specification source is the kramdown-rfc Markdown file
+`ietf/draft-bubblefish-naalp-01.md`. Before opening a pull request:
 
 1. Keep the source **ASCII-only**. Non-ASCII characters cause author-tool
    warnings; the only acceptable non-ASCII is what the renderer itself injects.
 2. Render and lint locally:
 
    ```sh
-   ./scripts/cddl_check.sh   # machine-validate spec/naalp-draft-00.cddl (RFC 8610)
+   gem install kramdown-rfc
+   pip install xml2rfc
+   scripts/regen_ietf_draft.sh   # kramdown-rfc -> xml2rfc --v2v3 -> post-process -> clean v3 .xml/.txt/.html
+   idnits draft-bubblefish-naalp-01.txt
    ```
 
    or use the hosted tools at <https://author-tools.ietf.org/>.
@@ -92,17 +93,17 @@ test does not belong in the corpus.
 ## Code-point stability
 
 The object encoding is intended to be stable within an object major version. The
-byte-level authority is [`spec/naalp-draft-00.cddl`](spec/naalp-draft-00.cddl).
+byte-level authority is the CDDL inlined in Appendix A of the draft; [`spec/naalp-draft-01.cddl`](spec/naalp-draft-01.cddl) is a byte-identical mirror.
 Additive registrations — a new channel surface, a new kind, a new carriage-class
 identifier, a new signature or multicodec code point — are **value additions**
-made through the IANA registries under their stated policies (Specification
-Required / Expert Review / Experimental / Private Use), not layout changes.
+made through the IANA registries under their stated policies (RFC Required /
+First Come First Served, Experimental, Private Use), not layout changes.
 
 Changes that alter the meaning of an existing object field, the deterministic
 CBOR canonicalization, the signed-input construction, the content-id or signer-id
 derivation, or the semantics of an already-assigned channel or kind are
 **major-version** changes and will be treated as such (a new object version and,
-if warranted, a new media type alongside `application/naalp+cbor`). N-AALP adds
+if warranted, a new media type alongside `application/vnd.bubblefish.naalp+cbor`). N-AALP adds
 no transport-dependent object guarantee: an object means the same thing over any
 N-PAMP channel or any other transport.
 

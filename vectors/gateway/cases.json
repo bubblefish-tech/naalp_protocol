@@ -1,0 +1,153 @@
+{
+  "source": "design \u00a724; naalp-gateway-decision {1:decision,2:action,3:policy,4:effect} is a signed decision object an enforcement gateway of any vendor emits as portable evidence. Its authority is the signature over the bytes, never the connection, so it verifies offline and re-verifies IDENTICALLY when served by a party other than the gateway (third-party re-serve). Evidence format only; no policy language. decision in {allow,deny,hold}; action = content-id of the decided action; policy = opaque policy identity; effect = C5 class. head=SHA-384(body); content-id=multihash(0x20,SHA-384).",
+  "decision_vocabulary": [
+    {
+      "name": "allow",
+      "code": 0
+    },
+    {
+      "name": "deny",
+      "code": 1
+    },
+    {
+      "name": "hold",
+      "code": 2
+    }
+  ],
+  "unknown_decision": 99,
+  "action_bytes_hex": "7b22746f6f6c223a2264656c6574655f6275636b6574222c2261726773223a7b226275636b6574223a2270726f642d6c6f6773227d7d",
+  "action_cid_hex": "2030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd",
+  "policy_hex": "706f6c6963793a61636d652d6567726573732d7633",
+  "decisions": {
+    "allow": {
+      "decision": 0,
+      "effect": 1,
+      "policy_hex": "706f6c6963793a61636d652d6567726573732d7633",
+      "action_hex": "2030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd",
+      "body_hex": "a401000258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0355706f6c6963793a61636d652d6567726573732d76330401",
+      "head_hex": "5896dd4cacd89754eee84c65fb4ad3da287e5acb16d157c5dee53fd348ddc8daa844a0c5cd8cf68807567f222fa98f73",
+      "id_hex": "20305896dd4cacd89754eee84c65fb4ad3da287e5acb16d157c5dee53fd348ddc8daa844a0c5cd8cf68807567f222fa98f73"
+    },
+    "deny": {
+      "decision": 1,
+      "effect": 3,
+      "policy_hex": "706f6c6963793a61636d652d6567726573732d7633",
+      "action_hex": "2030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd",
+      "body_hex": "a401010258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0355706f6c6963793a61636d652d6567726573732d76330403",
+      "head_hex": "77e3897993a49465fcb634348da50a0bc31fc071a792c6d9d323d7f7875e5a286078d33ed4a31d8af99eea88c81a0431",
+      "id_hex": "203077e3897993a49465fcb634348da50a0bc31fc071a792c6d9d323d7f7875e5a286078d33ed4a31d8af99eea88c81a0431"
+    },
+    "hold": {
+      "decision": 2,
+      "effect": 2,
+      "policy_hex": "706f6c6963793a61636d652d6567726573732d7633",
+      "action_hex": "2030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd",
+      "body_hex": "a401020258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0355706f6c6963793a61636d652d6567726573732d76330402",
+      "head_hex": "4a98ffe9c05b50d9bf23d0d428a67d067ba6ea87689978cf4864a0688e047aa22b2fec04268e508c520315db18fc3728",
+      "id_hex": "20304a98ffe9c05b50d9bf23d0d428a67d067ba6ea87689978cf4864a0688e047aa22b2fec04268e508c520315db18fc3728"
+    }
+  },
+  "edge_cases": {
+    "keys_out_of_order": {
+      "decision": 1,
+      "action_hex": "2030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd",
+      "policy_hex": "706f6c6963793a61636d652d6567726573732d7633",
+      "effect": 3,
+      "canonical_body_hex": "a401010258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0355706f6c6963793a61636d652d6567726573732d76330403",
+      "noncanonical_body_hex": "a404030355706f6c6963793a61636d652d6567726573732d76330258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0101",
+      "reject": "NonCanonical",
+      "note": "same content, top-level keys emitted descending (4,3,2,1) - the strict decoder rejects NonCanonical."
+    },
+    "empty_vs_absent": {
+      "empty_policy": {
+        "body_hex": "a401000258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd03400401",
+        "id_hex": "20306ca8769b6ca9a70bf6461be6c623be766d0f41d5c3e25cea5b6003ad7e41b0cc5abc70ac57782947b68ea2032b5d250f"
+      },
+      "populated_policy": {
+        "policy_hex": "706f6c6963793a61636d652d6567726573732d7633",
+        "body_hex": "a401000258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0355706f6c6963793a61636d652d6567726573732d76330401",
+        "id_hex": "20305896dd4cacd89754eee84c65fb4ad3da287e5acb16d157c5dee53fd348ddc8daa844a0c5cd8cf68807567f222fa98f73"
+      },
+      "absent_field": {
+        "body_hex": "a301000258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0401",
+        "reject": "GwMalformed"
+      },
+      "note": "an empty policy identity is present and valid, distinct by content-id from a populated one; both differ from a body whose policy field is absent (rejected - field 3 is mandatory)."
+    },
+    "minimal": {
+      "decision": 0,
+      "action_hex": "",
+      "policy_hex": "",
+      "effect": 0,
+      "body_hex": "a40100024003400400",
+      "id_hex": "20309cfcdec480ed523193286d4aaf6ff96bf010e50ccbeeee28f307db8973a2900efb2baff933856cd454babd31fa0ff547",
+      "note": "smallest valid decision: allow, empty action, empty policy, read_only."
+    },
+    "look_alike": {
+      "body_hex": "a5014775692d7365737302000358322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0400055830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "reject": "GwMalformed",
+      "note": "a ui-event {1:bstr,2:uint,3:bstr,4:uint,5:bstr} fed to ParseDecision: field 1 is not the uint decision."
+    },
+    "oversized_note": "edge case #3 (oversized >2^53 counter) is N/A: the gateway-decision body carries no 64-bit counter."
+  },
+  "optional_fields": {
+    "with_ordering": {
+      "decision": 0,
+      "action_hex": "2030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd",
+      "policy_hex": "706f6c6963793a61636d652d6567726573732d7633",
+      "effect": 1,
+      "ordering": {
+        "basis": 1,
+        "boundary_hex": "5349474e45525f422d626f756e64617279"
+      },
+      "body_hex": "a501000258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0355706f6c6963793a61636d652d6567726573732d7633040105a2010102515349474e45525f422d626f756e64617279",
+      "head_hex": "0cf3cf8d69c130814b4521995f420ac1e95e6d52c1170e27abcf22218942376ea6a2635e638108f4960447d5ecb10606",
+      "id_hex": "20300cf3cf8d69c130814b4521995f420ac1e95e6d52c1170e27abcf22218942376ea6a2635e638108f4960447d5ecb10606",
+      "note": "field 5 present (single-boundary), field 6 absent."
+    },
+    "with_foreign_profile": {
+      "decision": 0,
+      "action_hex": "2030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd",
+      "policy_hex": "706f6c6963793a61636d652d6567726573732d7633",
+      "effect": 1,
+      "foreign_profile": {
+        "id": "https://example-registry.test/profiles/acme",
+        "revision": "2026-01"
+      },
+      "body_hex": "a501000258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0355706f6c6963793a61636d652d6567726573732d7633040106a201782b68747470733a2f2f6578616d706c652d72656769737472792e746573742f70726f66696c65732f61636d650267323032362d3031",
+      "head_hex": "0539dffc9fd2aff350f4ca76b278ab79a69df18e0952b783223a1aed017d078367b6dd0d114b15466750dcccc16a2f70",
+      "id_hex": "20300539dffc9fd2aff350f4ca76b278ab79a69df18e0952b783223a1aed017d078367b6dd0d114b15466750dcccc16a2f70",
+      "note": "field 6 present, field 5 absent."
+    },
+    "with_both": {
+      "decision": 0,
+      "action_hex": "2030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd",
+      "policy_hex": "706f6c6963793a61636d652d6567726573732d7633",
+      "effect": 1,
+      "ordering": {
+        "basis": 2,
+        "mechanism_hex": "65787465726e616c2d6c6f673a61636d652d7472616e73706172656e63792d7631",
+        "relation_hex": "2030c83b03ab5d26de33f037927bb2258fcfc3e8050793b68959bc5be954bcda9ca13875be35627f50f282c4eff9d807ea56"
+      },
+      "foreign_profile": {
+        "id": "https://example-registry.test/profiles/acme",
+        "revision": "2026-01"
+      },
+      "body_hex": "a601000258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0355706f6c6963793a61636d652d6567726573732d7633040105a3010203582165787465726e616c2d6c6f673a61636d652d7472616e73706172656e63792d76310458322030c83b03ab5d26de33f037927bb2258fcfc3e8050793b68959bc5be954bcda9ca13875be35627f50f282c4eff9d807ea5606a201782b68747470733a2f2f6578616d706c652d72656769737472792e746573742f70726f66696c65732f61636d650267323032362d3031",
+      "head_hex": "1927c6ff0196ebd535b39736bf16bd08db67c11bf4b0b5421366da962cc3ad146e434a4078fdd31be18a4047d7fa4cc9",
+      "id_hex": "20301927c6ff0196ebd535b39736bf16bd08db67c11bf4b0b5421366da962cc3ad146e434a4078fdd31be18a4047d7fa4cc9",
+      "note": "field 5 (external-mechanism, with relation) AND field 6 both present."
+    },
+    "foreign_profile_malformed": {
+      "body_hex": "a501000258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0355706f6c6963793a61636d652d6567726573732d7633040106a101782b68747470733a2f2f6578616d706c652d72656769737472792e746573742f70726f66696c65732f61636d65",
+      "reject": "ForeignProfileMalformed",
+      "note": "field 6 present but omits key 2 (revision): id and revision are both mandatory tstr. ParseDecision decodes the body structurally fine (field 6 present, id populated); VerifyDecision's ForeignProfilePin.Validate() rejects the missing revision."
+    },
+    "ordering_malformed": {
+      "body_hex": "a501000258322030e29a76dd184988f9503d0fa62466876a9c7078edef4421bda446e62e53ef3911a8382861aeb9e4e97540db4838d5b1bd0355706f6c6963793a61636d652d6567726573732d7633040105a3010202515349474e45525f422d626f756e6461727903582165787465726e616c2d6c6f673a61636d652d7472616e73706172656e63792d7631",
+      "reject": "OrderingDisclosureMalformed",
+      "note": "field 5 basis=external-mechanism but key 2 (boundary) is also present; external-mechanism requires key 2 absent."
+    }
+  },
+  "note": "all three decision bodies are ordinary COSE_Sign1 payloads; VerifyDecision takes NO serving-party/connection identity, so the same bytes verify identically whether the gateway or a third party serves them."
+}

@@ -51,6 +51,14 @@ type auditCases struct {
 		ReceiptB receiptJSON `json:"receipt_b"`
 		Expect   string      `json:"expect"`
 	} `json:"equivocation"`
+	ForkProof struct {
+		SignerHex   string `json:"signer_hex"`
+		ExtCounter  uint64 `json:"ext_counter"`
+		Seq         uint64 `json:"seq"`
+		BodyAHex    string `json:"body_a_hex"`
+		BodyBHex    string `json:"body_b_hex"`
+		PreimageHex string `json:"preimage_hex"`
+	} `json:"fork_proof"`
 	CausalValid struct {
 		Nodes        []nodeJSON `json:"nodes"`
 		Valid        bool       `json:"valid"`
@@ -189,7 +197,7 @@ func TestReceiptUnsigned(t *testing.T) {
 	} else if ce, ok := err.(*cose.Error); !ok || ce.Kind != "ReceiptUnsigned" {
 		t.Fatalf("want ReceiptUnsigned, got %v", err)
 	}
-	if _, err := audit.NewAuditor(verifier).Observe(r, bad); err == nil {
+	if _, err := audit.NewAuditor(verifier, []byte("AUTH01")).Observe(r, bad); err == nil {
 		t.Fatal("tampered receipt accepted by auditor")
 	} else if ce, ok := err.(*cose.Error); !ok || ce.Kind != "ReceiptUnsigned" {
 		t.Fatalf("want ReceiptUnsigned from auditor, got %v", err)
@@ -214,7 +222,7 @@ func TestEquivocationDetected(t *testing.T) {
 	sa, _ := signer.Sign(ra.Bytes())
 	sb, _ := signer.Sign(rb.Bytes())
 
-	aud := audit.NewAuditor(verifier)
+	aud := audit.NewAuditor(verifier, []byte("AUTH01"))
 	if fp, err := aud.Observe(ra, sa); fp != nil || err != nil {
 		t.Fatalf("first receipt flagged: fp=%v err=%v", fp, err)
 	}
@@ -230,6 +238,14 @@ func TestEquivocationDetected(t *testing.T) {
 	}
 	if !bytes.Equal(fp.A.Obj, ra.Obj) || !bytes.Equal(fp.B.Obj, rb.Obj) {
 		t.Fatal("fork proof does not carry the two conflicting receipts")
+	}
+	// draft-01 (finding #70): the minted proof carries the accused's OWN two signatures, so it is
+	// non-repudiable — it verifies against the authority key with no further evidence.
+	if !bytes.Equal(fp.SigA, sa) || !bytes.Equal(fp.SigB, sb) {
+		t.Fatal("fork proof does not carry the two conflicting signatures")
+	}
+	if err := fp.Verify(verifier); err != nil {
+		t.Fatalf("auditor-minted proof failed to verify: %v", err)
 	}
 }
 
@@ -360,4 +376,110 @@ func TestOrderingDoesNotMutateOrigin(t *testing.T) {
 	if !bytes.Equal(r.Obj, oO.ID) {
 		t.Fatal("receipt does not reference the object content id")
 	}
+}
+
+// forkReceipts rebuilds the two conflicting receipts of the oracle's equivocation case (same seq,
+// same prev = head(receipt 0), DIFFERENT objects) and signs each with the authority key so a real,
+// non-repudiable fork proof can be assembled and graded.
+func forkReceipts(t *testing.T, c auditCases, signer cose.MLDSA65Signer) (audit.Receipt, []byte, audit.Receipt, []byte) {
+	t.Helper()
+	prev := hx(t, c.Chain.Receipts[0].HeadAfterHex)
+	ra := audit.Receipt{Prev: prev, Obj: hx(t, c.Equivocation.ReceiptA.ObjHex), Seq: c.Equivocation.Seq, At: 101}
+	rb := audit.Receipt{Prev: prev, Obj: hx(t, c.Equivocation.ReceiptB.ObjHex), Seq: c.Equivocation.Seq, At: 101}
+	sa, _ := signer.Sign(ra.Bytes())
+	sb, _ := signer.Sign(rb.Bytes())
+	return ra, sa, rb, sb
+}
+
+// TestForkProofMatchesOracle: the draft-01 fork-proof framing (signer id + external counter + the
+// two receipt bodies, signatures elided) is byte-identical to the independent oracle (⟹ Go == Rust
+// on the framing), and the two embedded receipt bodies are the oracle's exact signed inputs. The
+// two real ML-DSA signatures are graded by the two-implementation deterministic byte-parity (they
+// are deterministic, and each Verify checks them below).
+func TestForkProofMatchesOracle(t *testing.T) {
+	c := load(t)
+	signer, _ := authKey(t, 20)
+	ra, sa, rb, sb := forkReceipts(t, c, signer)
+
+	fpSigner := hx(t, c.ForkProof.SignerHex)
+	fp := audit.NewForkProof(fpSigner, ra, sa, rb, sb, c.ForkProof.ExtCounter)
+
+	if got := hex.EncodeToString(fp.A.Bytes()); got != c.ForkProof.BodyAHex {
+		t.Errorf("body A\n got %s\nwant %s", got, c.ForkProof.BodyAHex)
+	}
+	if got := hex.EncodeToString(fp.B.Bytes()); got != c.ForkProof.BodyBHex {
+		t.Errorf("body B\n got %s\nwant %s", got, c.ForkProof.BodyBHex)
+	}
+	if got := hex.EncodeToString(fp.Preimage()); got != c.ForkProof.PreimageHex {
+		t.Errorf("fork-proof framing witness\n got %s\nwant %s", got, c.ForkProof.PreimageHex)
+	}
+	// The full wire body carries the real signatures and is deterministic (same inputs ⟹ same bytes).
+	if !bytes.Equal(fp.Bytes(), audit.NewForkProof(fpSigner, ra, sa, rb, sb, c.ForkProof.ExtCounter).Bytes()) {
+		t.Fatal("fork-proof Bytes() is not deterministic")
+	}
+	// The full body strictly extends the witness (the empty-sig framing is a prefix-free structural
+	// subset): eliding the sigs must change the bytes, or the signatures are not carried.
+	if bytes.Equal(fp.Bytes(), fp.Preimage()) {
+		t.Fatal("fork-proof body equals its signature-elided witness — signatures are not carried")
+	}
+}
+
+// TestForkProofVerify exercises Verify's positive case and every fail-closed negative. Each
+// negative is a mutation that MUST flip the verdict — a Verify that returned nil unconditionally
+// would fail every negative here (mutation-surviving).
+func TestForkProofVerify(t *testing.T) {
+	c := load(t)
+	signer, verifier := authKey(t, 20)
+	ra, sa, rb, sb := forkReceipts(t, c, signer)
+	fpSigner := hx(t, c.ForkProof.SignerHex)
+
+	// POSITIVE: a genuine equivocation proof verifies as valid, non-repudiable evidence.
+	good := audit.NewForkProof(fpSigner, ra, sa, rb, sb, c.ForkProof.ExtCounter)
+	if err := good.Verify(verifier); err != nil {
+		t.Fatalf("valid fork proof rejected: %v", err)
+	}
+
+	assertKind := func(name string, err error, kind string) {
+		t.Helper()
+		if err == nil {
+			t.Fatalf("%s: fork proof accepted, want %s", name, kind)
+		}
+		if ce, ok := err.(*cose.Error); !ok || ce.Kind != kind {
+			t.Fatalf("%s: want %s, got %v", name, kind, err)
+		}
+	}
+
+	// NEGATIVE: a tampered signature over body A does not verify → ReceiptUnsigned (fail-closed).
+	badA := good
+	badA.SigA = append([]byte(nil), sa...)
+	badA.SigA[len(badA.SigA)-1] ^= 0x01
+	assertKind("tampered sig A", badA.Verify(verifier), "ReceiptUnsigned")
+
+	// NEGATIVE: a tampered signature over body B → ReceiptUnsigned.
+	badB := good
+	badB.SigB = append([]byte(nil), sb...)
+	badB.SigB[len(badB.SigB)-1] ^= 0x01
+	assertKind("tampered sig B", badB.Verify(verifier), "ReceiptUnsigned")
+
+	// NEGATIVE: the wrong verifier (a different authority key) rejects both signatures.
+	_, otherV := authKey(t, 21)
+	assertKind("wrong verifier", good.Verify(otherV), "ReceiptUnsigned")
+
+	// NEGATIVE: two receipts naming the SAME object are not equivocation → ForkProofInvalid. Sign a
+	// second receipt over the SAME object as A (so the signature is valid but the objects match).
+	rSame := audit.Receipt{Prev: rb.Prev, Obj: append([]byte(nil), ra.Obj...), Seq: c.Equivocation.Seq, At: 101}
+	sSame, _ := signer.Sign(rSame.Bytes())
+	sameObj := audit.NewForkProof(fpSigner, ra, sa, rSame, sSame, c.ForkProof.ExtCounter)
+	assertKind("same object", sameObj.Verify(verifier), "ForkProofInvalid")
+
+	// NEGATIVE: two receipts at DIFFERENT seq are not one-seq equivocation → ForkProofInvalid. Build
+	// a valid receipt at seq 2 so its signature verifies but the seqs differ.
+	rSeq2 := audit.Receipt{Prev: rb.Prev, Obj: append([]byte(nil), rb.Obj...), Seq: c.Equivocation.Seq + 1, At: 101}
+	sSeq2, _ := signer.Sign(rSeq2.Bytes())
+	seqMismatch := audit.NewForkProof(fpSigner, ra, sa, rSeq2, sSeq2, c.ForkProof.ExtCounter)
+	assertKind("seq mismatch", seqMismatch.Verify(verifier), "ForkProofInvalid")
+
+	// NEGATIVE: an unnamed accused (empty signer id) is not evidence → ForkProofInvalid.
+	noSigner := audit.NewForkProof(nil, ra, sa, rb, sb, c.ForkProof.ExtCounter)
+	assertKind("empty signer", noSigner.Verify(verifier), "ForkProofInvalid")
 }

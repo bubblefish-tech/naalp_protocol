@@ -328,3 +328,40 @@ func TestNintRFC8949(t *testing.T) {
 		t.Error("Nint(0) must be unencodable (not negative)")
 	}
 }
+
+// TestUintHeadBoundaryRFC8949 grades the positive-integer (major type 0) head-length boundary
+// against the RFC 8949 Appendix A worked examples (independent authority): additional info is
+// carried inline for 0..23, then in one, two, four, and eight trailing bytes at 24, 256, 65536,
+// and 2^32. Mutation-surviving: an off-by-one at the 24 threshold, or a wrong trailing-byte
+// width, fails a fixed hex expectation that TestPositivesMatchOracle (which grades whole objects)
+// does not pin directly.
+func TestUintHeadBoundaryRFC8949(t *testing.T) {
+	cases := []struct {
+		v   uint64
+		hex string
+	}{
+		{0, "00"}, {1, "01"}, {10, "0a"}, {23, "17"}, // 0..23 inline (RFC 8949 App. A)
+		{24, "1818"}, {25, "1819"}, {100, "1864"}, {255, "18ff"}, // 24..255: one trailing byte
+		{256, "190100"}, {1000, "1903e8"}, {65535, "19ffff"}, // 256..65535: two trailing bytes
+		{65536, "1a00010000"}, {1000000, "1a000f4240"}, // 65536..2^32-1: four trailing bytes
+		{4294967296, "1b0000000100000000"},            // 2^32: eight trailing bytes
+		{18446744073709551615, "1bffffffffffffffff"},  // 2^64-1: max uint
+	}
+	for _, c := range cases {
+		enc, err := Encode(Uint(c.v))
+		if err != nil {
+			t.Fatalf("encode Uint(%d): %v", c.v, err)
+		}
+		if got := hex.EncodeToString(enc); got != c.hex {
+			t.Errorf("Encode(Uint(%d)) = %s, want %s", c.v, got, c.hex)
+		}
+		raw, _ := hex.DecodeString(c.hex)
+		v, err := Decode(raw)
+		if err != nil {
+			t.Fatalf("decode %s: %v", c.hex, err)
+		}
+		if v != Uint(c.v) {
+			t.Errorf("Decode(%s) = %v, want Uint(%d)", c.hex, v, c.v)
+		}
+	}
+}

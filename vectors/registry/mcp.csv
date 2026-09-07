@@ -1,0 +1,5 @@
+read_only_hint,destructive_hint,idempotent_hint,effect,effect_value
+true,any,any,read_only,0
+false,true,any,destructive,3
+false,false,true,idempotent_write,1
+false,false,false,non_idempotent_write,2

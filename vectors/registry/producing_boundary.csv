@@ -1,0 +1,2 @@
+ext_key,name,placement,tier,description
+15,producing-boundary,ext,1,OPTIONAL per-object disclosure of the emitting trust boundary and whether it observed the event first-hand (kind 1) or relayed a report (kind 2); carried in the non-critical ext map and self-asserted under the signer's COSE_Sign1; establishes record-order/observational-domain not cross-boundary event precedence (design.md §2.5.4 NA-IETF-1)

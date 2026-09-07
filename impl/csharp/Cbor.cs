@@ -140,10 +140,9 @@ namespace Naalp
             switch (v)
             {
                 case U u:
-                    if (u.V < 0)
-                    {
-                        throw new NaalpException("NonCanonical", "uint is negative");
-                    }
+                    // U is a CBOR unsigned integer; u.V carries the uint64 bit pattern (a value >= 2^63
+                    // is a "negative" long). Head casts to ulong, so every bit pattern encodes correctly,
+                    // matching the Go/Rust reference -- there is nothing to reject here.
                     Write(outp, Head(0, u.V));
                     break;
                 case N n:
@@ -231,8 +230,20 @@ namespace Naalp
             public int Remaining => Data.Length - Pos;
         }
 
-        private static Value Dec(Cursor c)
+        // MaxDepthUnbounded is the sentinel used by the trusted-input Decode path: far beyond
+        // any legitimate structure yet finite, so even the unbounded path cannot recurse without
+        // limit on a pathological input (design.md §3.4 (R7)).
+        private const int MaxDepthUnbounded = 1 << 20;
+
+        // Dec decodes one item at the given depth; depth is threaded through every recursive call
+        // so an item nested deeper than maxDepth is rejected BEFORE it is materialized. The
+        // outermost item is depth 1 (design.md §3.4 (R7)).
+        private static Value Dec(Cursor c, int depth, int maxDepth)
         {
+            if (depth > maxDepth)
+            {
+                throw new NaalpException("DepthExceeded", "CBOR nesting depth exceeds the maximum (§3.4, R7)");
+            }
             if (c.Remaining < 1)
             {
                 throw new NaalpException("NonCanonical", "truncated");
@@ -345,7 +356,7 @@ namespace Naalp
                     var items = new List<Value>(len);
                     for (int i = 0; i < len; i++)
                     {
-                        items.Add(Dec(c));
+                        items.Add(Dec(c, depth + 1, maxDepth));
                     }
                     return new A(items);
                 }
@@ -357,10 +368,10 @@ namespace Naalp
                     for (int i = 0; i < len; i++)
                     {
                         int before = c.Pos;
-                        Value k = Dec(c);
+                        Value k = Dec(c, depth + 1, maxDepth);
                         byte[] kbytes = new byte[c.Pos - before];
                         Array.Copy(c.Data, before, kbytes, 0, kbytes.Length);
-                        Value val = Dec(c);
+                        Value val = Dec(c, depth + 1, maxDepth);
                         if (prev != null && CompareBytes(kbytes, prev) <= 0)
                         {
                             throw new NaalpException("NonCanonical", "map keys out of order or duplicate");
@@ -372,7 +383,7 @@ namespace Naalp
                 }
                 case 6:
                 {
-                    Value content = Dec(c);
+                    Value content = Dec(c, depth + 1, maxDepth);
                     return new Tag((long)arg, content);
                 }
                 default:
@@ -399,16 +410,32 @@ namespace Naalp
             return (int)arg;
         }
 
-        /// <summary>Strict canonical decode: rejects any non-canonical encoding with a NonCanonical error.</summary>
-        public static Value Decode(byte[] data)
+        private static Value DecodeTop(byte[] data, int maxDepth)
         {
             var c = new Cursor(data);
-            Value v = Dec(c);
+            Value v = Dec(c, 1, maxDepth);
             if (c.Remaining != 0)
             {
                 throw new NaalpException("NonCanonical", "trailing bytes after top-level item");
             }
             return v;
+        }
+
+        /// <summary>Strict canonical decode: rejects any non-canonical encoding with a NonCanonical
+        /// error. Does not bound nesting depth on the trusted-input path; the untrusted object
+        /// decode path uses <see cref="DecodeBounded"/> (design.md §3.4 (R7)).</summary>
+        public static Value Decode(byte[] data)
+        {
+            return DecodeTop(data, MaxDepthUnbounded);
+        }
+
+        /// <summary>Decode is Decode with a maximum CBOR nesting depth (design.md §3.4 (R7)): the
+        /// outermost item is depth 1, each nested map key/value, array element and tagged content is
+        /// one deeper, and an item at depth maxDepth+1 is rejected with a DepthExceeded error BEFORE
+        /// it is materialized (RFC 8949 §10 decoder-memory guard).</summary>
+        public static Value DecodeBounded(byte[] data, int maxDepth)
+        {
+            return DecodeTop(data, maxDepth);
         }
 
         // --- content id ---

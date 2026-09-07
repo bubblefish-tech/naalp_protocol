@@ -3,9 +3,10 @@
 # Maintainers
 
 This file lists the people responsible for **N-AALP** — the Native Agentic
-Application Layer Protocol: the Internet-Draft `draft-bubblefish-naalp-00`
+Application Layer Protocol: the Internet-Draft `draft-bubblefish-naalp-01`
 (Independent Submission stream), the spine design and per-channel interface
-references, the `spec/naalp-draft-00.cddl` wire authority, the code-point
+references, the normative CDDL wire grammar (inlined in the draft's Appendix A,
+mirrored byte-identically as `spec/naalp-draft-01.cddl`), the code-point
 registries, and the ten reference implementations — and it states what
 maintainership on this repository means: the review commitments, the merge and
 release rights, how security reports are handled, and how a person becomes or
@@ -37,7 +38,7 @@ land changes and to keep the wire format and its conformance evidence honest.
 
 | Name | GitHub handle | Affiliation | Area |
 |---|---|---|---|
-| Shawn Sammartano | `@<TODO-github-handle>` | BubbleFish Technologies, Inc. | **Lead maintainer / document editor.** Full scope: the Internet-Draft and all normative spec text, the spine and channel interface references, `spec/naalp-draft-00.cddl`, the code-point registries, the conformance corpus and independent oracles, the ten reference implementations, the conformance harness, and the integrity/CI gates. IETF author of record for `draft-bubblefish-naalp-00`. Contact: `naalp-editor@bubblefish.sh`. |
+| Shawn Sammartano | `@<TODO-github-handle>` | BubbleFish Technologies, Inc. | **Lead maintainer / document editor.** Full scope: the Internet-Draft and all normative spec text, the spine and channel interface references, `spec/naalp-draft-01.cddl`, the code-point registries, the conformance corpus and independent oracles, the ten reference implementations, the conformance harness, and the integrity/CI gates. IETF author of record for `draft-bubblefish-naalp-01`. Contact: `naalp-editor@bubblefish.sh`. |
 
 Shawn Sammartano is the **document editor** in the IETF sense (RFC 8874): the
 person who holds write access to the draft source and who is responsible for the
@@ -143,16 +144,16 @@ maintainer responsibility, not a nicety.
 ### 4. Releases and tags
 
 - **Cut draft revisions.** Each Datatracker `-NN` revision is marked by one
-  annotated git tag (`draft-bubblefish-naalp-00`, `-01`, …). The maintainer
+  annotated git tag (`draft-bubblefish-naalp-01`, `-01`, …). The maintainer
   renders the draft to `0 errors / 0 flaws` under idnits, submits it to the
   Datatracker, tags the revision, and adds the change-log subsection.
 - **Keep the conformance evidence current.** On any release, regenerate the
   independent-oracle vectors under [`vectors/`](vectors/) so the graded bytes
   match what ships, and confirm the parity, CDDL, and registry-drift gates exit
   zero.
-- **Coordinate IANA state.** Keep the `application/naalp+cbor` media-type
-  registration and the five N-AALP registry requests (in the Internet-Draft's
-  IANA Considerations) accurate across revisions, and keep the reused
+- **Coordinate IANA state.** Keep the `application/vnd.bubblefish.naalp+cbor` media-type
+  registration and the eight N-AALP registry requests in
+  [`ietf/IANA.md`](ietf/IANA.md) accurate across revisions, and keep the reused
   COSE algorithm and multicodec references correct.
 
 ### 5. Handling security reports
@@ -186,7 +187,7 @@ or banning a participant, handled as confidentially as practical.
 | Change class | Example | Requires ADR? | Maintainer approvals | Other gates |
 |---|---|---|---|---|
 | **Editorial** | wording, formatting, non-normative examples | No | 1 (may be self-merge by an editor) | CI green |
-| **Normative — additive** | register a new signature suite / carriage `protocol_id` / channel / kind in the reserved *Specification-Required* range | Yes | 1 (2 when ≥2 maintainers exist) | CI green; change-log bullet; `design` label |
+| **Normative — additive** | register a new signature suite / carriage `protocol_id` / channel / kind in the reserved *RFC-Required* range | Yes | 1 (2 when ≥2 maintainers exist) | CI green; change-log bullet; `design` label |
 | **Normative — layout / major** | envelope geometry, CBOR map keys, deterministic-encoding rules, `naalp-version` semantics, effect set/lattice, `content-id`/`signer-id` construction | Yes | 2 (or 1 + named external reviewer in the ADR) | CI green; `naalp-version` bump if wire-incompatible; change-log bullet; `design`+`has-consensus` |
 | **Implementation / harness** | fix in one of the ten reference impls or the conformance runner | No (unless it changes wire behavior) | 1 | CI green; corpus still passes byte-identically across languages |
 | **Security fix** | mitigation for a reported design weakness | Yes if normative | per class above | private-first per SECURITY.md; coordinated disclosure |

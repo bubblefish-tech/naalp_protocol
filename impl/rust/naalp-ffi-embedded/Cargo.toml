@@ -1,0 +1,37 @@
+[package]
+name = "naalp-ffi-embedded"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "no_std + alloc verify/parse subset of N-AALP (Manufacturing Add-ons Component A, bare-metal/RTOS embedded tier)"
+repository = "https://github.com/bubblefish-tech/naalp_protocol"
+
+# Manufacturing intake §3 Component A3 (a bare-metal/RTOS build profile for constrained
+# controllers with no operating system). The std `naalp` crate (impl/rust) cannot be a
+# dependency of a genuinely no_std target: its canonical `sign`/`verify` happy path
+# (`easy::now_millis`, called from `easy::Signer::sign`) calls `std::time::SystemTime::now()`
+# (no core/alloc equivalent — no_std has no OS clock), and `channels::open_workflow_gate`
+# (reachable from `easy::verify_with_profile` -> `channels::check_effect`'s sibling registry
+# code) uses `std::fs`/`std::io` (no filesystem on bare metal). Neither has been ported to
+# no_std, and doing so is real, separately-scoped work on the `naalp` crate itself, not this
+# one. See `src/lib.rs` module docs for the full precise-blocker record.
+#
+# This crate is therefore NOT a wrapper over `naalp` — it is an independent, from-scratch
+# no_std + alloc reimplementation of the narrow "verify a COSE_Sign1 ML-DSA-65 object and
+# recompute its content id" subset (RFC 9052 COSE_Sign1 parse, RFC 8949 canonical CBOR,
+# design.md §2.3 content-id), the maximal no_std-compatible surface this pass could build.
+# It introduces no new wire format: it decodes/encodes the SAME canonical-CBOR rules
+# `impl/rust/src/cbor.rs` enforces (shortest-form arguments, sorted+non-duplicate map keys,
+# definite-length only) and is graded against the same independent oracle vectors
+# (`vectors/cose/cases.json`, `vectors/cbor/cases.json`) the std implementation is.
+[lib]
+name = "naalp_ffi_embedded"
+path = "src/lib.rs"
+
+[dependencies]
+# no_std by default (fips204's default features are default-rng + all three parameter
+# sets; default-rng pulls `rand_core/getrandom`, an OS-backed RNG source this crate does
+# not need since it only verifies — verification takes no randomness — see the module docs
+# on why `KeyGen`, used only by the KeyProvider test double, does not need it either).
+fips204 = { version = "0.4", default-features = false, features = ["ml-dsa-65"] }
+sha2 = { version = "0.10", default-features = false }

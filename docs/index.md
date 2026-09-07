@@ -46,6 +46,7 @@ test. `bash harness/run.sh` grades the whole protocol.
 - [Implementations](implementations/index.md) — Go and Rust quickstarts.
 - [Worked example](examples/worked-object.md) — a complete signed object, byte by byte.
 - [Registries](registries.md) — the machine-readable code points.
+- [IETF Internet-Draft](../ietf/draft-bubblefish-naalp-01.md) — the Independent Submission draft.
 - [Design decisions](adr/index.md).
 
 !!! note "Status"

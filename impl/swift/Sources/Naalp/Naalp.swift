@@ -1,6 +1,6 @@
 // Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
 //
-// Naalp — the Swift reference SDK for N-AALP (draft-bubblefish-naalp-00).
+// Naalp — the Swift reference SDK for N-AALP (draft-bubblefish-naalp-01).
 //
 // N-AALP makes the *object*, not the connection, the unit of security: every message is a
 // deterministically-encoded CBOR structure signed with COSE that carries, under one signature,
@@ -36,5 +36,5 @@ public enum NaalpSDK {
     /// The SDK version.
     public static let version = "0.1.0"
     /// The Internet-Draft this SDK implements.
-    public static let draft = "draft-bubblefish-naalp-00"
+    public static let draft = "draft-bubblefish-naalp-01"
 }

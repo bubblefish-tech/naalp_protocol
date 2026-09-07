@@ -21,6 +21,10 @@ channel_id,channel_name,kind_code,kind_name,effect,variable_effect
 0x0004,Governance,1,Approval,non_idempotent_write,false
 0x0004,Governance,2,ApprovalHeld,read_only,false
 0x0004,Governance,3,Consume,non_idempotent_write,false
+0x0004,Governance,4,GatewayDecision,non_idempotent_write,false
+0x0004,Governance,5,DecisionRecord,non_idempotent_write,false
+0x0004,Governance,6,EgressAttestation,non_idempotent_write,false
+0x0004,Governance,7,HazardAuthorization,non_idempotent_write,false
 0x0005,Immune,0,AnomalyReport,read_only,false
 0x0005,Immune,1,Quarantine,destructive,false
 0x0005,Immune,2,QuarantineLift,non_idempotent_write,false
@@ -29,6 +33,8 @@ channel_id,channel_name,kind_code,kind_name,effect,variable_effect
 0x0007,Settlement,0,SettleIntent,non_idempotent_write,false
 0x0007,Settlement,1,SettleReceipt,non_idempotent_write,false
 0x0007,Settlement,2,SettleReject,idempotent_write,false
+0x0007,Settlement,3,PaymentImport,non_idempotent_write,false
+0x0007,Settlement,4,PaymentChargeBinding,non_idempotent_write,false
 0x0008,Compliance,0,ComplianceRecord,non_idempotent_write,false
 0x0008,Compliance,1,ComplianceQuery,read_only,false
 0x0008,Compliance,2,ComplianceReport,read_only,false
@@ -40,6 +46,9 @@ channel_id,channel_name,kind_code,kind_name,effect,variable_effect
 0x000B,Audit,0,Receipt,non_idempotent_write,false
 0x000B,Audit,1,AuditQuery,read_only,false
 0x000B,Audit,2,ForkProof,read_only,false
+0x000B,Audit,3,CheckpointRoot,non_idempotent_write,false
+0x000B,Audit,4,WitnessCosign,non_idempotent_write,false
+0x000B,Audit,5,InclusionProof,read_only,false
 0x000C,Stream,0,StreamOpen,variable,true
 0x000C,Stream,1,StreamCommit,read_only,false
 0x000C,Stream,2,StreamCheckpoint,read_only,false
@@ -51,6 +60,7 @@ channel_id,channel_name,kind_code,kind_name,effect,variable_effect
 0x000F,Interaction,0,Elicit,read_only,false
 0x000F,Interaction,1,Respond,idempotent_write,false
 0x000F,Interaction,2,Confirm,non_idempotent_write,false
+0x000F,Interaction,3,UiEvent,non_idempotent_write,false
 0x0010,Discovery,0,DiscoveryRecord,read_only,false
 0x0010,Discovery,1,DiscoveryQuery,read_only,false
 0x0011,Workflow,0,TaskCreate,non_idempotent_write,false

@@ -1,0 +1,348 @@
+{
+  "source": "design \u00a722; naalp-name-binding {1:name,2:signer,3:seq,4:prev} chained like the C7 audit receipt (head=SHA-384(body); genesis prev=48 zero bytes; seq monotonic; dated by chain position, envelope created advisory); rotation = a new binding chaining on; hole detected at the first-broken position; fork = one authority at the same (name,seq) naming different signers, reported at that seq. naalp-task-transition {1:task,2:card,3:from,4:to,5:seq,6:prev} = one receipt-chained A2A state transition; A2A TaskState is an imported vocabulary (spec \u00a74.1.3: start=submitted; terminal={completed,canceled,failed,rejected}; interrupted={input-required,auth-required}); legal edges derived from those category rules; card = content-id of the A2A Agent Card import (C18). head=SHA-384(body); content-id=multihash(0x20,SHA-384).",
+  "name": {
+    "name_utf8": "agent.billing.example",
+    "genesis_prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "bindings": [
+      {
+        "seq": 0,
+        "signer_hex": "5349474e45525f4b45595f41",
+        "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "body_hex": "a401756167656e742e62696c6c696e672e6578616d706c65024c5349474e45525f4b45595f410300045830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "head_hex": "805b15a27ddec3fdb07e8e4b34adbc9969f429f5066f9f7c09fa5c1c0e211c515f6f46b446a9e5d80ba2f7085dd06fc5",
+        "id_hex": "2030805b15a27ddec3fdb07e8e4b34adbc9969f429f5066f9f7c09fa5c1c0e211c515f6f46b446a9e5d80ba2f7085dd06fc5"
+      },
+      {
+        "seq": 1,
+        "signer_hex": "5349474e45525f4b45595f42",
+        "prev_hex": "805b15a27ddec3fdb07e8e4b34adbc9969f429f5066f9f7c09fa5c1c0e211c515f6f46b446a9e5d80ba2f7085dd06fc5",
+        "body_hex": "a401756167656e742e62696c6c696e672e6578616d706c65024c5349474e45525f4b45595f420301045830805b15a27ddec3fdb07e8e4b34adbc9969f429f5066f9f7c09fa5c1c0e211c515f6f46b446a9e5d80ba2f7085dd06fc5",
+        "head_hex": "a5f6efdaf268224e936b772500b11c940f69fba794e34df91f96d68d92b721f2478f1544867123a7604da5a6c1dc6a9d",
+        "id_hex": "2030a5f6efdaf268224e936b772500b11c940f69fba794e34df91f96d68d92b721f2478f1544867123a7604da5a6c1dc6a9d"
+      },
+      {
+        "seq": 2,
+        "signer_hex": "5349474e45525f4b45595f43",
+        "prev_hex": "a5f6efdaf268224e936b772500b11c940f69fba794e34df91f96d68d92b721f2478f1544867123a7604da5a6c1dc6a9d",
+        "body_hex": "a401756167656e742e62696c6c696e672e6578616d706c65024c5349474e45525f4b45595f430302045830a5f6efdaf268224e936b772500b11c940f69fba794e34df91f96d68d92b721f2478f1544867123a7604da5a6c1dc6a9d",
+        "head_hex": "035ab7efaa208a087a9780605368579de24b0edc719d8f9a9658f7d89401dba5979194477e5a2cc2ffb6ccc25940663b",
+        "id_hex": "2030035ab7efaa208a087a9780605368579de24b0edc719d8f9a9658f7d89401dba5979194477e5a2cc2ffb6ccc25940663b"
+      }
+    ],
+    "walk": [
+      {
+        "seq": 0,
+        "signer_hex": "5349474e45525f4b45595f41"
+      },
+      {
+        "seq": 1,
+        "signer_hex": "5349474e45525f4b45595f42"
+      },
+      {
+        "seq": 2,
+        "signer_hex": "5349474e45525f4b45595f43"
+      }
+    ],
+    "hole": {
+      "present_seqs": [
+        0,
+        2
+      ],
+      "first_hole_position": 1,
+      "note": "a deleted binding at seq 1 breaks contiguity at position 1."
+    },
+    "fork": {
+      "b_prime": {
+        "seq": 1,
+        "signer_hex": "5349474e45525f4b45595f58",
+        "prev_hex": "805b15a27ddec3fdb07e8e4b34adbc9969f429f5066f9f7c09fa5c1c0e211c515f6f46b446a9e5d80ba2f7085dd06fc5",
+        "body_hex": "a401756167656e742e62696c6c696e672e6578616d706c65024c5349474e45525f4b45595f580301045830805b15a27ddec3fdb07e8e4b34adbc9969f429f5066f9f7c09fa5c1c0e211c515f6f46b446a9e5d80ba2f7085dd06fc5",
+        "head_hex": "4aa75a04b7d991615b337590038c2f592d38967e23e6546dda2dbc2d68dd0665fa6fda775dbaca61d6303fcf836832ba"
+      },
+      "position": 1,
+      "note": "same name + seq 1, signer B vs signer X, both prev == head(binding 0) => fork at seq 1."
+    },
+    "big_seq": {
+      "seq_str": "72623859790382856",
+      "signer_hex": "5349474e45525f4b45595f41",
+      "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "body_hex": "a401756167656e742e62696c6c696e672e6578616d706c65024c5349474e45525f4b45595f41031b0102030405060708045830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "head_hex": "7b37b81fb42a01918a2ffdba51354c41522fc502396a34cd16bd02efc35c2e3aa6f315d93698353b7f5034edf4dfd1fd",
+      "id_hex": "20307b37b81fb42a01918a2ffdba51354c41522fc502396a34cd16bd02efc35c2e3aa6f315d93698353b7f5034edf4dfd1fd",
+      "note": "name-binding seq = 0x0102030405060708 (>2^53) round-trips byte-exact; carried as a string."
+    },
+    "minimal": {
+      "name_utf8": "",
+      "signer_hex": "",
+      "seq": 0,
+      "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "body_hex": "a4016002400300045830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "head_hex": "7d4310c231b293d4d9ceb5b21477c681f595c3d6edfeacd9091c1230bd555371b0cd02ceb90010f1cb3c9f437502a16b",
+      "id_hex": "20307d4310c231b293d4d9ceb5b21477c681f595c3d6edfeacd9091c1230bd555371b0cd02ceb90010f1cb3c9f437502a16b"
+    },
+    "keys_out_of_order": {
+      "canonical_binding_body_hex": "a401756167656e742e62696c6c696e672e6578616d706c65024c5349474e45525f4b45595f410300045830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "noncanonical_binding_body_hex": "a40458300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300024c5349474e45525f4b45595f4101756167656e742e62696c6c696e672e6578616d706c65",
+      "reject": "NonCanonical",
+      "note": "same content, keys emitted 4,3,2,1 (descending) \u2014 the strict decoder rejects NonCanonical."
+    },
+    "look_alike": {
+      "binding_body_hex": "a401756167656e742e62696c6c696e672e6578616d706c65024c5349474e45525f4b45595f410300045830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "transition_body_hex": "a601497461736b2d3030303102583220307aafcaffcd8274fb1e060e71e6ee8f3138fa715a4df135b2c0ce332c1c922d151eca3ca3643e901354a630a55fbc102f030004010500065830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "note": "a 4-field binding fed to ParseTransition and a 6-field transition fed to ParseNameBinding are both rejected."
+    }
+  },
+  "a2a": {
+    "states": {
+      "submitted": 0,
+      "working": 1,
+      "input_required": 2,
+      "auth_required": 3,
+      "completed": 4,
+      "canceled": 5,
+      "failed": 6,
+      "rejected": 7,
+      "start": 0,
+      "terminal": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "interrupted": [
+        2,
+        3
+      ]
+    },
+    "legal_edges": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        0,
+        4
+      ],
+      [
+        0,
+        5
+      ],
+      [
+        0,
+        6
+      ],
+      [
+        0,
+        7
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        1,
+        5
+      ],
+      [
+        1,
+        6
+      ],
+      [
+        1,
+        7
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        2,
+        6
+      ],
+      [
+        2,
+        7
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        3,
+        7
+      ]
+    ],
+    "illegal_edges": [
+      [
+        4,
+        1
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        7,
+        1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        0,
+        8
+      ]
+    ],
+    "card": {
+      "importer_hex": "494d504f525445525f49445f41",
+      "format": 1,
+      "foreign_hex": "7b2270726f746f636f6c56657273696f6e223a22302e322e35222c226e616d65223a2262696c6c696e672d6167656e74222c2275726c223a2268747470733a2f2f6167656e742e6578616d706c652f613261222c22736b696c6c73223a5b7b226964223a227375626d6974222c226e616d65223a225375626d697420696e766f696365227d2c7b226964223a22676574222c226e616d65223a2247657420737461747573227d5d7d",
+      "operations": [
+        {
+          "name": "submit",
+          "effect": 1,
+          "requires_approval": 1
+        },
+        {
+          "name": "get",
+          "effect": 0,
+          "requires_approval": 0
+        }
+      ],
+      "import_body_hex": "a4014d494d504f525445525f49445f4102010358a87b2270726f746f636f6c56657273696f6e223a22302e322e35222c226e616d65223a2262696c6c696e672d6167656e74222c2275726c223a2268747470733a2f2f6167656e742e6578616d706c652f613261222c22736b696c6c73223a5b7b226964223a227375626d6974222c226e616d65223a225375626d697420696e766f696365227d2c7b226964223a22676574222c226e616d65223a2247657420737461747573227d5d7d0482a301667375626d697402010301a3016367657402000300",
+      "card_id_hex": "20307aafcaffcd8274fb1e060e71e6ee8f3138fa715a4df135b2c0ce332c1c922d151eca3ca3643e901354a630a55fbc102f",
+      "note": "the A2A Agent Card import (C18, format a2a-agent-card); the task profile binds to this attestation's content-id (import.ID())."
+    },
+    "task_utf8": "task-0001",
+    "genesis_prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "transitions": [
+      {
+        "seq": 0,
+        "from": 0,
+        "to": 1,
+        "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "body_hex": "a601497461736b2d3030303102583220307aafcaffcd8274fb1e060e71e6ee8f3138fa715a4df135b2c0ce332c1c922d151eca3ca3643e901354a630a55fbc102f030004010500065830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "head_hex": "f6d76d10d358e5001d060d5e8ff5ae31f8677fe935b5dcbdf47a8f897b8e0a63d6b74c27946a0181cb6699211eff6380",
+        "id_hex": "2030f6d76d10d358e5001d060d5e8ff5ae31f8677fe935b5dcbdf47a8f897b8e0a63d6b74c27946a0181cb6699211eff6380"
+      },
+      {
+        "seq": 1,
+        "from": 1,
+        "to": 2,
+        "prev_hex": "f6d76d10d358e5001d060d5e8ff5ae31f8677fe935b5dcbdf47a8f897b8e0a63d6b74c27946a0181cb6699211eff6380",
+        "body_hex": "a601497461736b2d3030303102583220307aafcaffcd8274fb1e060e71e6ee8f3138fa715a4df135b2c0ce332c1c922d151eca3ca3643e901354a630a55fbc102f030104020501065830f6d76d10d358e5001d060d5e8ff5ae31f8677fe935b5dcbdf47a8f897b8e0a63d6b74c27946a0181cb6699211eff6380",
+        "head_hex": "ee37bf4a35222f93172b03f2635f292212dc56144ad8e584a1e2cf77d268c979a7ae553339be789f75c6506c56a2e7af",
+        "id_hex": "2030ee37bf4a35222f93172b03f2635f292212dc56144ad8e584a1e2cf77d268c979a7ae553339be789f75c6506c56a2e7af"
+      },
+      {
+        "seq": 2,
+        "from": 2,
+        "to": 1,
+        "prev_hex": "ee37bf4a35222f93172b03f2635f292212dc56144ad8e584a1e2cf77d268c979a7ae553339be789f75c6506c56a2e7af",
+        "body_hex": "a601497461736b2d3030303102583220307aafcaffcd8274fb1e060e71e6ee8f3138fa715a4df135b2c0ce332c1c922d151eca3ca3643e901354a630a55fbc102f030204010502065830ee37bf4a35222f93172b03f2635f292212dc56144ad8e584a1e2cf77d268c979a7ae553339be789f75c6506c56a2e7af",
+        "head_hex": "650108e80f2b6b58906aa8610c84c68aba0d0b764281b27b23b0bd35b59fb5d1a9b06253220abeef358d646055b5427f",
+        "id_hex": "2030650108e80f2b6b58906aa8610c84c68aba0d0b764281b27b23b0bd35b59fb5d1a9b06253220abeef358d646055b5427f"
+      },
+      {
+        "seq": 3,
+        "from": 1,
+        "to": 4,
+        "prev_hex": "650108e80f2b6b58906aa8610c84c68aba0d0b764281b27b23b0bd35b59fb5d1a9b06253220abeef358d646055b5427f",
+        "body_hex": "a601497461736b2d3030303102583220307aafcaffcd8274fb1e060e71e6ee8f3138fa715a4df135b2c0ce332c1c922d151eca3ca3643e901354a630a55fbc102f030104040503065830650108e80f2b6b58906aa8610c84c68aba0d0b764281b27b23b0bd35b59fb5d1a9b06253220abeef358d646055b5427f",
+        "head_hex": "d75c968eb8fc0cdee2c02fa5d00306bc94796428a65fd8ecd3be183687cc54a862e03793995cdee44d6ef2386c4d1b63",
+        "id_hex": "2030d75c968eb8fc0cdee2c02fa5d00306bc94796428a65fd8ecd3be183687cc54a862e03793995cdee44d6ef2386c4d1b63"
+      }
+    ],
+    "gap": {
+      "present_seqs": [
+        0,
+        2
+      ],
+      "first_gap_position": 1,
+      "note": "a deleted transition at seq 1 breaks contiguity at position 1."
+    },
+    "foreign_card_id_hex": "2030aaea4dcc81e369bbeffa1e98fc84612d734b6651c584d2e2ada7d716e945658ccf283ab083f946183cb4282c61d9e6f5",
+    "big_seq": {
+      "seq_str": "72623859790382856",
+      "from": 0,
+      "to": 1,
+      "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "body_hex": "a601497461736b2d3030303102583220307aafcaffcd8274fb1e060e71e6ee8f3138fa715a4df135b2c0ce332c1c922d151eca3ca3643e901354a630a55fbc102f03000401051b0102030405060708065830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "head_hex": "c786e0c0f53fe215c8feac97bb43f92bc6b30bf904133843347f1ed8f485db83f57a97d7a4a00cae77840a9d62c8c62c",
+      "id_hex": "2030c786e0c0f53fe215c8feac97bb43f92bc6b30bf904133843347f1ed8f485db83f57a97d7a4a00cae77840a9d62c8c62c",
+      "note": "task-transition seq = 0x0102030405060708 (>2^53) round-trips byte-exact; carried as a string."
+    },
+    "minimal": {
+      "task_hex": "",
+      "card_hex": "",
+      "from": 0,
+      "to": 1,
+      "seq": 0,
+      "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "body_hex": "a601400240030004010500065830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "head_hex": "4c3f8a69f9f3bd3d26f6c3a4fb197cb6095849ec962cf6e2ea59de7645807fb6ebc8ef9ad554007e965df33447acaa28",
+      "id_hex": "20304c3f8a69f9f3bd3d26f6c3a4fb197cb6095849ec962cf6e2ea59de7645807fb6ebc8ef9ad554007e965df33447acaa28"
+    }
+  }
+}

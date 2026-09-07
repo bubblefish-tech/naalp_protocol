@@ -26,6 +26,30 @@
       "name": "Consume",
       "effect": 2,
       "variable": false
+    },
+    {
+      "code": 4,
+      "name": "GatewayDecision",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 5,
+      "name": "DecisionRecord",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 6,
+      "name": "EgressAttestation",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 7,
+      "name": "HazardAuthorization",
+      "effect": 2,
+      "variable": false
     }
   ],
   "states": [

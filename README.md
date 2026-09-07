@@ -2,14 +2,15 @@
 
 **N-AALP gives every agentic application object a signed, deterministic, post-quantum, offline-verifiable meaning — identity, effect, approval, and audit — over any transport.** N-AALP sits *above* the transport and makes the **object, not the connection, the unit of security and governance**: every message is a deterministically encoded CBOR structure signed with COSE that carries, under one signature, its content identity, its originating signer, a closed effect label that is an *authorization input rather than a hint*, optional approval and audit bindings, and its causal derivation — verifiable offline, on any wire.
 
-This repository is the **public reference home** of N-AALP: the byte-level CDDL wire authority, ten reference implementations, a language-agnostic conformance corpus assembled from independent (non-circular) oracles, a cross-implementation test harness, machine-readable code-point registries, and the Architecture Decision Records that capture the load-bearing design choices. The Internet-Draft itself is published through the IETF [Independent Submission stream](https://www.rfc-editor.org/about/independent/). N-AALP is developed as its **own artifact** — consuming products vendor a reference implementation and pin the conformance corpus from here; they do not fork the protocol.
+This repository is the **public reference home** of N-AALP: the Internet-Draft (whose Appendix A holds the normative CDDL, mirrored as `spec/naalp-draft-01.cddl`), ten reference implementations, a language-agnostic conformance corpus assembled from independent (non-circular) oracles, a cross-implementation test harness, machine-readable code-point registries, and the durable, per-decision record of *how the protocol was designed*. N-AALP is developed as its **own artifact** — consuming products vendor a reference implementation and pin the conformance corpus from here; they do not fork the protocol. Design, rationale, and conformance authority live in one place, with one history.
 
 | | |
 |---|---|
-| **Specification** | Internet-Draft `draft-bubblefish-naalp-00` (IETF Independent Submission stream, Informational); byte-level wire authority [`spec/naalp-draft-00.cddl`](spec/naalp-draft-00.cddl) |
+| **Specification** | [`draft-bubblefish-naalp-01`](ietf/draft-bubblefish-naalp-01.md) (Internet-Draft, Independent Submission stream, Informational) |
 | **License** | [Apache-2.0](LICENSE.md) (repository code + original content); the Internet-Draft additionally under IETF Trust BCP 78 |
 | **Reference implementations** | 10 languages (Go, Rust, Python, TypeScript, C#, Swift, Java, Kotlin, PHP, Ruby) |
-| **Conformance** | 239-case op-replay corpus (byte-identical Go == Rust == oracle) + a cross-language deterministic-ML-DSA consensus gate; every expected value anchored to an RFC / FIPS / NIST vector |
+| **Adoption ecosystem** | 22 integration packages (framework hooks, MCP/A2A bridges, governance, verification, tooling) in [`ecosystem/`](ecosystem/) |
+| **Conformance** | 565-case op-replay corpus (byte-identical Go == Rust == oracle) + a cross-language deterministic-ML-DSA consensus gate; every expected value anchored to an RFC / FIPS / NIST vector |
 
 ---
 
@@ -17,8 +18,8 @@ This repository is the **public reference home** of N-AALP: the byte-level CDDL 
 
 | Item | State |
 |---|---|
-| Specification | `draft-bubblefish-naalp-00` (Internet-Draft, Independent Submission stream, Informational) |
-| Draft | draft-00 — pre-adoption, **no working-group consensus claimed** (Independent Submission, honest single-maintainer) |
+| Specification | `draft-bubblefish-naalp-01` (Internet-Draft, Independent Submission stream, Informational) |
+| Draft | draft-01 — pre-adoption, **no working-group consensus claimed** (Independent Submission, honest single-maintainer) |
 | IETF stream | Independent Submission (ISE), Informational category |
 | Substrate | N-PAMP (`draft-bubblefish-npamp-01`) — N-AALP is the application layer N-PAMP carries; N-AALP also rides QUIC, WebSocket, and HTTP |
 | License | Apache-2.0 (code) + IETF Trust BCP 78 (draft) |
@@ -33,8 +34,8 @@ N-AALP is not a whitepaper with aspirational code. Every claim in this repositor
 - **Post-quantum by default.** Objects are signed with ML-DSA-65 / ML-DSA-87 ([FIPS 204](https://csrc.nist.gov/pubs/fips/204/final), deterministic `rnd = 0`), with an optional Ed25519 ([RFC 8032](https://www.rfc-editor.org/rfc/rfc8032)) hybrid leg. Long-lived records — receipts, approvals, audit chains — are safe against store-now-verify-later forgery.
 - **Offline-verifiable, self-certifying identity.** The signer id is a pure function of the public key (multiformats PeerHandle form); the content id is `multihash(0x20, SHA-384(body))`. No directory, no online lookup, no trusted intermediary is needed to verify an object.
 - **Two implementations, byte-identical.** `impl/go` and `impl/rust` produce **byte-identical** deterministic CBOR, COSE signed input, signatures, and digests for identical logical input. The shared-corpus test asserts Go == Rust == oracle bytes — divergence fails CI (see [ADR-0006](docs/adr/0006-two-implementation-byte-parity.md)).
-- **Test vectors anchored to outside authorities, not to ourselves.** The 239-case conformance corpus is assembled by independent Python oracles in [`tools/`](tools/); every expected value traces to an RFC / FIPS / NIST vector or a from-scratch byte constructor — **never** to an implementation under test (non-circular). Because the expected answers come from independent standards, a bug shared across implementations cannot silently pass.
-- **Seven-language ML-DSA consensus.** Deterministic ML-DSA COSE_Sign1 is asserted byte-identical across **seven** languages (Go, Rust, Python, TypeScript, Java, Kotlin, Ruby) by a cross-language consensus gate ([`tools/crypto_consensus.py`](tools/crypto_consensus.py)). PHP and Swift, whose ecosystems lack a deterministic ML-DSA seed-keygen path, grade every non-crypto op plus Ed25519 and honestly skip-track the ML-DSA leg — recorded, never green-washed.
+- **Test vectors anchored to outside authorities, not to ourselves.** The 565-case conformance corpus is assembled by independent Python oracles in [`tools/`](tools/); every expected value traces to an RFC / FIPS / NIST vector or a from-scratch byte constructor — **never** to an implementation under test (non-circular). Because the expected answers come from independent standards, a bug shared across implementations cannot silently pass.
+- **Ten-language ML-DSA consensus.** Deterministic ML-DSA COSE_Sign1 is asserted byte-identical across **all ten** reference implementations by a cross-language consensus gate ([`tools/crypto_consensus.py`](tools/crypto_consensus.py)) — every port implements FIPS 204 deterministic (`rnd = 0`) signing. PHP and Ruby reach ML-DSA through the platform OpenSSL (>= 3.5) and skip-track gracefully on an older OpenSSL — recorded, never green-washed.
 - **A documented decision history.** Six Architecture Decision Records in [`docs/adr/`](docs/adr/) record why the object — not the connection — is the unit of security, why the protocol is post-quantum-first, why the effect label is an authorization input, and why carriage is by class. Rationale is preserved, not lost.
 - **CI that runs all of it on every push and pull request.** [`.github/workflows/conformance.yml`](.github/workflows/conformance.yml) grades the corpus through each SDK adapter, asserts Go == Rust byte parity, machine-validates the CDDL, runs the registry-drift gate, and asserts cross-language ML-DSA byte-parity.
 
@@ -47,7 +48,7 @@ Rigor and adoption-readiness in the same repository: the protocol is specified l
 - **A signed object envelope.** Every N-AALP object is a deterministic-CBOR structure carrying, under one COSE_Sign1 signature: its content id, its signer id, the channel and object `kind`, a `tier`, a closed **effect** label, and optional approval, audit, and causal-derivation bindings. The identical signed object is carried — with identical object-level guarantees — over N-PAMP, QUIC, WebSocket, or HTTP.
 - **Effect as authorization, not intent.** A closed four-value effect — `read_only`, `idempotent_write`, `non_idempotent_write`, `destructive` — is checked against a granted capability **before** any state change; an unrecognized effect fails closed to `destructive`. Absence on a state-mutating carried request is treated as `destructive`.
 - **Single-use approval and an append-only audit chain.** Approvals are content-addressed and consumed once through a single-use ledger append; receipts form an append-only chain an auditor can walk, with signed equivocation (fork) proofs.
-- **Twenty application channels** (`0x0000`–`0x0013`), **65 object kinds** total — one application surface for each of N-PAMP's twenty channels, each a thin body over the one spine (envelope, encoding, crypto, identity, effect, approval, audit, delivery).
+- **Twenty application channels** (`0x0000`–`0x0013`), **75 object kinds** total — one application surface for each of N-PAMP's twenty channels, each a thin body over the one spine (envelope, encoding, crypto, identity, effect, approval, audit, delivery).
 - **Foreign-protocol carriage by class.** N-AALP carries other agent protocols (MCP, A2A, and more) octet-exact by carriage **class** inside a governed signed envelope — six classes plus an OPAQUE catch-all — so a bridged payload inherits N-AALP's identity, effect, approval, and audit without re-encoding.
 - **Tiered, baseline-frozen surfaces.** Every channel has a complete frozen baseline surface no edition may thin; higher tiers add capability under the same envelope, effect vocabulary, identity model, and audit chain. One codebase; editions license tiers.
 
@@ -55,7 +56,7 @@ N-AALP is deliberately scoped as an **application layer**. Transport concerns �
 
 ### The 20 channels
 
-Every channel is a thin surface over the one spine, adding only `kind` codes and their bodies. The code points are in [`vectors/registry/channels.csv`](vectors/registry/channels.csv); the design rationale is in the [Architecture Decision Records](docs/adr/).
+Every channel is a thin surface over the one spine, adding only `kind` codes and their bodies. Per-channel documentation lives in [`docs/spec/channels.md`](docs/spec/channels.md); the code points are in [`vectors/registry/channels.csv`](vectors/registry/channels.csv).
 
 | Code | Channel | Code | Channel |
 |---|---|---|---|
@@ -78,22 +79,22 @@ Ten idiomatic reference implementations live under [`impl/`](impl/), co-located 
 
 | Language | Source | Quickstart | Crypto | Conformance adapter |
 |---|---|---|---|---|
-| Go *(primary reference)* | [`impl/go/`](impl/go/) | [Quickstart](docs/implementations/quickstart-go.md) | ML-DSA-65/-87 + Ed25519 | [`harness/adapters/go/`](harness/adapters/go/) |
-| Rust *(primary reference)* | [`impl/rust/`](impl/rust/) | [Quickstart](docs/implementations/quickstart-rust.md) | ML-DSA-65/-87 + Ed25519 | [`harness/adapters/rust/`](harness/adapters/rust/) |
+| Go *(primary reference)* | [`impl/go/`](impl/go/) | [QUICKSTART](impl/go/QUICKSTART.md) | ML-DSA-65/-87 + Ed25519 | [`harness/adapters/go/`](harness/adapters/go/) |
+| Rust *(primary reference)* | [`impl/rust/`](impl/rust/) | [QUICKSTART](impl/rust/QUICKSTART.md) | ML-DSA-65/-87 + Ed25519 | [`harness/adapters/rust/`](harness/adapters/rust/) |
 | Python | [`impl/python/`](impl/python/) | [QUICKSTART](impl/python/QUICKSTART.md) | ML-DSA-65/-87 + Ed25519 | [`harness/adapters/python/`](harness/adapters/python/) |
 | TypeScript | [`impl/typescript/`](impl/typescript/) | [QUICKSTART](impl/typescript/QUICKSTART.md) | ML-DSA-65/-87 + Ed25519 | [`harness/adapters/typescript/`](harness/adapters/typescript/) |
 | Java | [`impl/java/`](impl/java/) | [QUICKSTART](impl/java/QUICKSTART.md) | ML-DSA-65/-87 + Ed25519 | [`harness/adapters/java/`](harness/adapters/java/) |
 | Kotlin | [`impl/kotlin/`](impl/kotlin/) | [source](impl/kotlin/) | ML-DSA-65/-87 + Ed25519 | [`harness/adapters/kotlin/`](harness/adapters/kotlin/) |
 | Ruby | [`impl/ruby/`](impl/ruby/) | [QUICKSTART](impl/ruby/QUICKSTART.md) | ML-DSA-65/-87 + Ed25519 | [`harness/adapters/ruby/`](harness/adapters/ruby/) |
-| C# | [`impl/csharp/`](impl/csharp/) | [source](impl/csharp/) | authored, CI-graded | [`harness/adapters/csharp/`](harness/adapters/csharp/) |
-| PHP *(pure-only)* | [`impl/php/`](impl/php/) | [QUICKSTART](impl/php/QUICKSTART.md) | Ed25519 (ML-DSA skip-tracked) | [`harness/adapters/php/`](harness/adapters/php/) |
-| Swift *(pure-only)* | [`impl/swift/`](impl/swift/) | [source](impl/swift/) | Ed25519 (ML-DSA skip-tracked) | [`harness/adapters/swift_adapter/`](harness/adapters/swift_adapter/) |
+| C# | [`impl/csharp/`](impl/csharp/) | [source](impl/csharp/) | ML-DSA-65/-87 + Ed25519 (CI-graded) | [`harness/adapters/csharp/`](harness/adapters/csharp/) |
+| PHP | [`impl/php/`](impl/php/) | [QUICKSTART](impl/php/QUICKSTART.md) | ML-DSA-65/-87 + Ed25519 (via OpenSSL >= 3.5) | [`harness/adapters/php/`](harness/adapters/php/) |
+| Swift | [`impl/swift/`](impl/swift/) | [source](impl/swift/) | ML-DSA-65/-87 + Ed25519 | [`harness/adapters/swift_adapter/`](harness/adapters/swift_adapter/) |
 
-The Go module is `github.com/bubblefish-tech/naalp_protocol/impl/go`; the Rust crate is `naalp`. PHP and Swift are marked **pure-only**: their ecosystems lack a deterministic ML-DSA seed-keygen path, so they grade every non-crypto op plus Ed25519 and return an honest `skipped` for the ML-DSA ops (never a false green). The per-language ML-DSA library and its status are recorded in [`harness/adapters.json`](harness/adapters.json).
+The Go module is `github.com/bubblefish-tech/naalp_protocol/impl/go`; the Rust crate is `naalp`. All ten ports implement deterministic (FIPS 204 `rnd = 0`) ML-DSA-65/-87; PHP and Ruby reach it through the platform OpenSSL (>= 3.5) and return an honest `skipped` only where the runtime OpenSSL is older (never a false green). The per-language ML-DSA library and its status are recorded in [`harness/adapters.json`](harness/adapters.json).
 
 ### What every SDK gives you
 
-The exact symbol names differ per language (see each Quickstart), but every port implements the same spine, verified against the shared 239-case corpus in [`vectors/conformance/`](vectors/conformance/):
+The exact symbol names differ per language (see each Quickstart), but every port implements the same spine, verified against the shared 565-case corpus in [`vectors/conformance/`](vectors/conformance/):
 
 - **Deterministic CBOR codec** — canonical encode / decode with non-canonical rejection (RFC 8949 §4.2.1).
 - **Object identity** — `content.id` = `multihash(0x20, SHA-384(body))`; `signer.id` in multiformats PeerHandle form (a pure function of the public key).
@@ -140,7 +141,7 @@ The adapter contract covers 31 operations — the pure spine ops (deterministic 
 
 ## 3. Standards-anchored test vectors
 
-The [`vectors/`](vectors/) tree is the **canonical** conformance oracle: the 239-case op-replay corpus is assembled by the independent Python oracles in [`tools/`](tools/) from per-family sources. Crucially, the vectors are derived from the underlying standards — **not** generated by the implementation they grade.
+The [`vectors/`](vectors/) tree is the **canonical** conformance oracle: the 565-case op-replay corpus is assembled by the independent Python oracles in [`tools/`](tools/) from per-family sources. Crucially, the vectors are derived from the underlying standards — **not** generated by the implementation they grade.
 
 | Layer | What it pins | Standards anchor |
 |---|---|---|
@@ -151,7 +152,7 @@ The [`vectors/`](vectors/) tree is the **canonical** conformance oracle: the 239
 | Ed25519 | signature over a message | RFC 8032 |
 | Effect / approval / audit / delivery / stream / carriage / channels / federation | the spine construction bodies | from-scratch byte constructors in `tools/*_oracle.py` |
 
-Because every expected answer traces to an external standard or an independent byte constructor, no value is generated by an N-AALP implementation, and a shared implementation bug cannot pass the suite. The one exception — the deterministic ML-DSA signature, for which no external KAT gives the full COSE_Sign1 — is graded by the cross-language **consensus** gate ([`tools/crypto_consensus.py`](tools/crypto_consensus.py)), which asserts the seven crypto-capable SDKs agree byte-for-byte. Regenerate any oracle with `python tools/<name>_oracle.py`.
+Because every expected answer traces to an external standard or an independent byte constructor, no value is generated by an N-AALP implementation, and a shared implementation bug cannot pass the suite. The one exception — the deterministic ML-DSA signature, for which no external KAT gives the full COSE_Sign1 — is graded by the cross-language **consensus** gate ([`tools/crypto_consensus.py`](tools/crypto_consensus.py)), which asserts the ten reference implementations agree byte-for-byte. Regenerate any oracle with `python tools/<name>_oracle.py`.
 
 ---
 
@@ -161,7 +162,7 @@ Four CSV registries in [`vectors/registry/`](vectors/registry/) carry the public
 
 | Registry | Contents |
 |---|---|
-| [`channels.csv`](vectors/registry/channels.csv) | The 20 channels and their 65 object kinds — channel id, kind code, kind name, effect, variable-effect flag |
+| [`channels.csv`](vectors/registry/channels.csv) | The 20 channels and their 75 object kinds — channel id, kind code, kind name, effect, variable-effect flag |
 | [`signatures.csv`](vectors/registry/signatures.csv) | COSE signature algorithms — `ML-DSA-65` (`-49`), `ML-DSA-87` (`-50`), `Ed25519` (`-19`), `SLH-DSA` (reserved) with NIST level and status |
 | [`multicodec.csv`](vectors/registry/multicodec.csv) | Multicodec assignments for the multihash and signer-id key forms (`sha2-256`, `ed25519-pub`, `mldsa-65-pub`, `mldsa-87-pub`) |
 | [`protocols.csv`](vectors/registry/protocols.csv) | Bridge protocol-id assignments and their carriage class — `MCP`, `A2A` (JSONRPC), `HTTP`, `WebSocket` (STREAM) |
@@ -181,7 +182,64 @@ N-AALP's Bridge channel (`0x000D`) carries other agent protocols as first-class,
 | `DOC` | capability & schema documents |
 | `OPAQUE` | any payload whose bytes are carried verbatim under the envelope, with no class-specific binding |
 
-The `OPAQUE` class is the catch-all: it lets N-AALP wrap a payload whose protocol has no dedicated class yet in the same signed, effect-labelled, auditable envelope, so nothing falls outside governance. Thin per-protocol mappings beyond the assigned four are added as registry entries, not new envelope machinery. The carriage-by-class rationale is recorded in [ADR-0005](docs/adr/0005-carriage-by-class.md); the Bridge channel code points are in [`vectors/registry/protocols.csv`](vectors/registry/protocols.csv).
+The `OPAQUE` class is the catch-all: it lets N-AALP wrap a payload whose protocol has no dedicated class yet in the same signed, effect-labelled, auditable envelope, so nothing falls outside governance. Thin per-protocol mappings beyond the assigned four are added as registry entries, not new envelope machinery. The bridge design is specified in the Internet-Draft (Section 13); the Bridge channel surface is documented at [`docs/channels/bridge.md`](docs/channels/bridge.md).
+
+---
+
+## Adoption ecosystem
+
+Beyond the ten reference SDKs, N-AALP ships a set of ready-to-adopt integration packages in [`ecosystem/`](ecosystem/) — framework hooks, protocol bridges, governance and policy integrations, verification primitives, and developer tooling. Each is a thin, independently-tested adapter over the reference SDKs, so an existing agent stack gains signed, effect-checked, offline-verifiable objects **without re-architecting**.
+
+The bridges and hooks deploy as a **governance sidecar / gateway**: run one in front of an MCP or A2A server (or as an in-process framework hook), and every tool call, agent message, and result is wrapped in a signed N-AALP envelope — content-identified, effect-labelled, approval- and audit-bound — before it reaches the model or the tool. The application is unchanged; governance moves to the edge. (Transport-level ambient / per-node deployment is the substrate's concern — see N-PAMP.)
+
+### Framework hooks & agent patterns
+
+| Package | What it does |
+|---|---|
+| [`naalp-mcp-hook`](ecosystem/naalp-mcp-hook/) | MCP framework-hook adapter — intercept MCP tool calls in-process |
+| [`naalp-a2a-hook`](ecosystem/naalp-a2a-hook/) | A2A framework-hook adapter — intercept A2A agent messages in-process |
+| [`naalp-adk-plugin`](ecosystem/naalp-adk-plugin/) | Agent Development Kit plugin — N-AALP governance for ADK apps |
+| [`naalp-react`](ecosystem/naalp-react/) | ReAct bridge — sign and audit the reason/act loop |
+| [`naalp-plan`](ecosystem/naalp-plan/) | Plan-and-Execute orchestrator with signed plan/step objects |
+| [`naalp-multiagent`](ecosystem/naalp-multiagent/) | Multi-agent interaction shapes over governed objects |
+| [`naalp-agent-go`](ecosystem/naalp-agent-go/) | Go agent-pattern SDK (ReAct, plan, multi-agent, mixed-mode) |
+
+### Protocol bridges (sidecar / gateway)
+
+| Package | What it does |
+|---|---|
+| [`naalp-mcp-bridge`](ecosystem/naalp-mcp-bridge/) | MCP tool-integration bridge — carry MCP octet-exact under a governed envelope |
+| [`naalp-a2a-bridge`](ecosystem/naalp-a2a-bridge/) | A2A agent-coordination bridge — carry A2A octet-exact under a governed envelope |
+| [`naalp-mixed-mode`](ecosystem/naalp-mixed-mode/) | Mixed-mode HTTP discrimination — accept legacy JSON and strict N-AALP on one endpoint, fail-closed to strict |
+
+### Governance, policy and observability
+
+| Package | What it does |
+|---|---|
+| [`naalp-opa-policy`](ecosystem/naalp-opa-policy/) | OPA / Rego policy-enforcement integration over N-AALP objects |
+| [`naalp-otel`](ecosystem/naalp-otel/) | OpenTelemetry observability module for N-AALP flows |
+| [`naalp-hitl`](ecosystem/naalp-hitl/) | Human-in-the-loop interceptor gating effecting actions on approval |
+| [`naalp-governance-verify`](ecosystem/naalp-governance-verify/) | Offline mixed-kind receipt-chain verifier and replay |
+| [`naalp-governance-portability`](ecosystem/naalp-governance-portability/) | Portability conformance corpus + harness verifying the framework adapters (ADK/A2A/MCP) agree |
+
+### Verification and evidence primitives
+
+| Package | What it does |
+|---|---|
+| [`naalp-verify-at-use`](ecosystem/naalp-verify-at-use/) | Verify-at-use guard — re-verify an object at the point of use |
+| [`naalp-fingerprint-cache`](ecosystem/naalp-fingerprint-cache/) | Signer-id fingerprint cache for fast repeat verification |
+| [`naalp-evidentiality`](ecosystem/naalp-evidentiality/) | Evidentiality primitive — bind supporting evidence to an object |
+| [`naalp-bundle`](ecosystem/naalp-bundle/) | Offline proof bundle — package an object with its verification inputs |
+
+### Developer tooling
+
+| Package | What it does |
+|---|---|
+| [`naalp-codec`](ecosystem/naalp-codec/) | Deterministic-CBOR codec helpers |
+| [`naalp-schemagen`](ecosystem/naalp-schemagen/) | Schema generation for N-AALP object kinds |
+| [`naalp-validator`](ecosystem/naalp-validator/) | Object validator (structural and effect checks) |
+
+See [`ecosystem/`](ecosystem/) for per-package sources, examples, and tests.
 
 ---
 
@@ -189,14 +247,17 @@ The `OPAQUE` class is the catch-all: it lets N-AALP wrap a payload whose protoco
 
 | Path | Holds |
 |------|-------|
-| [`spec/naalp-draft-00.cddl`](spec/naalp-draft-00.cddl) | The byte-level wire authority (CDDL, RFC 8610) — machine-validated in CI. The prose specification is the Internet-Draft, published via the IETF Independent Submission stream. |
+| [`ietf/draft-bubblefish-naalp-01.md`](ietf/draft-bubblefish-naalp-01.md) | The Internet-Draft (single source of truth; kramdown-rfc source) + generated `.xml` / `.txt` / `.html` |
+| [`ietf/IANA.md`](ietf/IANA.md) | The IANA registration package: `application/vnd.bubblefish.naalp+cbor` media type + five N-AALP registries |
+| [`spec/naalp-draft-01.cddl`](spec/naalp-draft-01.cddl) | Byte-identical mirror of the normative CDDL in the draft's Appendix A (CDDL, RFC 8610) — machine-validated in CI |
 | [`impl/`](impl/) | 10 multi-language reference implementations (Go + Rust primary, byte-identical) |
+| [`ecosystem/`](ecosystem/) | 22 adoption packages: framework hooks, MCP/A2A bridges, governance, verification, and tooling |
 | [`harness/`](harness/) | The cross-implementation conformance runner (`naalp-conform`) + 10 language adapters + the contract ([`INSTRUCTIONS.md`](harness/INSTRUCTIONS.md)) |
 | [`tools/`](tools/) | The independent Python oracles that build the corpus + the cross-language ML-DSA consensus gate |
-| [`vectors/`](vectors/) | The 239-case conformance corpus + per-family vectors |
+| [`vectors/`](vectors/) | The 565-case conformance corpus + per-family vectors |
 | [`vectors/registry/`](vectors/registry/) | 4 machine-readable code-point registries (CSV) |
 | [`scripts/`](scripts/) | Gate scripts: [`verify.sh`](scripts/verify.sh) / [`verify.ps1`](scripts/verify.ps1), [`cddl_check.sh`](scripts/cddl_check.sh), [`registry_drift.py`](scripts/registry_drift.py) |
-| [`docs/`](docs/) | The MkDocs Material documentation site, including [`docs/adr/`](docs/adr/) — 6 Architecture Decision Records recording the load-bearing design rationale |
+| [`docs/`](docs/) | The MkDocs Material documentation site, including [`docs/adr/`](docs/adr/) — 6 Architecture Decision Records |
 | [`.github/workflows/conformance.yml`](.github/workflows/conformance.yml) | The conformance CI workflow |
 
 ---
@@ -207,24 +268,36 @@ The `OPAQUE` class is the catch-all: it lets N-AALP wrap a payload whose protoco
 
 | Job | Gate |
 |---|---|
-| `conformance` | The full harness ([`harness/run.sh`](harness/run.sh)): the `naalp-conform` runner grades the 239-case corpus through the SDK adapters, the CDDL is machine-validated (Bormann `cddl` tool, RFC 8610), and the registry-drift gate runs. Any MUST failure exits non-zero. |
+| `conformance` | The full harness ([`harness/run.sh`](harness/run.sh)): the `naalp-conform` runner grades the 565-case corpus through the SDK adapters, the CDDL is machine-validated (Bormann `cddl` tool, RFC 8610), and the registry-drift gate runs. Any MUST failure exits non-zero. |
 | `parity` | [`scripts/verify.sh`](scripts/verify.sh) asserts Go and Rust produce **byte-identical** COSE_Sign1 and object-envelope bytes for the same key + payload (R-16.2), and checks for vector drift. |
-| `cross-language` | [`harness/cross_language.sh`](harness/cross_language.sh) builds every adapter whose toolchain is present, grades the corpus through each, and asserts deterministic ML-DSA COSE_Sign1 is byte-identical across the crypto-capable SDKs (a language without a deterministic ML-DSA library grades its pure ops and tracks the crypto leg as an honest SKIP). |
+| `cross-language` | [`harness/cross_language.sh`](harness/cross_language.sh) builds every adapter whose toolchain is present, grades the corpus through each, and asserts deterministic ML-DSA COSE_Sign1 is byte-identical across all ten reference implementations (PHP and Ruby skip-track the ML-DSA leg only where the runtime OpenSSL is older than 3.5). |
 
 ---
 
 ## Reading the specification
 
-The normative prose specification is the Internet-Draft `draft-bubblefish-naalp-00`, published through the IETF [Independent Submission stream](https://www.rfc-editor.org/about/independent/) (Informational).
+The normative specification is the Internet-Draft in this repository:
 
-The byte-level wire authority is the CDDL in [`spec/naalp-draft-00.cddl`](spec/naalp-draft-00.cddl) — maintained with the reference implementations and machine-validated in CI (Bormann `cddl` tool, RFC 8610).
+- [`ietf/draft-bubblefish-naalp-01.md`](ietf/draft-bubblefish-naalp-01.md) — kramdown-rfc source; the build emits `draft-bubblefish-naalp-01` in `.xml` / `.txt` / `.html`.
+
+Render it locally with the IETF author tools:
+
+```sh
+gem install kramdown-rfc
+pip install xml2rfc
+cd ietf
+kramdown-rfc draft-bubblefish-naalp-01.md > draft-bubblefish-naalp-01.xml
+xml2rfc draft-bubblefish-naalp-01.xml --text --html
+```
+
+…or use the hosted renderer at <https://author-tools.ietf.org/>. The normative CDDL is inlined in Appendix A of the draft; [`spec/naalp-draft-01.cddl`](spec/naalp-draft-01.cddl) is a byte-identical mirror.
 
 ---
 
 ## Getting started
 
-1. **Read the object model** — the wire grammar in [`spec/naalp-draft-00.cddl`](spec/naalp-draft-00.cddl) for the signed envelope, deterministic encoding, crypto profiles, and the effect vocabulary; the [ADRs](docs/adr/) for the rationale.
-2. **Skim the channels** — the channel table above and [`vectors/registry/channels.csv`](vectors/registry/channels.csv) for the twenty application surfaces and their object kinds.
+1. **Read the object model** — the [Internet-Draft](ietf/draft-bubblefish-naalp-01.md) Sections 2-6 (or [`docs/spec/object-model.md`](docs/spec/object-model.md)) for the signed envelope, deterministic encoding, crypto profiles, and the effect vocabulary.
+2. **Skim the channels** — [`docs/spec/channels.md`](docs/spec/channels.md) for the twenty application surfaces and their object kinds.
 3. **Pick a language** — start from that implementation's Quickstart (table above); Go and Rust are the primary references.
 4. **Prove conformance** — run your build against the `naalp-conform` harness with the corpus in [`vectors/conformance/`](vectors/conformance/).
 
@@ -238,17 +311,17 @@ This repository is the **open** N-AALP reference surface: the spine (determinist
 
 ## IANA registrations
 
-The registrations are stated in the IANA Considerations of the Internet-Draft, and mirrored by the machine-readable registries in [`vectors/registry/`](vectors/registry/):
+The registration package is [`ietf/IANA.md`](ietf/IANA.md); it is also stated in the IANA Considerations of the Internet-Draft:
 
-- **Media type `application/naalp+cbor`** ([RFC 6838](https://www.rfc-editor.org/rfc/rfc6838) / BCP 13) — the object encoding.
-- **Five new N-AALP registries** — under Specification Required / Expert Review / Experimental / Private Use policies ([RFC 8126](https://www.rfc-editor.org/rfc/rfc8126)), with Designated-Expert guidance, mirrored by the machine-readable CSVs in [`vectors/registry/`](vectors/registry/).
+- **Media type `application/vnd.bubblefish.naalp+cbor`** ([RFC 6838](https://www.rfc-editor.org/rfc/rfc6838) / BCP 13) — the object encoding.
+- **Eight new N-AALP registries** — under RFC Required (First Come First Served) / Experimental / Private Use policies ([RFC 8126](https://www.rfc-editor.org/rfc/rfc8126) §4.7), mirrored by the machine-readable CSVs in [`vectors/registry/`](vectors/registry/). The Independent Submission stream appoints no Designated Expert, so RFC Required is the strictest policy available for a registry the draft creates.
 
 ---
 
 ## Versioning
 
-- **Draft revision** — the `-NN` counter at the end of the draft name advances with every published revision (`draft-bubblefish-naalp-00`, `-01`, …). One annotated git tag marks each Datatracker revision, with `rfcdiff` for per-revision deltas.
-- **Wire authority** — the CDDL in [`spec/naalp-draft-00.cddl`](spec/naalp-draft-00.cddl) is the byte-level source of truth; a wire-incompatible change is a new major and a new draft.
+- **Draft revision** — the `-NN` counter at the end of the draft name advances with every published revision (`draft-bubblefish-naalp-01`, `-01`, …). One annotated git tag marks each Datatracker revision, with `rfcdiff` for per-revision deltas.
+- **Wire authority** — the normative CDDL is inlined in Appendix A of the draft; [`spec/naalp-draft-01.cddl`](spec/naalp-draft-01.cddl) is a byte-identical mirror. A wire-incompatible change is a new major and a new draft.
 - **Substrate** — N-AALP tracks N-PAMP `draft-bubblefish-npamp-01` as its named substrate; the substrate version is independent of the N-AALP draft revision.
 
 ---

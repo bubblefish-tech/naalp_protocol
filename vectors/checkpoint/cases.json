@@ -1,0 +1,183 @@
+{
+  "source": "design.md section 26.5 / spec/naalp-draft-01.cddl naalp-checkpoint-root / naalp-witness-cosign / naalp-inclusion-proof (FROZEN commit c488c6d3). Tree construction and inclusion-proof verification follow RFC 9162 section 2.1 EXACTLY, SHA-384-profiled: leaf hash = HASH(0x00||leaf), interior node = HASH(0x01||left||right), read from https://www.rfc-editor.org/rfc/rfc9162.html this session and quoted verbatim in this file's module docstring. checkpoint-root.prev chains by the PRIOR checkpoint's own head (SHA-384 of its body), the same receipt-chain idiom as the C7 audit chain (design section 8.1); witness-cosign.root and inclusion-proof.root are T1 CONTENT IDS (50 bytes) of the checkpoint object, a distinct 48-vs-50-byte quantity from checkpoint-root.prev \u2014 both conventions are stated explicitly in this file to avoid the two 48-byte quantities (a Merkle root and a chain head) being confused with each other.",
+  "rfc9162_fidelity_check": {
+    "leaf_counts_checked": 12,
+    "total_leaf_positions_checked": 78,
+    "note": "for every n in 1..12 and every leaf index m in range(n), PATH()+recompute_root() reproduces MTH() exactly \u2014 asserted at generation time, before any vector below is trusted."
+  },
+  "genesis": {
+    "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "note": "the genesis prev value: 48 zero bytes, matching checkpoint0.prev_hex above."
+  },
+  "checkpoints": {
+    "checkpoint0_size7": {
+      "log_hex": "5349474e45525f4c4f472d7472616e73706172656e63792d6c6f672d31",
+      "size": 7,
+      "root_hex": "0feb45522692cc0233a9e93fa30626c06a9d340175bd8eccb326ffa5d4530ab173193bcab2ce66a78861df34c86cbc10",
+      "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "at_str": "1735689600000",
+      "body_hex": "a501581d5349474e45525f4c4f472d7472616e73706172656e63792d6c6f672d3102070358300feb45522692cc0233a9e93fa30626c06a9d340175bd8eccb326ffa5d4530ab173193bcab2ce66a78861df34c86cbc10045830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000051b000001941f297c00",
+      "head_hex": "4867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930",
+      "id_hex": "20304867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930"
+    },
+    "checkpoint1_size8": {
+      "log_hex": "5349474e45525f4c4f472d7472616e73706172656e63792d6c6f672d31",
+      "size": 8,
+      "root_hex": "85b1e873ad9376c177ff48e25b0e28391c90502f78803cc235efa79a8e7f19da852f57482e3444422d70a92c3068830b",
+      "prev_hex": "4867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930",
+      "at_str": "1738368000000",
+      "body_hex": "a501581d5349474e45525f4c4f472d7472616e73706172656e63792d6c6f672d31020803583085b1e873ad9376c177ff48e25b0e28391c90502f78803cc235efa79a8e7f19da852f57482e3444422d70a92c3068830b0458304867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930051b00000194becea000",
+      "head_hex": "e238cc99daba15a6982f61e6817d7e20dbf392a1672efb9a6c0fe7245b12711d90afb32b8dc9ab01968fc24a6dc4ae1c",
+      "id_hex": "2030e238cc99daba15a6982f61e6817d7e20dbf392a1672efb9a6c0fe7245b12711d90afb32b8dc9ab01968fc24a6dc4ae1c"
+    },
+    "checkpoint_single_leaf": {
+      "log_hex": "5349474e45525f4c4f472d7472616e73706172656e63792d6c6f672d31",
+      "size": 1,
+      "root_hex": "03e9a3c898b78971e0ef7b91f648131dccae366463ae4ee024b237f4707be1817d60f82c71a080fa96e1b2889f00b750",
+      "prev_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "at_str": "1735689600000",
+      "body_hex": "a501581d5349474e45525f4c4f472d7472616e73706172656e63792d6c6f672d31020103583003e9a3c898b78971e0ef7b91f648131dccae366463ae4ee024b237f4707be1817d60f82c71a080fa96e1b2889f00b750045830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000051b000001941f297c00",
+      "head_hex": "98ffb10bc72a0533373f566dfa855dbcbac2b3511f70dd36047657a293c20104d58b9bff34d5d53d3a7b3adc8a1c4698",
+      "id_hex": "203098ffb10bc72a0533373f566dfa855dbcbac2b3511f70dd36047657a293c20104d58b9bff34d5d53d3a7b3adc8a1c4698"
+    }
+  },
+  "witness_cosigns": {
+    "witness_ok_checkpoint0": {
+      "witness_hex": "5349474e45525f572d7769746e6573732d31",
+      "root_hex": "20304867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930",
+      "at_str": "1735689660000",
+      "body_hex": "a301525349474e45525f572d7769746e6573732d3102583220304867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930031b000001941f2a6660",
+      "head_hex": "d9b3c1f3c8b2aa3d9889573ab2f8d004e1801e692a0b625e5d64ff57f73cce572ea0149a70561d9aa7ea11b0aca7665d",
+      "id_hex": "2030d9b3c1f3c8b2aa3d9889573ab2f8d004e1801e692a0b625e5d64ff57f73cce572ea0149a70561d9aa7ea11b0aca7665d"
+    },
+    "witness_ok_checkpoint1": {
+      "witness_hex": "5349474e45525f572d7769746e6573732d31",
+      "root_hex": "2030e238cc99daba15a6982f61e6817d7e20dbf392a1672efb9a6c0fe7245b12711d90afb32b8dc9ab01968fc24a6dc4ae1c",
+      "at_str": "1738368060000",
+      "body_hex": "a301525349474e45525f572d7769746e6573732d310258322030e238cc99daba15a6982f61e6817d7e20dbf392a1672efb9a6c0fe7245b12711d90afb32b8dc9ab01968fc24a6dc4ae1c031b00000194becf8a60",
+      "head_hex": "82557f097dca36f6859a755373fb419bbb3a27f426aee3ee3ffc90d8246af4c2a47686c23c473e5d6b25e46c599a7f5f",
+      "id_hex": "203082557f097dca36f6859a755373fb419bbb3a27f426aee3ee3ffc90d8246af4c2a47686c23c473e5d6b25e46c599a7f5f"
+    }
+  },
+  "fork_evidence": {
+    "log_hex": "5349474e45525f4c4f472d7472616e73706172656e63792d6c6f672d31",
+    "size": 7,
+    "checkpoint_a": {
+      "root_hex": "0feb45522692cc0233a9e93fa30626c06a9d340175bd8eccb326ffa5d4530ab173193bcab2ce66a78861df34c86cbc10",
+      "id_hex": "20304867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930",
+      "witness_cosign": {
+        "witness_hex": "5349474e45525f572d7769746e6573732d31",
+        "root_hex": "20304867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930",
+        "at_str": "1735689660000",
+        "body_hex": "a301525349474e45525f572d7769746e6573732d3102583220304867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930031b000001941f2a6660",
+        "head_hex": "d9b3c1f3c8b2aa3d9889573ab2f8d004e1801e692a0b625e5d64ff57f73cce572ea0149a70561d9aa7ea11b0aca7665d",
+        "id_hex": "2030d9b3c1f3c8b2aa3d9889573ab2f8d004e1801e692a0b625e5d64ff57f73cce572ea0149a70561d9aa7ea11b0aca7665d"
+      }
+    },
+    "checkpoint_b": {
+      "root_hex": "c35ac83457e33b815ec0c13be8cf18dc4564d22f090a2edc92c3054128e965514481bf3df8386492093e52a3b79e17a1",
+      "id_hex": "2030971cc6fe1f96418d50fd1c506b821e4075c4b233b7d871bc18fe1b21cd54ccdcec448a8d9bd153dd1ecd0d675657791a",
+      "witness_cosign": {
+        "witness_hex": "5349474e45525f572d7769746e6573732d31",
+        "root_hex": "2030971cc6fe1f96418d50fd1c506b821e4075c4b233b7d871bc18fe1b21cd54ccdcec448a8d9bd153dd1ecd0d675657791a",
+        "at_str": "1735689660000",
+        "body_hex": "a301525349474e45525f572d7769746e6573732d310258322030971cc6fe1f96418d50fd1c506b821e4075c4b233b7d871bc18fe1b21cd54ccdcec448a8d9bd153dd1ecd0d675657791a031b000001941f2a6660",
+        "head_hex": "bd2fed157f5e69a350dbab9ccc5d3bdda347657a4d66393370824768e023df0659225bd6ec34328177242e90877bdbfb",
+        "id_hex": "2030bd2fed157f5e69a350dbab9ccc5d3bdda347657a4d66393370824768e023df0659225bd6ec34328177242e90877bdbfb"
+      }
+    },
+    "note": "two witness-cosigned naalp-checkpoint-root objects at the SAME (log, size)=(log,7) carrying DIFFERENT root values \u2014 the log has signed two incompatible histories, and both signatures are the proof (design section 26.5, the same idiom as the C7/section 8.5 naalp-fork-proof)."
+  },
+  "inclusion_proofs": {
+    "leaf3_of7": {
+      "root_hex": "20304867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930",
+      "leaf_hex": "20301b1909e539edb1f2024fee446fe62ddcadef13286ae230f20181d5339c7cf5980025d672e4c8efce9443e7384a2b25e4",
+      "index": 3,
+      "path_hex": [
+        "4a4274350273fbebfb942fb2499e4a83f50a568535748a4aadbe0d5f58185336f7181d8a9142d82b163176eebd74b3fe",
+        "13adffe04c2a236930ab9d37738501bae7ab1e84ae8a2595bfbaa7673a59bee03f8da7609513dce5ab5acdea6d914c3f",
+        "eb29cc8ff6e61092c151c88b054c8cf020adaa4202bdce6b3205f1cd769bd948b694a0bfafc4ca80429f2071fc7ac3b5"
+      ],
+      "body_hex": "a401583220304867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf61493002583220301b1909e539edb1f2024fee446fe62ddcadef13286ae230f20181d5339c7cf5980025d672e4c8efce9443e7384a2b25e40303048358304a4274350273fbebfb942fb2499e4a83f50a568535748a4aadbe0d5f58185336f7181d8a9142d82b163176eebd74b3fe583013adffe04c2a236930ab9d37738501bae7ab1e84ae8a2595bfbaa7673a59bee03f8da7609513dce5ab5acdea6d914c3f5830eb29cc8ff6e61092c151c88b054c8cf020adaa4202bdce6b3205f1cd769bd948b694a0bfafc4ca80429f2071fc7ac3b5",
+      "head_hex": "6faea775f01c2348ffec656eda0469c417f94a7d2b848e7b8d082020f9a6f1a6be20eadb3a0cad0307f49212a57d12e0",
+      "id_hex": "20306faea775f01c2348ffec656eda0469c417f94a7d2b848e7b8d082020f9a6f1a6be20eadb3a0cad0307f49212a57d12e0"
+    },
+    "leaf7_of8_newly_appended": {
+      "root_hex": "2030e238cc99daba15a6982f61e6817d7e20dbf392a1672efb9a6c0fe7245b12711d90afb32b8dc9ab01968fc24a6dc4ae1c",
+      "leaf_hex": "2030634870d4436cbf6f2325b3186602a6ab379fe5d463f0b9af0ea3812f86211c7d2863de36e900b0a734646ace9d811d9e",
+      "index": 7,
+      "path_hex": [
+        "561414230c5554d51ff8f0e73614e3d4c5b4079a90f2b7bcaa88e0e6c0908cc177ab5798567e12a5f2c60610f4dc9056",
+        "495d50f672f9dcf24bc4db1ded54f0ffadedf6de093b7d267cf0dd6b366bc2420df412876b13781b697a95948a621133",
+        "750735d1583d8b64d05a5477acaa940d458d8f8ad94d9882ed139f66f3c764090601ba3b33aaebabb79ac0e07b1a165a"
+      ],
+      "body_hex": "a40158322030e238cc99daba15a6982f61e6817d7e20dbf392a1672efb9a6c0fe7245b12711d90afb32b8dc9ab01968fc24a6dc4ae1c0258322030634870d4436cbf6f2325b3186602a6ab379fe5d463f0b9af0ea3812f86211c7d2863de36e900b0a734646ace9d811d9e030704835830561414230c5554d51ff8f0e73614e3d4c5b4079a90f2b7bcaa88e0e6c0908cc177ab5798567e12a5f2c60610f4dc90565830495d50f672f9dcf24bc4db1ded54f0ffadedf6de093b7d267cf0dd6b366bc2420df412876b13781b697a95948a6211335830750735d1583d8b64d05a5477acaa940d458d8f8ad94d9882ed139f66f3c764090601ba3b33aaebabb79ac0e07b1a165a",
+      "head_hex": "14860911d5c7af360faa05a0278d364ed4fdec8430068ff97eea0f9887212fa4b342556b91d674bf09fca578148a2e5b",
+      "id_hex": "203014860911d5c7af360faa05a0278d364ed4fdec8430068ff97eea0f9887212fa4b342556b91d674bf09fca578148a2e5b"
+    },
+    "single_leaf_tree_empty_path": {
+      "root_hex": "203098ffb10bc72a0533373f566dfa855dbcbac2b3511f70dd36047657a293c20104d58b9bff34d5d53d3a7b3adc8a1c4698",
+      "leaf_hex": "2030e46d2a58a0cb0a52e388dcd53dfaad526e8d346a1e76b3d020ab54446342a5950d6f71a8df30cae092a58797cf03795d",
+      "index": 0,
+      "path_hex": [],
+      "body_hex": "a4015832203098ffb10bc72a0533373f566dfa855dbcbac2b3511f70dd36047657a293c20104d58b9bff34d5d53d3a7b3adc8a1c46980258322030e46d2a58a0cb0a52e388dcd53dfaad526e8d346a1e76b3d020ab54446342a5950d6f71a8df30cae092a58797cf03795d03000480",
+      "head_hex": "6f222f1fdd4a26e27cbabeaf4baac616a2d17e42780ea1b747492abe4f63fbf2c44b4f38d692f8434fe54ba81d6cb292",
+      "id_hex": "20306f222f1fdd4a26e27cbabeaf4baac616a2d17e42780ea1b747492abe4f63fbf2c44b4f38d692f8434fe54ba81d6cb292"
+    }
+  },
+  "empty_tree_kat": {
+    "root_hex": "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
+    "note": "MTH({}) = HASH() = SHA-384(''), the empty-list base case (RFC 9162 section 2.1.1)."
+  },
+  "negative": {
+    "witness_root_mismatch": {
+      "checkpoint_accompanied_id_hex": "20304867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930",
+      "cosign_body_hex": "a301525349474e45525f572d7769746e6573732d310258322030e238cc99daba15a6982f61e6817d7e20dbf392a1672efb9a6c0fe7245b12711d90afb32b8dc9ab01968fc24a6dc4ae1c031b000001941f2a6660",
+      "cosign_names_root_hex": "2030e238cc99daba15a6982f61e6817d7e20dbf392a1672efb9a6c0fe7245b12711d90afb32b8dc9ab01968fc24a6dc4ae1c",
+      "reject": "WitnessRootMismatch",
+      "note": "the cosign names checkpoint1's content id (field 2) while accompanying checkpoint0 \u2014 cosign.root != cid(the checkpoint it accompanies)."
+    },
+    "inclusion_wrong_index": {
+      "root_hex": "20304867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930",
+      "leaf_hex": "20301b1909e539edb1f2024fee446fe62ddcadef13286ae230f20181d5339c7cf5980025d672e4c8efce9443e7384a2b25e4",
+      "claimed_index": 4,
+      "true_index": 3,
+      "path_hex": [
+        "4a4274350273fbebfb942fb2499e4a83f50a568535748a4aadbe0d5f58185336f7181d8a9142d82b163176eebd74b3fe",
+        "13adffe04c2a236930ab9d37738501bae7ab1e84ae8a2595bfbaa7673a59bee03f8da7609513dce5ab5acdea6d914c3f",
+        "eb29cc8ff6e61092c151c88b054c8cf020adaa4202bdce6b3205f1cd769bd948b694a0bfafc4ca80429f2071fc7ac3b5"
+      ],
+      "reject": "InclusionProofInvalid",
+      "note": "leaf3's real audit path, claimed at index 4 instead of 3 \u2014 recomputation diverges from the true root (or the sn==0 terminal check fails)."
+    },
+    "inclusion_wrong_path": {
+      "root_hex": "20304867886140cbd3a52d81024a0aa253e34af5015f8841b1f6d555cba43c5ad872834a06f49f7fa411b3e3950ebf614930",
+      "leaf_hex": "20301b1909e539edb1f2024fee446fe62ddcadef13286ae230f20181d5339c7cf5980025d672e4c8efce9443e7384a2b25e4",
+      "index": 3,
+      "path_hex": [
+        "7e60e5d9e29c6282f6bc5c2a0d4f350e9aef86e35d7883096f325249b106d25135568bef375883f38bbe08f5134b9462",
+        "13adffe04c2a236930ab9d37738501bae7ab1e84ae8a2595bfbaa7673a59bee03f8da7609513dce5ab5acdea6d914c3f",
+        "eb29cc8ff6e61092c151c88b054c8cf020adaa4202bdce6b3205f1cd769bd948b694a0bfafc4ca80429f2071fc7ac3b5"
+      ],
+      "true_path_hex": [
+        "4a4274350273fbebfb942fb2499e4a83f50a568535748a4aadbe0d5f58185336f7181d8a9142d82b163176eebd74b3fe",
+        "13adffe04c2a236930ab9d37738501bae7ab1e84ae8a2595bfbaa7673a59bee03f8da7609513dce5ab5acdea6d914c3f",
+        "eb29cc8ff6e61092c151c88b054c8cf020adaa4202bdce6b3205f1cd769bd948b694a0bfafc4ca80429f2071fc7ac3b5"
+      ],
+      "reject": "InclusionProofInvalid",
+      "note": "leaf3's real index/leaf but the first audit-path entry is corrupted (re-hashed) \u2014 recomputation does not reach the true root."
+    },
+    "checkpoint_keys_out_of_order": {
+      "canonical_body_hex": "a501581d5349474e45525f4c4f472d7472616e73706172656e63792d6c6f672d3102070358300feb45522692cc0233a9e93fa30626c06a9d340175bd8eccb326ffa5d4530ab173193bcab2ce66a78861df34c86cbc10045830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000051b000001941f297c00",
+      "noncanonical_body_hex": "a5051b000001941f297c000458300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000358300feb45522692cc0233a9e93fa30626c06a9d340175bd8eccb326ffa5d4530ab173193bcab2ce66a78861df34c86cbc10020701581d5349474e45525f4c4f472d7472616e73706172656e63792d6c6f672d31",
+      "reject": "NonCanonical",
+      "note": "checkpoint0's body with top-level keys emitted descending (5,4,3,2,1)."
+    },
+    "checkpoint_missing_field": {
+      "body_hex": "a401581d5349474e45525f4c4f472d7472616e73706172656e63792d6c6f672d310207045830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000051b000001941f297c00",
+      "reject": "CheckpointMalformed",
+      "note": "field 3 (root) is absent \u2014 a naalp-checkpoint-root is malformed without it."
+    }
+  },
+  "note": "every *_hex value in this corpus is produced by the shared deterministic-CBOR constructor (cbor_oracle, T1), stdlib hashlib SHA-384, and the from-scratch RFC-9162 Merkle implementation in this file \u2014 never by the Go/Rust checkpoint code under test. Go and Rust are graded byte-for-byte against these bodies, heads, content ids, roots, and audit paths (Go == Rust == oracle)."
+}

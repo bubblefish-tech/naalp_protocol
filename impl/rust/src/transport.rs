@@ -5,7 +5,7 @@
 //! A binding carries exactly one signed object as one message unit, with identical object
 //! semantics across N-PAMP, QUIC, WebSocket, and HTTP (R-13.1). The object is self-secured by
 //! C2..C8; the binding adds only framing plus, from the transport, confidentiality and
-//! connection authentication (R-13.2, R-13.3). Media type application/naalp+cbor. The
+//! connection authentication (R-13.2, R-13.3). Media type application/vnd.bubblefish.naalp+cbor. The
 //! confidentiality boundary is normative: a sensitive object MUST NOT be emitted in cleartext
 //! over a non-confidential transport — the binding refuses it (ConfidentialTransportRequired,
 //! R-13.4). A transport lacking peer authentication where policy requires it is
@@ -14,7 +14,7 @@
 use crate::cose;
 
 /// One-object-per-representation media type (§12.1).
-pub const MEDIA_TYPE: &str = "application/naalp+cbor";
+pub const MEDIA_TYPE: &str = "application/vnd.bubblefish.naalp+cbor";
 
 pub fn err_confidential_transport_required() -> cose::Error {
     cose::Error {
@@ -23,10 +23,16 @@ pub fn err_confidential_transport_required() -> cose::Error {
     }
 }
 pub fn err_peer_unauthenticated() -> cose::Error {
-    cose::Error { kind: "PeerUnauthenticated", msg: "transport peer is not authenticated where policy requires it" }
+    cose::Error {
+        kind: "PeerUnauthenticated",
+        msg: "transport peer is not authenticated where policy requires it",
+    }
 }
 pub fn err_malformed() -> cose::Error {
-    cose::Error { kind: "Malformed", msg: "message unit is not application/naalp+cbor" }
+    cose::Error {
+        kind: "Malformed",
+        msg: "message unit is not application/vnd.bubblefish.naalp+cbor",
+    }
 }
 
 /// One binding and the two conditional guarantees it provides (§12.3). Object-level guarantees
@@ -40,12 +46,36 @@ pub struct Transport {
 
 // The four binding types (§12.2); WebSocket/HTTP have confidential (wss/https) and cleartext
 // (ws/http) variants.
-pub const NPAMP: Transport = Transport { name: "npamp", confidential: true, peer_authenticated: true };
-pub const QUIC: Transport = Transport { name: "quic", confidential: true, peer_authenticated: true };
-pub const WEBSOCKET_WSS: Transport = Transport { name: "websocket+wss", confidential: true, peer_authenticated: false };
-pub const WEBSOCKET_WS: Transport = Transport { name: "websocket+ws", confidential: false, peer_authenticated: false };
-pub const HTTPS: Transport = Transport { name: "https", confidential: true, peer_authenticated: false };
-pub const HTTP: Transport = Transport { name: "http", confidential: false, peer_authenticated: false };
+pub const NPAMP: Transport = Transport {
+    name: "npamp",
+    confidential: true,
+    peer_authenticated: true,
+};
+pub const QUIC: Transport = Transport {
+    name: "quic",
+    confidential: true,
+    peer_authenticated: true,
+};
+pub const WEBSOCKET_WSS: Transport = Transport {
+    name: "websocket+wss",
+    confidential: true,
+    peer_authenticated: false,
+};
+pub const WEBSOCKET_WS: Transport = Transport {
+    name: "websocket+ws",
+    confidential: false,
+    peer_authenticated: false,
+};
+pub const HTTPS: Transport = Transport {
+    name: "https",
+    confidential: true,
+    peer_authenticated: false,
+};
+pub const HTTP: Transport = Transport {
+    name: "http",
+    confidential: false,
+    peer_authenticated: false,
+};
 
 /// Every transport variant.
 pub const ALL: [Transport; 6] = [NPAMP, QUIC, WEBSOCKET_WSS, WEBSOCKET_WS, HTTPS, HTTP];
@@ -76,14 +106,23 @@ impl MessageUnit {
 
 /// Carry one signed object as one message unit, adding only framing.
 pub fn frame(t: &Transport, obj: &[u8]) -> MessageUnit {
-    MessageUnit { transport: t.name.to_string(), media_type: MEDIA_TYPE.to_string(), payload: obj.to_vec() }
+    MessageUnit {
+        transport: t.name.to_string(),
+        media_type: MEDIA_TYPE.to_string(),
+        payload: obj.to_vec(),
+    }
 }
 
 /// Apply the confidentiality boundary (§12.3) and peer-auth rule (§12.4) before framing: a
 /// sensitive object over a non-confidential transport is refused
 /// (ConfidentialTransportRequired); a transport lacking peer authentication where policy
 /// requires it is refused (PeerUnauthenticated). Otherwise the object is framed unchanged.
-pub fn emit(t: &Transport, obj: &[u8], sensitive: bool, require_peer_auth: bool) -> Result<MessageUnit, cose::Error> {
+pub fn emit(
+    t: &Transport,
+    obj: &[u8],
+    sensitive: bool,
+    require_peer_auth: bool,
+) -> Result<MessageUnit, cose::Error> {
     if sensitive && !t.confidential {
         return Err(err_confidential_transport_required());
     }
@@ -114,7 +153,10 @@ mod tests {
         for tr in c["transports"].as_array().unwrap() {
             let got = by_name(tr["name"].as_str().unwrap()).expect("known transport");
             assert_eq!(got.confidential, tr["confidential"].as_bool().unwrap());
-            assert_eq!(got.peer_authenticated, tr["peer_authenticated"].as_bool().unwrap());
+            assert_eq!(
+                got.peer_authenticated,
+                tr["peer_authenticated"].as_bool().unwrap()
+            );
         }
     }
 
@@ -125,7 +167,12 @@ mod tests {
         let (mut conf_refusals, mut auth_refusals) = (0, 0);
         for r in c["emit_matrix"].as_array().unwrap() {
             let tr = by_name(r["transport"].as_str().unwrap()).unwrap();
-            let res = emit(&tr, &obj, r["sensitive"].as_bool().unwrap(), r["require_peer_auth"].as_bool().unwrap());
+            let res = emit(
+                &tr,
+                &obj,
+                r["sensitive"].as_bool().unwrap(),
+                r["require_peer_auth"].as_bool().unwrap(),
+            );
             match r["result"].as_str().unwrap() {
                 "ok" => {
                     let mu = res.expect("ok");
@@ -154,9 +201,20 @@ mod tests {
 
     fn obj(pkb: &[u8]) -> envelope::Object {
         envelope::Object {
-            id: vec![], kind: 0, channel: 0, tier: 0, signer: pkb.to_vec(), created: 100,
-            effect: 0, causes: vec![], profile: cose::PROFILE_PUBLIC as u64,
-            body: Value::Uint(0), ext: None, cext: None,
+            audience: String::new(),
+            suite: 0,
+            id: vec![],
+            kind: 0,
+            channel: 0,
+            tier: 0,
+            signer: pkb.to_vec(),
+            created: 100,
+            effect: 0,
+            causes: vec![],
+            profile: cose::PROFILE_PUBLIC as u64,
+            body: Value::Uint(0),
+            ext: None,
+            cext: None,
         }
     }
 
@@ -193,7 +251,11 @@ mod tests {
 
     #[test]
     fn media_type_rejected() {
-        let mu = MessageUnit { transport: "http".into(), media_type: "application/json".into(), payload: vec![1, 2, 3] };
+        let mu = MessageUnit {
+            transport: "http".into(),
+            media_type: "application/json".into(),
+            payload: vec![1, 2, 3],
+        };
         assert_eq!(mu.object().unwrap_err().kind, "Malformed");
     }
 }

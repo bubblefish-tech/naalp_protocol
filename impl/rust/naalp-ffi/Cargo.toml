@@ -1,0 +1,36 @@
+[package]
+name = "naalp-ffi"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Stable extern \"C\" ABI over the naalp core (Manufacturing Add-ons Component A, cell-controller tier)"
+repository = "https://github.com/bubblefish-tech/naalp_protocol"
+
+# Component A (design.md §4A / requirements A1-A2): a stable C ABI so a C/C++ or
+# C-FFI-capable controller (ROS nodes, vendor motion-controller SDKs) can sign/verify
+# N-AALP objects without a second protocol implementation. This crate adds no crypto
+# and no encoding of its own — every exported function is a thin delegation to
+# `naalp::naalpcore`, matching the naming naalpcore already reconciled against the
+# real module-scoped core surface.
+[lib]
+name = "naalp_ffi"
+path = "src/lib.rs"
+# staticlib: link into a bare-metal/RTOS or statically-linked C/C++ build.
+# cdylib: a shared library (.so/.dll/.dylib) for a dynamically-loaded C/C++ consumer.
+# rlib: kept so this crate's own #[cfg(test)] suite (Rust-side, no C toolchain needed)
+# can run via `cargo test` in the ordinary way.
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[dependencies]
+# Path dependency on the sibling `naalp` package (impl/rust) — not a workspace member,
+# so this crate builds standalone (`cd impl/rust/naalp-ffi && cargo build`) without any
+# edit to impl/rust/Cargo.toml or its existing single-package layout.
+naalp = { path = ".." }
+
+# Component A6 (manufacturing intake): a verification-only build surface. When enabled,
+# `naalp_sign` is compiled OUT of this crate — the binary links no signing path and holds
+# no secret-key material, for a deployment that only ever checks signatures (e.g. a
+# gateway/edge verifier that never originates objects). Default (feature off) is unchanged:
+# every existing exported function still compiles and every existing test still runs.
+[features]
+verify_only = []

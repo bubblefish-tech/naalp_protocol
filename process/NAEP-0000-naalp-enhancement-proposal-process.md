@@ -30,7 +30,7 @@ decision history that [`CONTRIBUTING.md`](../CONTRIBUTING.md) already defines
 labels).
 
 N-AALP is the **Native Agentic Application Layer Protocol**
-(`draft-bubblefish-naalp-00`), an application-layer **object** protocol offered
+(`draft-bubblefish-naalp-01`), an application-layer **object** protocol offered
 through the IETF **Independent Submission** stream (Informational category,
 pre-adoption). It is carried by — and specified independently of — its substrate,
 **N-PAMP** (`draft-bubblefish-npamp-01`); the two are separate documents with
@@ -136,8 +136,8 @@ proposes and specifies one coherent change to N-AALP and carries it from idea to
 implemented, graded reality. A NAEP has one **Author** (who MAY be the document
 editor) and a single **Status** at any time. Its normative specification text,
 once the NAEP is `Accepted`, is merged into the governing document it targets (the
-Internet-Draft, the CDDL wire authority
-[`spec/naalp-draft-00.cddl`](../spec/naalp-draft-00.cddl), or a registry under
+Internet-Draft `ietf/draft-bubblefish-naalp-01.md` (whose Appendix A holds the
+normative CDDL, mirrored as [`spec/naalp-draft-01.cddl`](../spec/naalp-draft-01.cddl)), or a registry under
 [`vectors/registry/`](../vectors/registry/)); the NAEP remains as the durable
 record of the proposal and its rationale.
 
@@ -178,18 +178,18 @@ following:
    construction, the content-id or signer-id derivation, the COSE_Sign1 profile
    (RFC 9052), or the signature/multicodec suite sets. `CONTRIBUTING.md` already
    flags these as **major-version** changes (a new object version, and if
-   warranted a new media type alongside `application/naalp+cbor`); such a change
+   warranted a new media type alongside `application/vnd.bubblefish.naalp+cbor`); such a change
    **MUST** be carried by a NAEP.
 4. **Opens or re-policies a code-point range** — creating a new registry, adding a
    new range to an existing registry, or changing a range's **registration
-   policy** (for example, converting a range from "Specification Required" to
+   policy** (for example, converting a range from "RFC Required" to
    "Experimental", per RFC 8126). Registries in scope include
    [`channels.csv`](../vectors/registry/channels.csv),
    [`signatures.csv`](../vectors/registry/signatures.csv),
    [`multicodec.csv`](../vectors/registry/multicodec.csv), and
    [`protocols.csv`](../vectors/registry/protocols.csv), together with the
    effect-class and error-code registries defined in the draft, all collected in
-   the Internet-Draft's IANA Considerations.
+   [`ietf/IANA.md`](../ietf/IANA.md).
 
 This mirrors the Rust "substantial change" trigger and the KEP "non-trivial
 change" trigger: a NAEP is for changes that other implementers must reason about,
@@ -206,9 +206,9 @@ The following changes proceed through the existing pull-request + ADR path in
    policy already permits it** — e.g. registering one new carriage `protocol_id`
    in the "standards" range `0x01`–`0x0F` of
    [`protocols.csv`](../vectors/registry/protocols.csv), or one new multicodec or
-   signature code point in an additive registry. Per RFC 8126, a Specification
-   Required registration needs a stable public specification reviewed by the
-   designated expert, **not** a NAEP. A registration in the Experimental
+   signature code point in an additive registry. Such a single additive
+   registration needs a stable, public specification (the project's code-point
+   procedure, GOVERNANCE §6.2), **not** a NAEP. A registration in the Experimental
    (`0x10`–`0x7F`) or Private (`0x80`–`0xFF`) carriage range needs no registration
    at all. Such an additive registration still gets an ADR and a change-log
    bullet.
@@ -354,7 +354,7 @@ replaces it.
 >   either implementation under test — and against which **both** Go and Rust are
 >   cross-validated (`scripts/verify.sh`);
 > - where the behavior has a wire production, the **CDDL** wire grammar
->   [`spec/naalp-draft-00.cddl`](../spec/naalp-draft-00.cddl) machine-validates the
+>   [`spec/naalp-draft-01.cddl`](../spec/naalp-draft-01.cddl) machine-validates the
 >   vector bytes (`scripts/cddl_check.sh`), and the registries stay drift-free
 >   against the graded vectors (`scripts/registry_drift.py`); and
 > - the behavior is graded across the **ten-language SDK set**
@@ -405,8 +405,8 @@ Supporting requirements for the Final gate:
 4. **Object-major-version NAEPs.** A NAEP that changes the object wire in a
    backwards-incompatible way (§2.3) additionally requires bumping the
    `naalp-version` protected-header field (key 3; this draft = 1) and, if
-   warranted, registering a new media type alongside `application/naalp+cbor`
-   (RFC 6838) in the Internet-Draft's IANA Considerations, per `CONTRIBUTING.md`
+   warranted, registering a new media type alongside `application/vnd.bubblefish.naalp+cbor`
+   (RFC 6838) in [`ietf/IANA.md`](../ietf/IANA.md), per `CONTRIBUTING.md`
    "Code-point stability". **N-AALP defines no ALPN identifier or other transport
    identifier of its own** — it carries the same meaning over any N-PAMP channel
    or any other transport ([ADR-0002](../docs/adr/0002-object-not-connection.md)),
@@ -705,16 +705,17 @@ Populated on Accepted.>
   single-editor Independent Submission stream N-AALP is offered through; the basis
   for the NAEP process being editor-final rather than working-group-vote.
 - **RFC 6838** — *Media Type Specifications and Registration Procedures.* BCP 13.
-  The registration procedure for `application/naalp+cbor` and any successor media
+  The registration procedure for `application/vnd.bubblefish.naalp+cbor` and any successor media
   type an object-major NAEP introduces.
 - **RFC 7282** — *On Consensus and Humming in the IETF.* "Consensus is when
   everyone is sufficiently satisfied with the chosen solution, such that they no
   longer have specific objections to it." The basis for §5.2 rough-consensus review
   (objections addressed on merits, not counted).
 - **RFC 8126** — *Guidelines for Writing an IANA Considerations Section in RFCs.*
-  BCP 26. The Specification-Required policy (Expert Review + a stable, clear,
-  technically-sound public specification) that governs single additive
-  registrations (§3.2) versus range/policy changes that need a NAEP (§2.4).
+  BCP 26. The RFC-Required policy (§4.7 — a value carried by a published RFC; on
+  the Independent Submission stream the strictest policy available, since the ISE
+  appoints no Designated Expert) that the N-AALP registries request, versus
+  range/policy changes that need a NAEP (§2.4).
 - **RFC 8174 / RFC 2119** — BCP 14 requirement keywords, used throughout.
 - **RFC 8874** — *Working Group GitHub Usage Guidance.* The `design`/`editorial`
   issue-label convention `CONTRIBUTING.md` adopts and the NAEP `naep` label extends.

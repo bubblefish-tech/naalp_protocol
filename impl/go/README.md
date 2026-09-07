@@ -4,7 +4,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/bubblefish-tech/naalp_protocol/impl/go.svg)](https://pkg.go.dev/github.com/bubblefish-tech/naalp_protocol/impl/go)
 
-The Go reference implementation of **N-AALP** (draft-bubblefish-naalp-00) — the primary reference
+The Go reference implementation of **N-AALP** (draft-bubblefish-naalp-01) — the primary reference
 against which every other SDK is byte-compared. Every N-AALP object is a deterministically-encoded
 CBOR structure signed with COSE that carries, under one signature, its content identity, its signer,
 a closed effect label, optional approval/audit bindings, and its causal derivation — **verifiable

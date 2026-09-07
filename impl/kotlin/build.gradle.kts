@@ -1,6 +1,6 @@
 // Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
 //
-// Gradle manifest for the N-AALP Kotlin reference SDK (draft-bubblefish-naalp-00).
+// Gradle manifest for the N-AALP Kotlin reference SDK (draft-bubblefish-naalp-01).
 // The `-kotlin` artifact suffix disambiguates this from the sibling `naalp-java` artifact.
 //
 //   ./gradlew build            # compile + run the main()-driven KAT and smoke tests
@@ -37,7 +37,7 @@ tasks.register<JavaExec>("workedExampleKat") {
     description = "Reproduce the byte-level worked object and verify/tamper-check it."
     dependsOn("testClasses")
     classpath = sourceSets["test"].runtimeClasspath
-    mainClass.set("sh.bubblefish.naalp.WorkedExampleKatKt")
+    mainClass.set("sh.bubblefish.naalp.WorkedExampleKatTestKt")
 }
 
 tasks.register<JavaExec>("primitivesSmoke") {
@@ -48,8 +48,16 @@ tasks.register<JavaExec>("primitivesSmoke") {
     mainClass.set("sh.bubblefish.naalp.PrimitivesSmokeKt")
 }
 
+tasks.register<JavaExec>("producingBoundaryKat") {
+    group = "verification"
+    description = "NA-IETF-1 producing-boundary disclosure (ext key 15, §2.5.4) known-answer test."
+    dependsOn("testClasses")
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("sh.bubblefish.naalp.ProducingBoundaryKatTestKt")
+}
+
 tasks.named("check") {
-    dependsOn("workedExampleKat", "primitivesSmoke")
+    dependsOn("workedExampleKat", "primitivesSmoke", "producingBoundaryKat")
 }
 
 // Maven Central REQUIRES a -sources.jar AND a -javadoc.jar for every published module; attach both.
@@ -84,7 +92,7 @@ publishing {
                 name.set("N-AALP Kotlin SDK")
                 description.set(
                     "Reference SDK for N-AALP (Native Agentic Application Layer Protocol), " +
-                        "draft-bubblefish-naalp-00 — the Kotlin implementation."
+                        "draft-bubblefish-naalp-01 — the Kotlin implementation."
                 )
                 url.set("https://github.com/bubblefish-tech/naalp_protocol")
                 licenses {

@@ -1,0 +1,33 @@
+[package]
+name = "naalp-opcua"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "OPC UA carriage binding over N-AALP's existing opaque-carriage class (Manufacturing Add-ons Component B)"
+repository = "https://github.com/bubblefish-tech/naalp_protocol"
+
+# Component B (Manufacturing Add-ons intake §2/§4-row4, design.md §13 opaque carriage):
+# wraps an OPC UA message as opaque octets, binds it by content-id hash (+ optional
+# companion-node identity for the robotics/CNC OPC UA companion object model), and never
+# parses OPC UA on the verify path. Over the channel's size budget it binds by reference
+# (hash + locator); a missing referent is unverifiable, never valid. This crate adds no new
+# wire kind, no new CDDL, and no new crypto/encoding: it is a carriage binding built entirely
+# on N-AALP's existing opaque-carriage class (impl/rust/src/carriage.rs) and the existing
+# naalpcore sign/verify/content_id facade (impl/rust/src/naalpcore.rs) this crate builds
+# against.
+[lib]
+name = "naalp_opcua"
+path = "src/lib.rs"
+
+[dependencies]
+# Path dependency on the sibling `naalp` package (impl/rust) — not a workspace member, so
+# this crate builds standalone (`cd impl/rust/naalp-opcua && cargo build`) without any edit
+# to impl/rust/Cargo.toml or its existing single-package layout (mirrors the naalp-ffi
+# crate's pattern, impl/rust/naalp-ffi/Cargo.toml).
+naalp = { path = ".." }
+
+[dev-dependencies]
+# Used ONLY in tests, as an independent (non-circular, F3) oracle: the content-id test
+# hand-constructs the RFC 8949 canonical CBOR byte-string encoding and hashes it with this
+# crate directly, rather than calling naalp::cbor::encode/content_id (the code under test).
+sha2 = "0.10"

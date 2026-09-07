@@ -1,0 +1,9 @@
+state_code,state_name,category,is_start,description
+0,submitted,active,1,acknowledged and not yet started (the A2A start state; A2A spec TaskState §4.1.3)
+1,working,active,0,actively being processed by the agent (A2A spec TaskState §4.1.3)
+2,input-required,interrupted,0,interrupted awaiting additional client input to proceed (A2A spec TaskState §4.1.3)
+3,auth-required,interrupted,0,interrupted awaiting authentication to proceed (A2A spec TaskState §4.1.3)
+4,completed,terminal,0,finished successfully; no transition may leave it (A2A spec TaskState §4.1.3)
+5,canceled,terminal,0,canceled before completion; no transition may leave it (A2A spec TaskState §4.1.3)
+6,failed,terminal,0,finished with an error; no transition may leave it (A2A spec TaskState §4.1.3)
+7,rejected,terminal,0,the agent declined to perform the task; no transition may leave it (A2A spec TaskState §4.1.3)

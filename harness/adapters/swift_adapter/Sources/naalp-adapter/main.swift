@@ -190,6 +190,21 @@ func parseNodes(_ inp: [String: Any]) throws -> [Graph.Node] {
     return nodes
 }
 
+/// Parse `in["nodes"]` as Federation.CausalNode (id + causes only — no position; federation
+/// reconcile's tie-break is content id, never position, so position is not part of this shape).
+func parseFederationNodes(_ inp: [String: Any]) throws -> [Federation.CausalNode] {
+    guard let raw = inp["nodes"] as? [Any] else { throw NaalpError("Malformed", "missing nodes") }
+    var nodes: [Federation.CausalNode] = []
+    for entry in raw {
+        guard let n = entry as? [String: Any] else { throw NaalpError("Malformed", "node must be an object") }
+        let id = try hexToBytes(anyToString(n["id_hex"]))
+        let causesRaw = (n["causes_hex"] as? [Any]) ?? []
+        let causes = try causesRaw.map { try hexToBytes(anyToString($0)) }
+        nodes.append(Federation.CausalNode(id: id, causes: causes))
+    }
+    return nodes
+}
+
 // ---------------------------------------------------------------------------
 // Dispatch
 // ---------------------------------------------------------------------------
@@ -199,6 +214,14 @@ func errFrom(_ error: Error, _ fallbackKind: String) -> JOut {
         return errOut("\(e.kind): \(e.message)")
     }
     return errOut("\(fallbackKind): \(error)")
+}
+
+/// The bare error kind (or "" for no error) — used by the {valid, error} state-machine cases, which
+/// report the kind alone rather than the full "kind: message" adapter-error string.
+func errKind(_ error: Error?) -> String {
+    guard let error = error else { return "" }
+    if let e = error as? NaalpError { return e.kind }
+    return "\(error)"
 }
 
 func handle(_ op: String, _ inp: [String: Any]) -> JOut {
@@ -232,22 +255,44 @@ func handle(_ op: String, _ inp: [String: Any]) -> JOut {
             return okOut([("tobesigned_hex", .s(bytesToHex(tbs)))])
 
         case "mldsa.keygen":
-            return skipOut("no deterministic seed->key FIPS 204 path: SwiftDilithium 3.6.0 exposes no seed-based key derivation")
+            // The corpus names the parameter set with the string field `param` (like Go/Rust/Python).
+            let kalg = anyToString(inp["param"]) == "ML-DSA-87" ? Cose.ALG_MLDSA87 : Cose.ALG_MLDSA65
+            let pk = try MlDsa.keygenFromSeed(try hx(inp, "seed_hex"), kalg)
+            return okOut([("pk_hex", .s(bytesToHex(pk)))])
 
         case "ed25519.sign":
             let sig = try Cose.ed25519Sign(try hx(inp, "sk_hex"), try hx(inp, "msg_hex"))
             return okOut([("sig_hex", .s(bytesToHex(sig)))])
 
         case "cose.sign1":
-            return skipOut("deterministic ML-DSA-from-seed unavailable in SwiftDilithium 3.6.0")
+            let obj = try Cose.coseSign1(anyToInt(inp["alg"]), try hx(inp, "seed_hex"),
+                                         try hx(inp, "protected_hex"), try hx(inp, "payload_hex"))
+            return okOut([("obj_hex", .s(bytesToHex(obj)))])
 
         case "cose.verify1":
-            let alg = anyToInt(inp["alg"])
-            if alg == Cose.ALG_ED25519 {
-                let valid = try Cose.coseVerify1(alg, try hx(inp, "pubkey_hex"), try hx(inp, "obj_hex"))
-                return okOut([("valid", .b(valid))])
+            let valid = try Cose.coseVerify1(anyToInt(inp["alg"]), try hx(inp, "pubkey_hex"), try hx(inp, "obj_hex"))
+            return okOut([("valid", .b(valid))])
+
+        // ---- opt-in LAMPS composite signature (alg -65537, design.md §4.2) ----
+        case "composite.mprime":
+            let mp = try Cose.computeMprime(Array("COMPSIG-MLDSA65-Ed25519-SHA512".utf8), [], try hx(inp, "m_hex"))
+            return okOut([("mprime_hex", .s(bytesToHex(mp)))])
+
+        case "composite.signerid":
+            do {
+                let sid = try Identity.compositeSignerId(anyToInt(inp["mldsa_alg"]), try hx(inp, "mldsa_pubkey_hex"), try hx(inp, "ed_pubkey_hex"))
+                return okOut([("signer_id", .s(sid))])
+            } catch {
+                return errFrom(error, "UnknownAlg")
             }
-            return skipOut("ML-DSA verification unavailable in SwiftDilithium 3.6.0")
+
+        case "composite.sign":
+            let value = try Cose.compositeSign(try hx(inp, "mldsa_seed_hex"), try hx(inp, "ed_seed_hex"), try hx(inp, "tbs_hex"))
+            return okOut([("value_hex", .s(bytesToHex(value)))])
+
+        case "composite.verify":
+            let valid = try Cose.compositeVerify(try hx(inp, "mldsa_pubkey_hex"), try hx(inp, "ed_pubkey_hex"), try hx(inp, "m_hex"), try hx(inp, "sig_hex"))
+            return okOut([("valid", .b(valid))])
 
         case "signerid":
             do {
@@ -345,6 +390,145 @@ func handle(_ op: String, _ inp: [String: Any]) -> JOut {
                                                         try hx(inp, "digest_so_far_hex"))
             return okOut([("body_hex", .s(bytesToHex(body)))])
 
+        case "stream.state":
+            // design.md §10 state table + § Timers (stream idle/commit timer): drive ONE stream through
+            // an ordered `events` list on a fresh Guard; report the LAST event's outcome plus the
+            // stream's final state. Graded against the independent, non-circular
+            // tools/streamstate_oracle.py (F3). Mirrors impl/go's stream.state case.
+            let rawEvents = (inp["events"] as? [Any]) ?? []
+            let g = Streaming.newGuard()
+            var lastErr: Error? = nil
+            var lastStream: [UInt8] = []
+            for re in rawEvents {
+                guard let em = re as? [String: Any] else {
+                    return errOut("Malformed: stream.state event is not an object")
+                }
+                let sid = try hx(em, "stream_hex")
+                lastStream = sid
+                switch anyToString(em["ev"]) {
+                case "open":
+                    let o = Streaming.StreamOpen(streamID: sid, effect: anyToUInt64(em["effect"]), approval: nil, substream: 0)
+                    do { try g.open(o, anyToInt(em["granted"])); lastErr = nil } catch { lastErr = error }
+                case "chunk":
+                    do { try g.chunk(sid); lastErr = nil } catch { lastErr = error }
+                case "checkpoint":
+                    do { try g.checkpoint(sid); lastErr = nil } catch { lastErr = error }
+                case "commit":
+                    let rawChunks = (em["chunks"] as? [Any]) ?? []
+                    var chunks: [Streaming.Chunk] = []
+                    for rc in rawChunks {
+                        guard let cm = rc as? [String: Any] else {
+                            return errOut("Malformed: stream.state chunk is not an object")
+                        }
+                        chunks.append(Streaming.Chunk(offset: anyToUInt64(cm["offset"]),
+                                                      data: try hexToBytes(anyToString(cm["data_hex"]))))
+                    }
+                    let digest = try hx(em, "digest_hex")
+                    do {
+                        try g.commit(Streaming.StreamCommit(streamID: sid, digest: digest), chunks)
+                        lastErr = nil
+                    } catch { lastErr = error }
+                case "expire":
+                    do { try g.expire(sid); lastErr = nil } catch { lastErr = error }
+                default:
+                    return errOut("Malformed: stream.state unknown event \(anyToString(em["ev"]))")
+                }
+            }
+            let lastErrKind: String
+            if let e = lastErr as? NaalpError { lastErrKind = e.kind } else { lastErrKind = "" }
+            return okOut([
+                ("valid", .b(lastErr == nil)),
+                ("error", .s(lastErrKind)),
+                ("state", .s(g.state(lastStream).name)),
+            ])
+
+        case "delivery.state":
+            // ietf draft "## Delivery state machine" (# Object State Machines): drive ONE object
+            // through an ordered `events` list of signed delivery updates on a fresh WAL-backed
+            // Tracker; report the LAST event's outcome plus the object's final stage name. A
+            // rejected event (regress -> StageOutOfOrder) leaves the recorded stage unchanged.
+            // Graded against the independent, non-circular tools/delivery_state_oracle.py (F3).
+            // Mirrors impl/go's delivery.state case.
+            let rawEvents = (inp["events"] as? [Any]) ?? []
+            let tmpPath = NSTemporaryDirectory() + "naalp-delivery-state-\(UUID().uuidString).wal"
+            defer { try? FileManager.default.removeItem(atPath: tmpPath) }
+            let tr = try Delivery.openTracker(tmpPath)
+            defer { try? tr.close() }
+            var lastErr: Error? = nil
+            var lastObj: [UInt8] = []
+            for re in rawEvents {
+                guard let em = re as? [String: Any] else {
+                    return errOut("Malformed: delivery.state event is not an object")
+                }
+                let obj = try hx(em, "obj_hex")
+                lastObj = obj
+                switch anyToString(em["ev"]) {
+                case "update":
+                    do { _ = try tr.advance(obj, anyToUInt64(em["stage"]), 0); lastErr = nil } catch { lastErr = error }
+                default:
+                    return errOut("Malformed: delivery.state unknown event \(anyToString(em["ev"]))")
+                }
+            }
+            let (st, _) = tr.stage(lastObj)
+            let lastErrKind: String
+            if let e = lastErr as? NaalpError { lastErrKind = e.kind } else { lastErrKind = "" }
+            return okOut([
+                ("valid", .b(lastErr == nil)),
+                ("error", .s(lastErrKind)),
+                ("state", .s(Delivery.stageName(st))),
+            ])
+
+        case "approval.state":
+            // ietf draft "## Approval state machine" (# Object State Machines): build ONE signed
+            // approval, then drive it through an ordered `events` list of consume attempts through
+            // the REAL composed choke point Approval.consumeApproval on a fresh single-use ledger;
+            // report the LAST event's {valid, error} plus the ledger length after it (the draft's
+            // "ledger left untouched by a rejected request", observable via Ledger.len()). Graded
+            // against the independent, non-circular tools/approval_state_oracle.py (F3). The approver
+            // key is a deterministic Ed25519 test key — the signature is verified, not graded (bytes
+            // are not compared across ports for this op). Mirrors impl/go's approval.state case.
+            guard let am = inp["approval"] as? [String: Any] else {
+                return errOut("Malformed: approval.state missing approval object")
+            }
+            let a = Approval.ApprovalRecord(approves: try hx(am, "approves_hex"), approver: anyToString(am["approver"]),
+                                            grant: anyToUInt64(am["grant"]), nonce: try hx(am, "nonce_hex"),
+                                            notAfter: anyToUInt64(am["not_after"]))
+            let seed = [UInt8](repeating: 0, count: 32) // deterministic all-zero test approver seed
+            let pk = try Cose.ed25519PublicKey(seed)
+            let sig = try Cose.ed25519Sign(seed, try a.bytes())
+            let verify: Approval.Verify = { msg, s in Cose.ed25519Verify(pk, msg, s) }
+
+            let tmpPath = NSTemporaryDirectory() + "naalp-approval-state-\(UUID().uuidString).wal"
+            defer { try? FileManager.default.removeItem(atPath: tmpPath) }
+            let ledger = try Approval.Ledger.open(tmpPath)
+            defer { try? ledger.close() }
+
+            let rawApprovalEvents = (inp["events"] as? [Any]) ?? []
+            var lastApprovalErr: Error? = nil
+            for re in rawApprovalEvents {
+                guard let em = re as? [String: Any] else {
+                    return errOut("Malformed: approval.state event is not an object")
+                }
+                switch anyToString(em["ev"]) {
+                case "consume":
+                    let presentCID = try hx(em, "present_cid_hex")
+                    do {
+                        _ = try Approval.consumeApproval(a, verify, sig, presentCID, anyToUInt64(em["pos_time"]),
+                                                         anyToInt(em["required_effect"]), ledger, anyToString(em["by"]))
+                        lastApprovalErr = nil
+                    } catch { lastApprovalErr = error }
+                default:
+                    return errOut("Malformed: approval.state unknown event \(anyToString(em["ev"]))")
+                }
+            }
+            let lastApprovalErrKind: String
+            if let e = lastApprovalErr as? NaalpError { lastApprovalErrKind = e.kind } else { lastApprovalErrKind = "" }
+            return okOut([
+                ("valid", .b(lastApprovalErr == nil)),
+                ("error", .s(lastApprovalErrKind)),
+                ("ledger_len", .i(ledger.len())),
+            ])
+
         case "transport.emit":
             do {
                 let result = try Records.transportEmit(anyToString(inp["transport"]),
@@ -395,6 +579,173 @@ func handle(_ op: String, _ inp: [String: Any]) -> JOut {
             let order = try orderRaw.map { try hexToBytes(anyToString($0)) }
             let body = try Graph.reconcileRecord(authorities, order)
             return okOut([("body_hex", .s(bytesToHex(body)))])
+
+        case "reconcile.state":
+            // ietf draft "## Reconcile state machine" (# Object State Machines): drive the machine
+            // through ONE event (add-chain | linearize | verify) on fresh state and report
+            // {valid, error}. add-chain runs the draft's fixed VerifyChain-then-Observe pipeline (a
+            // `chain` that must independently pass VerifyChain, plus an optional `extra` receipt fed
+            // only to Observe -- a chain array cannot itself carry a duplicate seq without
+            // independently tripping ChainBroken, so equivocation is exercised via the separate
+            // `extra` observation); linearize runs Federation.reconcile (which calls
+            // Graph.verifyCausal internally); verify runs Federation.verifyReconcileOrder, which MUST
+            // recompute via reconcile (content-id tie-break), never a position tie-break. Graded
+            // against the independent, non-circular tools/reconcile_state_oracle.py (F3). The
+            // authority key is a deterministic all-zero Ed25519 test seed -- the signature is
+            // verified, not graded (bytes are not compared across ports for this op). Note:
+            // Audit.Auditor.observe RETURNS a ForkProof on equivocation rather than throwing, so a
+            // non-nil return is treated as the Equivocation outcome here. Mirrors impl/go's
+            // reconcile.state case.
+            let seed = [UInt8](repeating: 0, count: 32) // deterministic all-zero test authority seed
+            let signerID = try Cose.ed25519PublicKey(seed)
+            let verify: Audit.Verify = { msg, sig in Cose.ed25519Verify(signerID, msg, sig) }
+
+            func buildReceipt(_ rm: [String: Any]) throws -> Audit.Receipt {
+                return Audit.Receipt(prev: try hx(rm, "prev_hex"), obj: try hx(rm, "obj_hex"),
+                                     seq: anyToUInt64(rm["seq"]), at: anyToUInt64(rm["at"]))
+            }
+
+            switch anyToString(inp["event"]) {
+            case "add-chain":
+                let rawChain = (inp["chain"] as? [Any]) ?? []
+                var receipts: [Audit.Receipt] = []
+                var sigs: [[UInt8]] = []
+                for rc in rawChain {
+                    guard let rm = rc as? [String: Any] else {
+                        return errOut("Malformed: reconcile.state chain entry is not an object")
+                    }
+                    let r = try buildReceipt(rm)
+                    receipts.append(r)
+                    sigs.append(try Cose.ed25519Sign(seed, try r.bytes()))
+                }
+                if let ci = inp["corrupt_sig_at"] as? NSNumber {
+                    let idx = ci.intValue
+                    var corrupted = sigs[idx]
+                    corrupted[0] ^= 0xFF
+                    sigs[idx] = corrupted
+                }
+                var lastErr: Error? = nil
+                do {
+                    try Audit.verifyChain(receipts, sigs, verify)
+                } catch {
+                    lastErr = error
+                }
+                if lastErr == nil {
+                    let auditor = Audit.Auditor(verify: verify, signer: signerID)
+                    for (i, r) in receipts.enumerated() {
+                        do {
+                            if try auditor.observe(r, sigs[i]) != nil {
+                                lastErr = NaalpError("Equivocation", "auditor detected equivocation")
+                                break
+                            }
+                        } catch {
+                            lastErr = error
+                            break
+                        }
+                    }
+                    if lastErr == nil, let em = inp["extra"] as? [String: Any] {
+                        let er = try buildReceipt(em)
+                        let esig = try Cose.ed25519Sign(seed, try er.bytes())
+                        do {
+                            if try auditor.observe(er, esig) != nil {
+                                lastErr = NaalpError("Equivocation", "auditor detected equivocation")
+                            }
+                        } catch {
+                            lastErr = error
+                        }
+                    }
+                }
+                return okOut([("valid", .b(lastErr == nil)), ("error", .s(errKind(lastErr)))])
+
+            case "linearize":
+                let nodes = try parseFederationNodes(inp)
+                var lastErr: Error? = nil
+                do { _ = try Federation.reconcile(nodes) } catch { lastErr = error }
+                return okOut([("valid", .b(lastErr == nil)), ("error", .s(errKind(lastErr)))])
+
+            case "verify":
+                let nodes = try parseFederationNodes(inp)
+                let rawOrder = (inp["claimed_order_hex"] as? [Any]) ?? []
+                let order = try rawOrder.map { try hexToBytes(anyToString($0)) }
+                let rec = Federation.ReconcileRecord(authorities: [], order: order)
+                var lastErr: Error? = nil
+                do { try Federation.verifyReconcileOrder(rec, nodes) } catch { lastErr = error }
+                return okOut([("valid", .b(lastErr == nil)), ("error", .s(errKind(lastErr)))])
+
+            default:
+                return errOut("Malformed: reconcile.state unknown event \(anyToString(inp["event"]))")
+            }
+
+        // ---- R7 decoder resource bounds: decode + bound-enforce an untrusted object; all four
+        // object-level bounds (DepthExceeded, TooManyCauses, TooManyExtensions) fire BEFORE the
+        // COSE signature is checked, so no real key/alg is ever consulted -- a permissive kind
+        // validator + an unused alg/pubkey pair is enough. over_size materializes the octet-size
+        // bound (rejected on raw length before any parse). Mirrors impl/go's object.decode case.
+        case "object.decode":
+            var obj: [UInt8]
+            if let overSizeRaw = inp["over_size"] {
+                obj = [UInt8](repeating: 0, count: anyToInt(overSizeRaw))
+            } else {
+                obj = try hx(inp, "obj_hex")
+            }
+            let kindOK: KindValidator = { _, _ in true }
+            do {
+                _ = try Envelope.verify(1, Cose.ALG_MLDSA65, [], kindOK, obj)
+                return okOut([("valid", .b(true)), ("error", .s(""))])
+            } catch let e as NaalpError {
+                return okOut([("valid", .b(false)), ("error", .s(e.kind))])
+            } catch {
+                return okOut([("valid", .b(false)), ("error", .s("Malformed"))])
+            }
+
+        // ---- R7 decoder resource bounds: the stream chunk-count bound fires before the digest
+        // check, so a zero/default commitment is enough -- n empty chunks against an empty
+        // StreamCommit. Mirrors impl/go's stream.verify_commit case.
+        case "stream.verify_commit":
+            let n = anyToInt(inp["chunk_count"])
+            let chunks = (0..<max(0, n)).map { _ in Streaming.Chunk(offset: 0, data: []) }
+            let commit = Streaming.StreamCommit(streamID: [], digest: [])
+            do {
+                try Streaming.verifyCommit(commit, chunks)
+                return okOut([("valid", .b(true)), ("error", .s(""))])
+            } catch let e as NaalpError {
+                return okOut([("valid", .b(false)), ("error", .s(e.kind))])
+            } catch {
+                return okOut([("valid", .b(false)), ("error", .s("Malformed"))])
+            }
+
+        case "error.name_for_code":
+            // T3.3: the naalp-error registry table lookup (design.md §3.5). Grades the port's
+            // embedded 119-entry name<->code table per-code, plus the unknown-code (opaque)
+            // contract. Mirrors impl/go's error.name_for_code case.
+            let (name, reg) = Naalperror.nameForCode(anyToUInt64(inp["code"]))
+            return okOut([("name", .s(name)), ("registered", .b(reg))])
+
+        case "error.encode":
+            // T3.3: deterministic CBOR of a naalp-error body {1:code, 2:name, ?3:detail,
+            // ?4:subject}. Mirrors impl/go's error.encode case.
+            var subj: [UInt8]? = nil
+            if inp["subject_hex"] != nil {
+                subj = try hx(inp, "subject_hex")
+            }
+            let detail = anyToString(inp["detail"])
+            let name = anyToString(inp["name"])
+            let body = try Naalperror.encode(anyToUInt64(inp["code"]), name, detail, subj)
+            return okOut([("body_hex", .s(bytesToHex(body)))])
+
+        case "error.decode":
+            // T3.3: parse + dual-carriage validate a naalp-error body (registered code + wrong
+            // name -> Malformed; unknown code -> opaque accept). Mirrors impl/go's error.decode
+            // case.
+            let body = try hx(inp, "body_hex")
+            do {
+                let eo = try Naalperror.decode(body)
+                return okOut([("valid", .b(true)), ("code", .i(Int(eo.code))), ("name", .s(eo.name))])
+            } catch let e as NaalpError {
+                return okOut([("valid", .b(false)), ("error", .s(e.kind))])
+            } catch {
+                return okOut([("valid", .b(false)), ("error", .s("Malformed"))])
+            }
 
         default:
             return skipOut("op not implemented: " + op)

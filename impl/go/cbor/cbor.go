@@ -81,6 +81,12 @@ func (e *Error) Error() string { return e.Kind + ": " + e.Msg }
 
 func nonCanonical(msg string) *Error { return &Error{Kind: "NonCanonical", Msg: msg} }
 
+// depthExceeded is returned when a decoded item nests deeper than the caller's
+// maximum (design.md §3.4 (R7)). The outermost item is depth 1.
+func depthExceeded() *Error {
+	return &Error{Kind: "DepthExceeded", Msg: "CBOR nesting depth exceeds the maximum"}
+}
+
 // encHead writes the shortest-form head for a major type and argument n.
 func encHead(major byte, n uint64) []byte {
 	mt := major << 5
@@ -185,9 +191,28 @@ func ContentID(bodyWithoutID Map) ([]byte, error) {
 
 // Decode parses one deterministic-CBOR value from data and requires that data is
 // exactly one canonical item with no trailing bytes. Any non-canonical input is
-// rejected with a NonCanonical error (fail-closed, R-3.4).
+// rejected with a NonCanonical error (fail-closed, R-3.4). Decode does not bound
+// nesting depth on the trusted-input path; the untrusted object decode path uses
+// DecodeBounded (design.md §3.4 (R7)).
 func Decode(data []byte) (Value, error) {
-	v, rest, err := decode(data)
+	return decodeTop(data, maxDepthUnbounded)
+}
+
+// DecodeBounded is Decode with a maximum CBOR nesting depth (design.md §3.4 (R7)):
+// the outermost item is depth 1, each nested map key/value, array element and tagged
+// content is one deeper, and an item at depth maxDepth+1 is rejected with a
+// DepthExceeded error BEFORE it is materialized (RFC 8949 §10 decoder-memory guard).
+func DecodeBounded(data []byte, maxDepth int) (Value, error) {
+	return decodeTop(data, maxDepth)
+}
+
+// maxDepthUnbounded is the sentinel used by the trusted-input Decode path: far beyond
+// any legitimate structure yet finite, so even the unbounded path cannot recurse
+// without limit on a pathological input.
+const maxDepthUnbounded = 1 << 20
+
+func decodeTop(data []byte, maxDepth int) (Value, error) {
+	v, rest, err := decode(data, 1, maxDepth)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +222,10 @@ func Decode(data []byte) (Value, error) {
 	return v, nil
 }
 
-func decode(b []byte) (Value, []byte, error) {
+func decode(b []byte, depth, maxDepth int) (Value, []byte, error) {
+	if depth > maxDepth {
+		return nil, nil, depthExceeded()
+	}
 	if len(b) == 0 {
 		return nil, nil, nonCanonical("unexpected end of input")
 	}
@@ -231,11 +259,23 @@ func decode(b []byte) (Value, []byte, error) {
 		}
 		return Tstr(string(s)), rest[arg:], nil
 	case 4: // array
+		// Bound the pre-allocation by what the remaining input can actually satisfy
+		// (every item needs >=1 byte), mirroring the existing bstr/tstr length check
+		// above. Without this, an attacker-controlled count up to 2^64-1 either panics
+		// the runtime's own overflow guard ("makeslice: cap out of range") or, for a
+		// count below that guard but still far larger than the input, drives a real
+		// multi-gigabyte allocation attempt from a few-byte message -- the decoder-
+		// memory-exhaustion class RFC 8949 §10 names and design.md §3.4 (R7) guards
+		// against. This never rejects a legitimately-decodable structure: a real array
+		// of arg items requires at least arg bytes of remaining input by construction.
+		if uint64(len(rest)) < arg {
+			return nil, nil, nonCanonical("array declares more elements than remaining input can contain")
+		}
 		items := make(Arr, 0, arg)
 		cur := rest
 		for i := uint64(0); i < arg; i++ {
 			var it Value
-			it, cur, err = decode(cur)
+			it, cur, err = decode(cur, depth+1, maxDepth)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -243,13 +283,21 @@ func decode(b []byte) (Value, []byte, error) {
 		}
 		return items, cur, nil
 	case 5: // map
+		// Bound the pre-allocation the same way as the array case above: a map pair
+		// needs at least 2 bytes of remaining input (>=1 byte each for its key and its
+		// value head), so arg pairs can never legitimately be satisfied by fewer than
+		// 2*arg bytes. Compare via division (len(rest)/2), not arg*2, so an
+		// attacker-controlled arg near 2^64-1 cannot overflow the comparison itself.
+		if arg > uint64(len(rest))/2 {
+			return nil, nil, nonCanonical("map declares more pairs than remaining input can contain")
+		}
 		pairs := make(Map, 0, arg)
 		cur := rest
 		var prevKey []byte
 		for i := uint64(0); i < arg; i++ {
 			keyStart := cur
 			var k Value
-			k, cur, err = decode(cur)
+			k, cur, err = decode(cur, depth+1, maxDepth)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -264,7 +312,7 @@ func decode(b []byte) (Value, []byte, error) {
 			}
 			prevKey = kbytes
 			var val Value
-			val, cur, err = decode(cur)
+			val, cur, err = decode(cur, depth+1, maxDepth)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -272,7 +320,7 @@ func decode(b []byte) (Value, []byte, error) {
 		}
 		return pairs, cur, nil
 	case 6: // tag: tag number (arg) applied to the following content item
-		content, rest2, err := decode(rest)
+		content, rest2, err := decode(rest, depth+1, maxDepth)
 		if err != nil {
 			return nil, nil, err
 		}

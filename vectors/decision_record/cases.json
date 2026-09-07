@@ -1,0 +1,270 @@
+{
+  "source": "design.md section 26.4 / spec/naalp-draft-01.cddl naalp-decision-record (FROZEN commit c488c6d3). naalp-decision-record {1:action,2:governing[],?3:consume,4:outcome,5:ordering,?6:terms,?7:enforcement} is the SIGNED record a governed decision point emits that it decided about an action under a CLOSED, uniquely-selected condition set. CLOCK-FREE by design: no timestamp field anywhere in the body; both time properties (governed-at-T, binding-fixed-by-T) are POSITIONAL. head=SHA-384(body); content-id=multihash(0x20,SHA-384(body)), exactly as every other N-AALP object in this family.",
+  "outcome_vocabulary": [
+    {
+      "name": "allow",
+      "code": 0
+    },
+    {
+      "name": "deny",
+      "code": 1
+    },
+    {
+      "name": "hold",
+      "code": 2
+    }
+  ],
+  "ordering_basis_vocabulary": [
+    {
+      "name": "correspondence-only",
+      "code": 0
+    },
+    {
+      "name": "single-boundary",
+      "code": 1
+    },
+    {
+      "name": "external-mechanism",
+      "code": 2
+    }
+  ],
+  "enforcement_disposition_vocabulary": [
+    {
+      "name": "enforced",
+      "code": 1
+    },
+    {
+      "name": "advised",
+      "code": 2
+    }
+  ],
+  "term_disposition_kind_vocabulary": [
+    {
+      "name": "observed",
+      "code": 1
+    },
+    {
+      "name": "reported",
+      "code": 2
+    }
+  ],
+  "action_cid_hex": "20303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3",
+  "policy_a_cid_hex": "2030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f",
+  "policy_b_cid_hex": "2030a08a97e75d2a93650abeac46fcfd9b4ec00001696c9c207d8c4d440f7d89c1fe42b4328476569565528a18647a328720",
+  "consume_receipt_cid_hex": "2030849669b1bfa41fa0d676055c67040493f9ce4d3e9fff7dccb44bceb9a8b696dfabc28ebee6f10853979f247bb830252e",
+  "records": {
+    "allow_consuming": {
+      "name": "allow_consuming",
+      "action_hex": "20303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3",
+      "governing_hex": [
+        "2030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f"
+      ],
+      "consume_hex": "2030849669b1bfa41fa0d676055c67040493f9ce4d3e9fff7dccb44bceb9a8b696dfabc28ebee6f10853979f247bb830252e",
+      "outcome": 0,
+      "body_hex": "a501583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3028158322030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f0358322030849669b1bfa41fa0d676055c67040493f9ce4d3e9fff7dccb44bceb9a8b696dfabc28ebee6f10853979f247bb830252e040005a10100",
+      "head_hex": "8c07d0c4853015458dbed024b9ce4e3a4aecd1061ec7c8e396e55ae78f9e8be660ac84bdb91ecca828c6ad0031c2e9f2",
+      "id_hex": "20308c07d0c4853015458dbed024b9ce4e3a4aecd1061ec7c8e396e55ae78f9e8be660ac84bdb91ecca828c6ad0031c2e9f2",
+      "note": "an ALLOW that spent a single-use authority at decision time: field 3 (consume) names the naalp-consume-receipt content id that was spent. Governed-at-T leg present."
+    },
+    "allow_no_consume": {
+      "name": "allow_no_consume",
+      "action_hex": "20303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3",
+      "governing_hex": [
+        "2030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f"
+      ],
+      "consume_hex": null,
+      "outcome": 0,
+      "body_hex": "a401583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3028158322030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f040005a10100",
+      "head_hex": "3a4d558e7590815e68a169e3f6a4ed3be9fefdc7b466da18ba2f2a30178e7bd3b78f167d808859445edffd7d9e723d8c",
+      "id_hex": "20303a4d558e7590815e68a169e3f6a4ed3be9fefdc7b466da18ba2f2a30178e7bd3b78f167d808859445edffd7d9e723d8c",
+      "note": "an ALLOW governed by standing policy alone: field 3 (consume) absent because no single-use authority was spent. Distinct content-id from allow_consuming (isolates field 3 present-vs-absent as the single variable)."
+    },
+    "deny_two_governing": {
+      "name": "deny_two_governing",
+      "action_hex": "20303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3",
+      "governing_hex": [
+        "2030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f",
+        "2030a08a97e75d2a93650abeac46fcfd9b4ec00001696c9c207d8c4d440f7d89c1fe42b4328476569565528a18647a328720"
+      ],
+      "consume_hex": null,
+      "outcome": 1,
+      "body_hex": "a401583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3028258322030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f58322030a08a97e75d2a93650abeac46fcfd9b4ec00001696c9c207d8c4d440f7d89c1fe42b4328476569565528a18647a328720040105a201010251626f756e646172792d7369676e65722d58",
+      "head_hex": "0ddf9c75cc2629c517f693b7ff8f8415468e6c2ae542a1e914d97de725bec9fe8f7540d6f4fdf0f2a0ec8c7b321ba838",
+      "id_hex": "20300ddf9c75cc2629c517f693b7ff8f8415468e6c2ae542a1e914d97de725bec9fe8f7540d6f4fdf0f2a0ec8c7b321ba838",
+      "note": "a DENY naming two governing conditions in the clear (unique-selection leg): identification AND availability together, not a hash or a count."
+    },
+    "hold_empty_governing": {
+      "name": "hold_empty_governing",
+      "action_hex": "20303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3",
+      "governing_hex": [],
+      "consume_hex": null,
+      "outcome": 2,
+      "body_hex": "a401583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e30280040205a3010203582165787465726e616c2d6c6f673a61636d652d7472616e73706172656e63792d76310458322030c83b03ab5d26de33f037927bb2258fcfc3e8050793b68959bc5be954bcda9ca13875be35627f50f282c4eff9d807ea56",
+      "head_hex": "fd270df4bae005614478c0b144ada2bfb620ffe8ce854bbc88706e79ec5c2a235ea6f354eb38a8eb6951fba6ecfea3d9",
+      "id_hex": "2030fd270df4bae005614478c0b144ada2bfb620ffe8ce854bbc88706e79ec5c2a235ea6f354eb38a8eb6951fba6ecfea3d9",
+      "note": "a HOLD with governing=[] (empty is legal only when no governing condition beyond the decision itself exists); ordering = external-mechanism, relation names a naalp-checkpoint-root content id (S3 composition)."
+    },
+    "terms_valid": {
+      "name": "terms_valid",
+      "action_hex": "20303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3",
+      "governing_hex": [
+        "2030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f"
+      ],
+      "consume_hex": "2030849669b1bfa41fa0d676055c67040493f9ce4d3e9fff7dccb44bceb9a8b696dfabc28ebee6f10853979f247bb830252e",
+      "outcome": 0,
+      "body_hex": "a601583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3028158322030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f0358322030849669b1bfa41fa0d676055c67040493f9ce4d3e9fff7dccb44bceb9a8b696dfabc28ebee6f10853979f247bb830252e040005a1010006a201a1010104a20102025818626f756e646172793a72656c61792d706172746e65722d33",
+      "head_hex": "dc901455a8ace412288a55e2e24821d3f3337c1503ce179106538fad34a4e09fa03c2d0e0c4d6638004d43b270092c8c",
+      "id_hex": "2030dc901455a8ace412288a55e2e24821d3f3337c1503ce179106538fad34a4e09fa03c2d0e0c4d6638004d43b270092c8c",
+      "note": "field 6 discloses that field 1 (action) was OBSERVED first-hand and field 4 (outcome) was REPORTED, relayed from `origin` \u2014 reuses the section 2.5.4 kind codes (1/2), keyed by this record's own field numbers."
+    },
+    "enforcement_enforced": {
+      "name": "enforcement_enforced",
+      "action_hex": "20303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3",
+      "governing_hex": [
+        "2030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f"
+      ],
+      "consume_hex": null,
+      "outcome": 1,
+      "body_hex": "a501583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3028158322030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f040105a101000701",
+      "head_hex": "ffacb91d0a6b003222112b5227ced0efa1562436dda313caeec34abaa594f8306e7a98d777fd403099b6062a26e5e7fc",
+      "id_hex": "2030ffacb91d0a6b003222112b5227ced0efa1562436dda313caeec34abaa594f8306e7a98d777fd403099b6062a26e5e7fc",
+      "note": "field 7 = enforced (1): the producer states it actually enforces this outcome."
+    },
+    "enforcement_advised": {
+      "name": "enforcement_advised",
+      "action_hex": "20303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3",
+      "governing_hex": [
+        "2030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f"
+      ],
+      "consume_hex": null,
+      "outcome": 1,
+      "body_hex": "a501583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3028158322030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f040105a101000702",
+      "head_hex": "bb2545db4167ad4be80230acd4b10634414b5976ad627e0fcf737e7f0630832fc5cb5ea4d6ff67312f03eeccb91a83cd",
+      "id_hex": "2030bb2545db4167ad4be80230acd4b10634414b5976ad627e0fcf737e7f0630832fc5cb5ea4d6ff67312f03eeccb91a83cd",
+      "note": "field 7 = advised (2): the producer's own unverifiable self-account that it only advises, rather than enforces, this outcome."
+    },
+    "minimal": {
+      "name": "minimal",
+      "action_hex": "",
+      "governing_hex": [],
+      "consume_hex": null,
+      "outcome": 1,
+      "body_hex": "a401400280040105a10100",
+      "head_hex": "bec57f4166670a59e08703214eeb24acaf6652f254019d9fd7809cbfecefb5f7171919672773013054b00cfd46da21e6",
+      "id_hex": "2030bec57f4166670a59e08703214eeb24acaf6652f254019d9fd7809cbfecefb5f7171919672773013054b00cfd46da21e6",
+      "note": "smallest valid decision-record: empty action bstr, governing=[], deny, correspondence-only, no consume/terms/enforcement."
+    }
+  },
+  "ordering_examples": {
+    "correspondence_only": {
+      "name": "correspondence_only",
+      "action_hex": "2030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a555",
+      "governing_hex": [],
+      "consume_hex": null,
+      "outcome": 1,
+      "body_hex": "a40158322030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a5550280040105a10100",
+      "head_hex": "31412b557c03bd61059151512acc0ebb9cce9a41798158a051c5c380b98dfbe1f57791996389106fdec0c09b0810af31",
+      "id_hex": "203031412b557c03bd61059151512acc0ebb9cce9a41798158a051c5c380b98dfbe1f57791996389106fdec0c09b0810af31",
+      "note": "the weakest claim: no boundary, no mechanism, no relation. Also the value a verifier MUST read when ordering is ABSENT on the optional carriers (gateway-decision, egress-attestation) \u2014 never inferred stronger from silence."
+    },
+    "single_boundary": {
+      "name": "single_boundary",
+      "action_hex": "2030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a555",
+      "governing_hex": [],
+      "consume_hex": null,
+      "outcome": 1,
+      "body_hex": "a40158322030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a5550280040105a2010102515349474e45525f422d626f756e64617279",
+      "head_hex": "961d83d43b41539654672510c7b08ce23f93509266a8907f146f1192b90e7f2ca9021dbf7c86739910770a12cceda71f",
+      "id_hex": "2030961d83d43b41539654672510c7b08ce23f93509266a8907f146f1192b90e7f2ca9021dbf7c86739910770a12cceda71f",
+      "note": "one boundary observed both terms and is named; a real, checkable claim, but NOT neither-party (one observational domain, not two)."
+    },
+    "external_mechanism": {
+      "name": "external_mechanism",
+      "action_hex": "2030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a555",
+      "governing_hex": [],
+      "consume_hex": null,
+      "outcome": 1,
+      "body_hex": "a40158322030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a5550280040105a3010203582165787465726e616c2d6c6f673a61636d652d7472616e73706172656e63792d76310458322030c83b03ab5d26de33f037927bb2258fcfc3e8050793b68959bc5be954bcda9ca13875be35627f50f282c4eff9d807ea56",
+      "head_hex": "c502b5c36ab1d8f7011729b99920a4d0740fd263aa10b076ea3c3e7a9f5ec3b4e6c73c16f13cbb538d55f059771fbf83",
+      "id_hex": "2030c502b5c36ab1d8f7011729b99920a4d0740fd263aa10b076ea3c3e7a9f5ec3b4e6c73c16f13cbb538d55f059771fbf83",
+      "note": "an external sequencing mechanism is named together with the log relation binding this record under it (here, a naalp-checkpoint-root content id) \u2014 the strongest on-wire claim, composing with S3 to carry binding-fixed-by-T."
+    },
+    "external_mechanism_no_relation": {
+      "name": "external_mechanism_no_relation",
+      "action_hex": "2030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a555",
+      "governing_hex": [],
+      "consume_hex": null,
+      "outcome": 1,
+      "body_hex": "a40158322030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a5550280040105a2010203582165787465726e616c2d6c6f673a61636d652d7472616e73706172656e63792d7631",
+      "head_hex": "3dca4686e9ccd9116526c0b6d4527888e1b6e6952799f125e796e8e670dd92752cf5cd414ada8b76d938c2a975d12fb4",
+      "id_hex": "20303dca4686e9ccd9116526c0b6d4527888e1b6e6952799f125e796e8e670dd92752cf5cd414ada8b76d938c2a975d12fb4",
+      "note": "external-mechanism with relation (field 4) ABSENT \u2014 relation is OPTIONAL even under external-mechanism per the CDDL ('key 3 present (4 optional)')."
+    }
+  },
+  "negative": {
+    "deny_with_consume_rejected": {
+      "body_hex": "a501583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3028158322030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f0358322030849669b1bfa41fa0d676055c67040493f9ce4d3e9fff7dccb44bceb9a8b696dfabc28ebee6f10853979f247bb830252e040105a10100",
+      "reject": "DecisionMalformed",
+      "note": "outcome=deny but field 3 (consume) is present anyway \u2014 nothing was consumed by a refusal, so a value here asserts authority spent for an action the record's own outcome says was not taken."
+    },
+    "hold_with_consume_rejected": {
+      "body_hex": "a501583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e302800358322030849669b1bfa41fa0d676055c67040493f9ce4d3e9fff7dccb44bceb9a8b696dfabc28ebee6f10853979f247bb830252e040205a10100",
+      "reject": "DecisionMalformed",
+      "note": "outcome=hold but field 3 (consume) is present anyway \u2014 same rejection as deny."
+    },
+    "terms_key_outside_field_set_rejected": {
+      "body_hex": "a601583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3028158322030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f0358322030849669b1bfa41fa0d676055c67040493f9ce4d3e9fff7dccb44bceb9a8b696dfabc28ebee6f10853979f247bb830252e040005a1010006a106a10101",
+      "reject": "TermDispositionMalformed",
+      "note": "field 6 (terms) carries a key of 6, which is NOT one of the record's own field numbers 1..5 (6 is the terms map's own field number) \u2014 fail-closed, the whole record is rejected."
+    },
+    "unknown_outcome_rejected": {
+      "body_hex": "a401583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3028004186305a10100",
+      "reject": "UnknownGatewayDecision",
+      "note": "field 4 (outcome) = 99, outside the closed gw-decision set {allow=0,deny=1,hold=2} the field reuses unchanged from naalp-gateway-decision."
+    },
+    "ordering_malformed": {
+      "correspondence_with_boundary": {
+        "body_hex": "a40158322030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a5550280040105a201000251626f756e646172792d7369676e65722d58",
+        "reject": "OrderingDisclosureMalformed",
+        "note": "basis=correspondence-only but key 2 (boundary) is present; correspondence-only requires 2/3/4 all absent."
+      },
+      "single_boundary_with_mechanism": {
+        "body_hex": "a40158322030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a5550280040105a301010251626f756e646172792d7369676e65722d5803582165787465726e616c2d6c6f673a61636d652d7472616e73706172656e63792d7631",
+        "reject": "OrderingDisclosureMalformed",
+        "note": "basis=single-boundary but key 3 (mechanism) is also present; single-boundary requires 3/4 absent."
+      },
+      "single_boundary_missing_boundary": {
+        "body_hex": "a40158322030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a5550280040105a10101",
+        "reject": "OrderingDisclosureMalformed",
+        "note": "basis=single-boundary but key 2 (boundary) is absent; single-boundary requires key 2 present."
+      },
+      "external_mechanism_with_boundary": {
+        "body_hex": "a40158322030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a5550280040105a401020251626f756e646172792d7369676e65722d5803582165787465726e616c2d6c6f673a61636d652d7472616e73706172656e63792d76310458322030c83b03ab5d26de33f037927bb2258fcfc3e8050793b68959bc5be954bcda9ca13875be35627f50f282c4eff9d807ea56",
+        "reject": "OrderingDisclosureMalformed",
+        "note": "basis=external-mechanism but key 2 (boundary) is present; external-mechanism requires key 2 absent."
+      },
+      "external_mechanism_missing_mechanism": {
+        "body_hex": "a40158322030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a5550280040105a201020458322030c83b03ab5d26de33f037927bb2258fcfc3e8050793b68959bc5be954bcda9ca13875be35627f50f282c4eff9d807ea56",
+        "reject": "OrderingDisclosureMalformed",
+        "note": "basis=external-mechanism but key 3 (mechanism) is absent; external-mechanism requires key 3 present."
+      },
+      "unknown_ordering_basis": {
+        "body_hex": "a40158322030abb1c2cd81d7bb018c666074804513410ad2d1de5a9044da947c3c7d7359524b0e16272bb03c4325726a60aadca3a5550280040105a1011863",
+        "reject": "UnknownOrderingBasis",
+        "note": "ordering-disclosure field 1 (basis) = 99, outside the closed {0,1,2} set."
+      }
+    },
+    "keys_out_of_order": {
+      "canonical_body_hex": "a601583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3028158322030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f0358322030849669b1bfa41fa0d676055c67040493f9ce4d3e9fff7dccb44bceb9a8b696dfabc28ebee6f10853979f247bb830252e040005a1010006a201a1010104a20102025818626f756e646172793a72656c61792d706172746e65722d33",
+      "noncanonical_body_hex": "a606a201a1010104a20102025818626f756e646172793a72656c61792d706172746e65722d3305a1010004000358322030849669b1bfa41fa0d676055c67040493f9ce4d3e9fff7dccb44bceb9a8b696dfabc28ebee6f10853979f247bb830252e028158322030dcb90a2a9e9158c0bd1108f5f2245c7655058564ebee2d2f29dd0344ca21f7e7a199a6631e8e2ed2aae869e6c9312a6f01583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3",
+      "reject": "NonCanonical",
+      "note": "same content as terms_valid, top-level keys emitted descending \u2014 the strict shared decoder rejects NonCanonical."
+    },
+    "look_alike": {
+      "body_hex": "a4010002583220303abca200cf5993c695dd08348323c88f6e7921f678a11a5a3aeefa11479958bfd433c37448864325df6f6794e947d0e3034b706f6c6963793a61636d650400",
+      "reject": "DecisionMalformed",
+      "note": "a naalp-gateway-decision body (this family's own sibling near-clone) fed to ParseDecisionRecord: field 1 is a uint (gw-decision) where field 1 (action) requires a bstr, and field 5 (the mandatory ordering group) is entirely absent."
+    }
+  },
+  "note": "every *_hex value in this corpus is produced by the shared deterministic-CBOR constructor (cbor_oracle, T1) plus stdlib hashlib SHA-384 \u2014 never by the Go/Rust decision-record code under test. Go and Rust are graded byte-for-byte against these bodies, heads, and content ids (Go == Rust == oracle)."
+}

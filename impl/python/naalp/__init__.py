@@ -1,6 +1,6 @@
 # Copyright (c) 2026 BubbleFish Technologies, Inc. Apache-2.0.
 """
-naalp — the Python reference SDK for N-AALP (draft-bubblefish-naalp-00).
+naalp — the Python reference SDK for N-AALP (draft-bubblefish-naalp-01).
 
 N-AALP makes the *object*, not the connection, the unit of security: every message is a
 deterministically-encoded CBOR structure signed with COSE that carries, under one signature,
@@ -30,11 +30,11 @@ the transport boundary), `graph` (causal verify + federation reconcile), `channe
 channel registry), and `envelope` (the full object). Every construction is graded byte-for-byte
 against the shared conformance corpus (== Go == Rust).
 """
-from . import cbor, channels, cose, envelope, graph, identity, policy, records  # noqa: F401
-from .envelope import Object, sign, verify  # noqa: F401  (the ergonomic surface)
+from . import cbor, channels, cose, envelope, ez, graph, hazard, identity, policy, records  # noqa: F401
+from .envelope import Object, sign, verify  # noqa: F401  (the raw object surface)
 
 __all__ = [
-    "cbor", "cose", "identity", "policy", "records", "graph", "channels", "envelope",
-    "Object", "sign", "verify",
+    "cbor", "cose", "identity", "policy", "records", "graph", "channels", "envelope", "ez",
+    "hazard", "Object", "sign", "verify",
 ]
 __version__ = "0.1.0"

@@ -1,0 +1,132 @@
+{
+  "source": "design \u00a720; FlowOpen {1:flow_id,2:effect_ceiling,3:approvals[]} (full ML-DSA sig); Continuation {1:flow_open_id,2:seq,3:effect,4:payload_id,5:prev} (cheap; head = SHA-384(body); prev[0] = SHA-384(FlowOpen body); prev[i] = head[i-1]); Checkpoint {1:flow_open_id,2:through_seq,3:head}; FlowCommit {1:flow_open_id,2:final_head} (full ML-DSA sig). Content-id = multihash(0x20, SHA-384). Effect lattice read_only=0<idempotent_write=1<non_idempotent_write=2<destructive=3; a continuation effect above the ceiling is refused AboveCeiling.",
+  "flow_open": {
+    "flow_id_hex": "f100000000000000000000000000000a",
+    "effect_ceiling": 2,
+    "approvals_hex": [
+      "2030a47674b30741cc99b53a3c27753dfcaf366e982d67a3aa5958a596837441ca9f4c2b27d848943a7d5d91d6c59788a221"
+    ],
+    "body_hex": "a30150f100000000000000000000000000000a0202038158322030a47674b30741cc99b53a3c27753dfcaf366e982d67a3aa5958a596837441ca9f4c2b27d848943a7d5d91d6c59788a221",
+    "head_hex": "da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1",
+    "id_hex": "2030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1"
+  },
+  "continuations": [
+    {
+      "seq": 0,
+      "effect": 0,
+      "payload_id_hex": "2030197e6ace0d1015abf5d7c736c39c6c74cc132b5235dbbc2983518aef0d4a81a00f3c6998262394a789ee5ed9ab2761ce",
+      "prev_hex": "da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1",
+      "body_hex": "a50158322030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1020003000458322030197e6ace0d1015abf5d7c736c39c6c74cc132b5235dbbc2983518aef0d4a81a00f3c6998262394a789ee5ed9ab2761ce055830da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1",
+      "head_hex": "0520ce70f4be9ae2db06db8d6d4c739c4d8a597e958bc7238798a9b9954ff9420be68f9a329722d65f9b3a56611bf2b0"
+    },
+    {
+      "seq": 1,
+      "effect": 1,
+      "payload_id_hex": "2030cdf4256bc260693f06c993aba7387af31ecbb58e1765160f10cddcc0e1bb346f60e6000568fd40fe0757c28b99588462",
+      "prev_hex": "0520ce70f4be9ae2db06db8d6d4c739c4d8a597e958bc7238798a9b9954ff9420be68f9a329722d65f9b3a56611bf2b0",
+      "body_hex": "a50158322030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1020103010458322030cdf4256bc260693f06c993aba7387af31ecbb58e1765160f10cddcc0e1bb346f60e6000568fd40fe0757c28b995884620558300520ce70f4be9ae2db06db8d6d4c739c4d8a597e958bc7238798a9b9954ff9420be68f9a329722d65f9b3a56611bf2b0",
+      "head_hex": "1dba29eb61e80b080e86ccb424d42c8de1e5724787e2e6e9e4b601ab515a1ac3fb4c5582799a955ab5eadc9fe31d4747"
+    },
+    {
+      "seq": 2,
+      "effect": 2,
+      "payload_id_hex": "2030075e2f9d5851c4742433251155f85cebabe5735848d840591e01ffb1d85ad6148e142b9656c6ac3b9f6720e6786351b6",
+      "prev_hex": "1dba29eb61e80b080e86ccb424d42c8de1e5724787e2e6e9e4b601ab515a1ac3fb4c5582799a955ab5eadc9fe31d4747",
+      "body_hex": "a50158322030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1020203020458322030075e2f9d5851c4742433251155f85cebabe5735848d840591e01ffb1d85ad6148e142b9656c6ac3b9f6720e6786351b60558301dba29eb61e80b080e86ccb424d42c8de1e5724787e2e6e9e4b601ab515a1ac3fb4c5582799a955ab5eadc9fe31d4747",
+      "head_hex": "6ab0202304054d9b2e703b520ab1f3da862793902380a5bfbe46c376613de84c12b9cf8a475dc250feff1565be711995"
+    }
+  ],
+  "final_head_hex": "6ab0202304054d9b2e703b520ab1f3da862793902380a5bfbe46c376613de84c12b9cf8a475dc250feff1565be711995",
+  "checkpoint": {
+    "through_seq": 1,
+    "head_hex": "1dba29eb61e80b080e86ccb424d42c8de1e5724787e2e6e9e4b601ab515a1ac3fb4c5582799a955ab5eadc9fe31d4747",
+    "body_hex": "a30158322030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c102010358301dba29eb61e80b080e86ccb424d42c8de1e5724787e2e6e9e4b601ab515a1ac3fb4c5582799a955ab5eadc9fe31d4747"
+  },
+  "flow_commit": {
+    "final_head_hex": "6ab0202304054d9b2e703b520ab1f3da862793902380a5bfbe46c376613de84c12b9cf8a475dc250feff1565be711995",
+    "body_hex": "a20158322030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c10258306ab0202304054d9b2e703b520ab1f3da862793902380a5bfbe46c376613de84c12b9cf8a475dc250feff1565be711995"
+  },
+  "above_ceiling": {
+    "seq": 3,
+    "effect": 3,
+    "ceiling": 2,
+    "payload_id_hex": "20301fc2696d71f6fa28f7f7b80cd5a040454ca63a18c93742e6520812f4ca731c69f87c39c0949764b9999e4329f13504d3",
+    "prev_hex": "6ab0202304054d9b2e703b520ab1f3da862793902380a5bfbe46c376613de84c12b9cf8a475dc250feff1565be711995",
+    "body_hex": "a50158322030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c10203030304583220301fc2696d71f6fa28f7f7b80cd5a040454ca63a18c93742e6520812f4ca731c69f87c39c0949764b9999e4329f13504d30558306ab0202304054d9b2e703b520ab1f3da862793902380a5bfbe46c376613de84c12b9cf8a475dc250feff1565be711995",
+    "head_hex": "f8a8ec15b3d7db3b6f867a1fbdc9a94f5abedec845a5d49735526437b7f91daf3fb65ecd6cce5ccf369ffa8cd91561d9",
+    "reject": "AboveCeiling"
+  },
+  "gap": {
+    "present_seqs": [
+      0,
+      2
+    ],
+    "missing_seq": 1,
+    "through_seq": 2,
+    "claimed_head_hex": "6ab0202304054d9b2e703b520ab1f3da862793902380a5bfbe46c376613de84c12b9cf8a475dc250feff1565be711995",
+    "recomputed_after_seq0_hex": "0520ce70f4be9ae2db06db8d6d4c739c4d8a597e958bc7238798a9b9954ff9420be68f9a329722d65f9b3a56611bf2b0",
+    "detect": "GapDetected",
+    "note": "seq2.prev (head of seq1) != head(seq0); the prefix is non-contiguous."
+  },
+  "replay": {
+    "flow_open_b_body_hex": "a30150f100000000000000000000000000000b0202038158322030a47674b30741cc99b53a3c27753dfcaf366e982d67a3aa5958a596837441ca9f4c2b27d848943a7d5d91d6c59788a221",
+    "flow_open_b_head_hex": "bf593c85d7453273a1325ec5dc292621a1700b0caa3b54953994853b1fcfbac26aa584a5180deedd206ad065040eb153",
+    "flow_open_b_id_hex": "2030bf593c85d7453273a1325ec5dc292621a1700b0caa3b54953994853b1fcfbac26aa584a5180deedd206ad065040eb153",
+    "detect": "WrongFlow",
+    "note": "continuation seq0 carries flow_open_id = A and prev = head(A); verifying it under FlowOpen B fails: flow_open_id != B.id, and prev != head(B)."
+  },
+  "range_reject": {
+    "out_of_lattice_value": 4,
+    "flow_open_ceiling_body_hex": "a30150f100000000000000000000000000000a0204038158322030a47674b30741cc99b53a3c27753dfcaf366e982d67a3aa5958a596837441ca9f4c2b27d848943a7d5d91d6c59788a221",
+    "continuation_effect_body_hex": "a50158322030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1020003040458322030197e6ace0d1015abf5d7c736c39c6c74cc132b5235dbbc2983518aef0d4a81a00f3c6998262394a789ee5ed9ab2761ce055830da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1",
+    "reject": "RangeError",
+    "note": "effect_ceiling (flow-open field 2) and effect (continuation field 3) are the closed `effect` enum 0..3; 4 is rejected RangeError, never normalized to destructive."
+  },
+  "checkpoint_overflow": {
+    "through_seq_str": "18446744073709551615",
+    "head_hex": "da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1",
+    "body_hex": "a30158322030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1021bffffffffffffffff035830da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1",
+    "prefix_len": 0,
+    "reject": "GapDetected",
+    "note": "through_seq = u64::MAX; through_seq+1 overflows -> reject GapDetected (no MAX+1 links)."
+  },
+  "big_seq": {
+    "seq_str": "72623859790382856",
+    "effect": 1,
+    "payload_id_hex": "203096d2f9dcc9b8326238f944a000177641343e5630b87daa08818de2c8e306cc4394b6fa419a6292570effda8bd56514e2",
+    "prev_hex": "da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1",
+    "body_hex": "a50158322030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1021b01020304050607080301045832203096d2f9dcc9b8326238f944a000177641343e5630b87daa08818de2c8e306cc4394b6fa419a6292570effda8bd56514e2055830da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1",
+    "head_hex": "a8074d1b5c77278bdf6df26f2156aa1e667181589e42e029ca0f6d2217cfa549db53a1ecbff6ca9beb763ef7f607da0f",
+    "note": "seq = 0x0102030405060708 (>2^53) MUST round-trip byte-exact; carried as a JSON string."
+  },
+  "minimal": {
+    "flow_id_hex": "",
+    "effect_ceiling": 0,
+    "approvals_hex": [],
+    "body_hex": "a3014002000380",
+    "head_hex": "f6edcf4fc230047e8c389332f82c7048596507071f73f530ff7c22dca23cdb2c4321982e1a57a19c382447ad7689b6c4",
+    "id_hex": "2030f6edcf4fc230047e8c389332f82c7048596507071f73f530ff7c22dca23cdb2c4321982e1a57a19c382447ad7689b6c4",
+    "note": "smallest valid FlowOpen: empty flow_id, ceiling read_only, no approvals."
+  },
+  "empty_vs_nonempty": {
+    "empty_approvals": {
+      "body_hex": "a30150f100000000000000000000000000000a02020380",
+      "id_hex": "20304c5fba4c2174512415112ec0c6624c1fa0976317dc399d9f45f89e955b0097442a1e3d80f4ad4a1b01eca9defbd12c4b"
+    },
+    "one_approval": {
+      "body_hex": "a30150f100000000000000000000000000000a0202038158322030a47674b30741cc99b53a3c27753dfcaf366e982d67a3aa5958a596837441ca9f4c2b27d848943a7d5d91d6c59788a221",
+      "id_hex": "2030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1"
+    },
+    "note": "an empty approvals[] is distinct on the wire and by content-id from a populated one."
+  },
+  "keys_out_of_order": {
+    "canonical_commit_body_hex": "a20158322030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c10258306ab0202304054d9b2e703b520ab1f3da862793902380a5bfbe46c376613de84c12b9cf8a475dc250feff1565be711995",
+    "noncanonical_commit_body_hex": "a20258306ab0202304054d9b2e703b520ab1f3da862793902380a5bfbe46c376613de84c12b9cf8a475dc250feff1565be7119950158322030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c1",
+    "reject": "NonCanonical",
+    "note": "same content, keys in descending order (2 then 1) \u2014 the strict decoder rejects NonCanonical."
+  },
+  "look_alike": {
+    "flow_commit_body_hex": "a20158322030da4b869a0b4ada10a1f1f5701ad0c3702cbd0749086adfeb904b55279792f6d647fee097e0ec44d097c7f9707e7ff8c10258306ab0202304054d9b2e703b520ab1f3da862793902380a5bfbe46c376613de84c12b9cf8a475dc250feff1565be711995",
+    "note": "a 2-field FlowCommit body fed to ParseCheckpoint is rejected \u2014 Checkpoint is 3 fields."
+  }
+}

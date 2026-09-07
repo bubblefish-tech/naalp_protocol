@@ -1,10 +1,10 @@
 # N-AALP object-version lineage
 
 This file is the **public** narrative of how N-AALP reached
-`draft-bubblefish-naalp-00`. It records what is publishable and orients a reader in the
+`draft-bubblefish-naalp-01`. It records what is publishable and orients a reader in the
 version history; the authoritative rationale for each load-bearing choice lives in the linked
 ADRs under `docs/adr/`. It is descriptive, not normative — where it and the spec or ADRs differ,
-the spec (`spec/naalp-draft-00.cddl`, and the Internet-Draft) and the ADRs govern.
+the spec (`ietf/draft-bubblefish-naalp-01.md`, `spec/naalp-draft-01.cddl`) and the ADRs govern.
 
 ## Where N-AALP sits (positioning)
 
@@ -21,9 +21,9 @@ one application surface for each of N-PAMP's twenty channels.
 
 ## What this file does NOT contain (non-scope)
 
-- **This is not the normative specification.** The byte-level authority is
-  `spec/naalp-draft-00.cddl`; the prose authority is the Internet-Draft (IETF Independent Submission stream). This file
-  narrates lineage only.
+- **This is not the normative specification.** The normative authority — prose and the byte-level
+  CDDL alike — is `ietf/draft-bubblefish-naalp-01.md`; `spec/naalp-draft-01.cddl` is a byte-identical
+  mirror of its inlined CDDL. This file narrates lineage only.
 - **Transport-layer concerns are out of scope by layering, not by policy.** The 1.5-RTT handshake,
   hybrid key establishment, and AEAD record protection belong to the substrate
   (`draft-bubblefish-npamp-01`), not to N-AALP. N-AALP versions the *object*, not the connection.
@@ -45,7 +45,7 @@ separate layers.
 
 | Object major | Label prefix | Status |
 |---|---|---|
-| 1 | `N-AALP/1` | **Current** — defined by `draft-bubblefish-naalp-00` |
+| 1 | `N-AALP/1` | **Current** — defined by `draft-bubblefish-naalp-01` |
 
 A future incompatible object model would take a new prefix (for example `N-AALP/2`); the
 Internet-Draft revision (`-NN`) advances independently with each published document revision (see
@@ -53,16 +53,17 @@ Internet-Draft revision (`-NN`) advances independently with each published docum
 
 ## Protocol generations
 
-The public draft is the **first published** generation:
+N-AALP has a single object generation, carried by the current Internet-Draft:
 
-1. **draft-00 (`N-AALP/1`)** — the first published generation: the Internet-Draft
-   + `spec/naalp-draft-00.cddl` + the reference implementations under `impl/`. Its public design
-   decisions are indexed below.
+1. **`N-AALP/1`** — the first (and current) object generation: `ietf/draft-bubblefish-naalp-01.md`
+   + `spec/naalp-draft-01.cddl` + the reference implementations under `impl/`. Its public design
+   decisions are indexed below. The object generation is distinct from the Internet-Draft revision
+   (`-NN`), which advances independently with each published document revision (see `CHANGELOG.md`).
 
 There is **no deprecated predecessor** and **no controlled intermediate generation**. N-AALP was
-authored directly to this published draft; the sequence above is the whole sequence.
+authored directly to this generation; the sequence above is the whole sequence.
 
-## Public design decisions at draft-00 (index into `docs/adr/`)
+## Public design decisions (`N-AALP/1`) (index into `docs/adr/`)
 
 Each item links to the ADR that records the full context, decision, and consequences:
 
@@ -92,7 +93,7 @@ in `docs/adr/`.
 
 ## Deprecations and supersessions (public)
 
-- **None at this revision.** draft-00 is the first published generation of N-AALP; there is no prior
+- **None at this revision.** `N-AALP/1` is the first object generation of N-AALP; there is no prior
   object major version to deprecate and no superseded corpus or golden vector set.
 
 ## Honest conformance and SDK status
@@ -119,5 +120,5 @@ prefix. Both counters, and their changes, are recorded in `CHANGELOG.md`.
 - `docs/adr/` — the full ADR log (ADR-0001 records the decision-recording process itself).
 - `README.md` — repository model and structure.
 - `CHANGELOG.md` — the object-major-version and Internet-Draft-revision counters.
-- `spec/naalp-draft-00.cddl` (and the Internet-Draft) — the normative protocol text and
-  the byte-level wire authority.
+- `ietf/draft-bubblefish-naalp-01.md` — the normative protocol text, whose Appendix A holds the
+  normative CDDL (mirrored byte-identically as `spec/naalp-draft-01.cddl`).

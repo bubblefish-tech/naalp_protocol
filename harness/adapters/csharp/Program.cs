@@ -133,8 +133,12 @@ namespace Naalp.Adapter
             {
                 case "u":
                 {
+                    // A uint value can reach 2^64-1, beyond signed Int64; large uints are carried as JSON
+                    // strings (they exceed the float64 safe range). Parse as ulong and reinterpret the bit
+                    // pattern into the signed long Cbor.U holds (matching Long.parseUnsignedLong in the Java
+                    // adapter); a bare JSON number is always within the Int64-safe range.
                     long n = p.ValueKind == JsonValueKind.String
-                        ? long.Parse(p.GetString()!, CultureInfo.InvariantCulture)
+                        ? unchecked((long)ulong.Parse(p.GetString()!, CultureInfo.InvariantCulture))
                         : p.GetInt64();
                     return new Cbor.U(n);
                 }
@@ -199,6 +203,39 @@ namespace Naalp.Adapter
             return nodes;
         }
 
+        /// <summary>Same shape as <see cref="NodesFrom"/> but builds <c>Federation.CausalNode</c>s (the
+        /// type <c>Federation.Reconcile</c>/<c>Federation.VerifyReconcileOrder</c> consume), for the
+        /// reconcile.state op.</summary>
+        private static List<Federation.CausalNode> FederationNodesFrom(JsonElement inn)
+        {
+            var nodes = new List<Federation.CausalNode>();
+            if (inn.ValueKind != JsonValueKind.Object
+                || !inn.TryGetProperty("nodes", out JsonElement raw)
+                || raw.ValueKind != JsonValueKind.Array)
+            {
+                return nodes;
+            }
+            foreach (JsonElement nm in raw.EnumerateArray())
+            {
+                byte[] id = Hex.Decode(nm.GetProperty("id_hex").GetString()!);
+                var causes = new List<byte[]>();
+                if (nm.TryGetProperty("causes_hex", out JsonElement cr) && cr.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (JsonElement c in cr.EnumerateArray())
+                    {
+                        causes.Add(Hex.Decode(c.GetString()!));
+                    }
+                }
+                long pos = 0;
+                if (nm.TryGetProperty("position", out JsonElement pe) && pe.ValueKind == JsonValueKind.Number)
+                {
+                    pos = pe.GetInt64();
+                }
+                nodes.Add(new Federation.CausalNode(id, causes, pos));
+            }
+            return nodes;
+        }
+
         // ---- dispatch ----
 
         private static Dictionary<string, object?> Handle(string op, JsonElement inn)
@@ -255,6 +292,48 @@ namespace Naalp.Adapter
                 case "cose.verify1":
                     return Out("valid", Cose.CoseVerify1(IntVal(inn, "alg"), Hx(inn, "pubkey_hex"), Hx(inn, "obj_hex")));
 
+                case "rotation.leg_tbs":
+                    return Out("tbs_hex", Hex.Encode(Cose.SignatureToBeSigned(
+                        Hx(inn, "body_protected_hex"), IntVal(inn, "leg_alg"), Hx(inn, "payload_hex"))));
+
+                case "rotation.sign":
+                {
+                    byte[] prot = Hx(inn, "protected_hex");
+                    byte[] payload = Hx(inn, "payload_hex");
+                    byte[][] oldLeg = Cose.SignatureLeg(prot, IntVal(inn, "old_alg"), Hx(inn, "old_seed_hex"), payload);
+                    byte[][] newLeg = Cose.SignatureLeg(prot, IntVal(inn, "new_alg"), Hx(inn, "new_seed_hex"), payload);
+                    return Out("obj_hex", Hex.Encode(Cose.AssembleSignRaw(prot, payload, new List<byte[][]> { oldLeg, newLeg })));
+                }
+
+                case "rotation.verify":
+                {
+                    byte[] robj = Hx(inn, "obj_hex");
+                    int oldAlg = IntVal(inn, "old_alg");
+                    int newAlg = IntVal(inn, "new_alg");
+                    int profile = IntVal(inn, "profile");
+                    byte[] oldPk = Hx(inn, "old_pubkey_hex");
+                    byte[] newPk = Hx(inn, "new_pubkey_hex");
+                    // dispatch by COSE tag: tag-98 (0xd8 0x62) -> two-leg VerifyRotationObject; a tag-18
+                    // single-sig object -> the general Verify, which rejects a (3,0) single-sig rotation.
+                    try
+                    {
+                        if (robj.Length >= 2 && robj[0] == 0xd8 && robj[1] == 0x62)
+                        {
+                            Envelope.VerifyRotationObject(profile, oldAlg, oldPk, newAlg, newPk,
+                                (ch, k) => ch == 3 && k == 0, robj);
+                        }
+                        else
+                        {
+                            Envelope.Verify(profile, newAlg, newPk, (ch, k) => ch == 3 && k == 0, robj);
+                        }
+                        return Out("valid", true, "error", "");
+                    }
+                    catch (NaalpException e)
+                    {
+                        return Out("valid", false, "error", e.Kind);
+                    }
+                }
+
                 case "signerid":
                     return Out("signer_id", Identity.SignerId(IntVal(inn, "alg"), Hx(inn, "pubkey_hex")));
 
@@ -290,6 +369,72 @@ namespace Naalp.Adapter
                     return Out("body_hex", Hex.Encode(Records.LedgerEntry(
                         U64(inn, "seq"), Hx(inn, "prev_hex"), Hx(inn, "approval_id_hex"), Str(inn, "by"))));
 
+                case "approval.state":
+                {
+                    // ietf draft "## Approval state machine" (# Object State Machines): build ONE signed
+                    // approval, then drive it through an ordered `events` list of consume attempts through
+                    // the REAL composed choke point Approval.ConsumeApproval on a fresh single-use ledger;
+                    // report the LAST event's {valid, error} plus the ledger length after it (the draft's
+                    // "ledger left untouched by a rejected request", observable via Ledger.Len). Graded
+                    // against the independent, non-circular tools/approval_state_oracle.py (F3). The
+                    // approver key is a deterministic Ed25519 test key -- the signature is verified, not
+                    // graded (bytes are not compared across ports for this op).
+                    if (inn.ValueKind != JsonValueKind.Object || !inn.TryGetProperty("approval", out JsonElement am))
+                    {
+                        return Error("approval.state: missing approval object");
+                    }
+                    var a = new Approval.ApprovalRecord(
+                        Hx(am, "approves_hex"), Str(am, "approver"), U64(am, "grant"),
+                        Hx(am, "nonce_hex"), U64(am, "not_after"));
+                    byte[] seed = new byte[32]; // deterministic all-zero test approver seed
+                    byte[] pk = Cose.Ed25519PublicKeyFromSeed(seed);
+                    byte[] sig = Cose.Ed25519Sign(seed, a.Bytes());
+
+                    string path = Path.Combine(Path.GetTempPath(), "naalp-approval-state-" + Guid.NewGuid().ToString("N") + ".wal");
+                    string lastErrKind = "";
+                    int ledgerLen = 0;
+                    try
+                    {
+                        using (Approval.Ledger ledger = Approval.OpenLedger(path))
+                        {
+                            if (inn.TryGetProperty("events", out JsonElement rawEvents) && rawEvents.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (JsonElement em in rawEvents.EnumerateArray())
+                                {
+                                    lastErrKind = "";
+                                    string ev = Str(em, "ev");
+                                    switch (ev)
+                                    {
+                                        case "consume":
+                                            try
+                                            {
+                                                Approval.ConsumeApproval(a, Cose.ALG_ED25519, pk, sig,
+                                                    Hx(em, "present_cid_hex"), U64(em, "pos_time"),
+                                                    U64(em, "required_effect"), ledger, Str(em, "by"));
+                                            }
+                                            catch (NaalpException e)
+                                            {
+                                                lastErrKind = e.Kind;
+                                            }
+                                            break;
+                                        default:
+                                            return Error("approval.state: unknown event \"" + ev + "\"");
+                                    }
+                                }
+                            }
+                            ledgerLen = ledger.Len();
+                        }
+                    }
+                    finally
+                    {
+                        if (File.Exists(path))
+                        {
+                            File.Delete(path);
+                        }
+                    }
+                    return Out("valid", lastErrKind == "", "error", lastErrKind, "ledger_len", ledgerLen);
+                }
+
                 case "receipt.body":
                     return Out("body_hex", Hex.Encode(Records.ReceiptBody(
                         Hx(inn, "prev_hex"), Hx(inn, "obj_hex"), U64(inn, "seq"), U64(inn, "at"))));
@@ -304,6 +449,61 @@ namespace Naalp.Adapter
                 case "delivery.update":
                     return Out("body_hex", Hex.Encode(Records.DeliveryUpdate(
                         Hx(inn, "obj_hex"), U64(inn, "stage"), U64(inn, "at"))));
+
+                case "delivery.state":
+                {
+                    // ietf draft "## Delivery state machine" (# Object State Machines): drive ONE object
+                    // through an ordered `events` list of signed delivery updates on a fresh WAL-backed
+                    // Tracker; report the LAST event's outcome plus the object's final stage name. A
+                    // rejected event (regress -> StageOutOfOrder) leaves the recorded stage unchanged.
+                    // Graded against the independent, non-circular tools/delivery_state_oracle.py (F3).
+                    string path = Path.Combine(Path.GetTempPath(), "naalp-delivery-state-" + Guid.NewGuid().ToString("N") + ".wal");
+                    string lastErrKind = "";
+                    byte[] lastObj = Array.Empty<byte>();
+                    long finalStage = 0;
+                    try
+                    {
+                        using (Delivery.Tracker tr = Delivery.OpenTracker(path))
+                        {
+                            if (inn.ValueKind == JsonValueKind.Object
+                                && inn.TryGetProperty("events", out JsonElement rawEvents)
+                                && rawEvents.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (JsonElement em in rawEvents.EnumerateArray())
+                                {
+                                    byte[] obj = Hx(em, "obj_hex");
+                                    lastObj = obj;
+                                    lastErrKind = "";
+                                    string ev = Str(em, "ev");
+                                    switch (ev)
+                                    {
+                                        case "update":
+                                            try
+                                            {
+                                                tr.Advance(obj, U64(em, "stage"), 0);
+                                            }
+                                            catch (NaalpException e)
+                                            {
+                                                lastErrKind = e.Kind;
+                                            }
+                                            break;
+                                        default:
+                                            return Error("delivery.state: unknown event \"" + ev + "\"");
+                                    }
+                                }
+                            }
+                            (finalStage, _) = tr.Stage(lastObj);
+                        }
+                    }
+                    finally
+                    {
+                        if (File.Exists(path))
+                        {
+                            File.Delete(path);
+                        }
+                    }
+                    return Out("valid", lastErrKind == "", "error", lastErrKind, "state", Delivery.StageName(finalStage));
+                }
 
                 case "stream.digest":
                 {
@@ -348,6 +548,75 @@ namespace Naalp.Adapter
                 case "stream.checkpoint":
                     return Out("body_hex", Hex.Encode(Records.StreamCheckpointBody(
                         Hx(inn, "stream_id_hex"), U64(inn, "through_offset"), Hx(inn, "digest_so_far_hex"))));
+
+                case "stream.state":
+                {
+                    // design.md §10 state table + § Timers (stream idle/commit timer): drive ONE stream
+                    // through an ordered `events` list on a fresh Guard; report the LAST event's outcome
+                    // plus the stream's final state. Graded against the independent, non-circular
+                    // tools/streamstate_oracle.py (F3).
+                    var guard = new Streaming.Guard();
+                    string lastErrKind = "";
+                    byte[] lastStream = Array.Empty<byte>();
+                    if (inn.ValueKind == JsonValueKind.Object
+                        && inn.TryGetProperty("events", out JsonElement rawEvents)
+                        && rawEvents.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (JsonElement em in rawEvents.EnumerateArray())
+                        {
+                            byte[] sid = Hx(em, "stream_hex");
+                            lastStream = sid;
+                            string ev = Str(em, "ev");
+                            lastErrKind = "";
+                            try
+                            {
+                                switch (ev)
+                                {
+                                    case "open":
+                                    {
+                                        var o = new Streaming.StreamOpen(sid, U64(em, "effect"), null, 0);
+                                        guard.Open(o, U64(em, "granted"));
+                                        break;
+                                    }
+                                    case "chunk":
+                                        guard.Chunk(sid);
+                                        break;
+                                    case "checkpoint":
+                                        guard.Checkpoint(sid);
+                                        break;
+                                    case "commit":
+                                    {
+                                        var chunks = new List<Streaming.Chunk>();
+                                        if (em.TryGetProperty("chunks", out JsonElement rawChunks)
+                                            && rawChunks.ValueKind == JsonValueKind.Array)
+                                        {
+                                            foreach (JsonElement cm in rawChunks.EnumerateArray())
+                                            {
+                                                long offset = NumOf(cm.GetProperty("offset"));
+                                                byte[] data = Hex.Decode(cm.GetProperty("data_hex").GetString()!);
+                                                chunks.Add(new Streaming.Chunk(offset, data));
+                                            }
+                                        }
+                                        byte[] digest = Hx(em, "digest_hex");
+                                        guard.Commit(new Streaming.StreamCommit(sid, digest), chunks);
+                                        break;
+                                    }
+                                    case "expire":
+                                        guard.Expire(sid);
+                                        break;
+                                    default:
+                                        return Error("stream.state: unknown event \"" + ev + "\"");
+                                }
+                            }
+                            catch (NaalpException e)
+                            {
+                                lastErrKind = e.Kind;
+                            }
+                        }
+                    }
+                    return Out("valid", lastErrKind == "", "error", lastErrKind,
+                        "state", Streaming.StateName(guard.GetState(lastStream)));
+                }
 
                 case "transport.emit":
                     return Out("result", Records.TransportEmit(
@@ -398,6 +667,225 @@ namespace Naalp.Adapter
                         }
                     }
                     return Out("body_hex", Hex.Encode(Graph.ReconcileRecord(auths, order)));
+                }
+
+                case "reconcile.state":
+                {
+                    // ietf draft "## Reconcile state machine" (# Object State Machines): drive the
+                    // machine through ONE event (add-chain | linearize | verify) on fresh state and
+                    // report {valid, error}. add-chain runs the draft's fixed VerifyChain-then-Observe
+                    // pipeline (a `chain` that must independently pass VerifyChain, plus an optional
+                    // `extra` receipt fed only to Observe — a chain array cannot itself carry a
+                    // duplicate seq without independently tripping ChainBroken, so equivocation is
+                    // exercised via the separate `extra` observation); linearize runs
+                    // Federation.Reconcile (which calls Federation.VerifyCausal internally); verify runs
+                    // Federation.VerifyReconcileOrder, which MUST recompute via Reconcile (content-id
+                    // tie-break), never Audit.TopoOrder (position tie-break). Graded against the
+                    // independent, non-circular tools/reconcile_state_oracle.py (F3). The authority key
+                    // is a deterministic all-zero-seed ML-DSA-65 test key — the signature is verified,
+                    // not graded (bytes are not compared across ports for this op). Note:
+                    // Audit.Auditor.Observe RETURNS a ForkProof on equivocation (it does not throw); a
+                    // non-null return is the Equivocation outcome.
+                    const int alg = Cose.ALG_MLDSA65;
+                    byte[] seed = new byte[32]; // deterministic all-zero test authority seed
+                    byte[] pk = Cose.MldsaKeygen("ML-DSA-65", seed);
+
+                    Audit.Receipt BuildReceipt(JsonElement rm)
+                        => new Audit.Receipt(Hx(rm, "prev_hex"), Hx(rm, "obj_hex"), U64(rm, "seq"), U64(rm, "at"));
+
+                    string lastErrKind = "";
+                    switch (Str(inn, "event"))
+                    {
+                        case "add-chain":
+                        {
+                            var receipts = new List<Audit.Receipt>();
+                            var sigs = new List<byte[]>();
+                            if (inn.TryGetProperty("chain", out JsonElement rawChain) && rawChain.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (JsonElement rm in rawChain.EnumerateArray())
+                                {
+                                    Audit.Receipt r = BuildReceipt(rm);
+                                    receipts.Add(r);
+                                    sigs.Add(Cose.MldsaSign(alg, seed, r.Bytes()));
+                                }
+                            }
+                            if (inn.TryGetProperty("corrupt_sig_at", out JsonElement ci) && ci.ValueKind == JsonValueKind.Number)
+                            {
+                                int idx = ci.GetInt32();
+                                sigs[idx][0] ^= 0xFF;
+                            }
+                            try
+                            {
+                                Audit.VerifyChain(receipts, sigs, alg, pk);
+                                var auditor = new Audit.Auditor(alg, pk, pk);
+                                for (int i = 0; i < receipts.Count && lastErrKind == ""; i++)
+                                {
+                                    if (auditor.Observe(receipts[i], sigs[i]) != null)
+                                    {
+                                        lastErrKind = "Equivocation";
+                                    }
+                                }
+                                if (lastErrKind == ""
+                                    && inn.TryGetProperty("extra", out JsonElement em)
+                                    && em.ValueKind == JsonValueKind.Object)
+                                {
+                                    Audit.Receipt er = BuildReceipt(em);
+                                    byte[] esig = Cose.MldsaSign(alg, seed, er.Bytes());
+                                    if (auditor.Observe(er, esig) != null)
+                                    {
+                                        lastErrKind = "Equivocation";
+                                    }
+                                }
+                            }
+                            catch (NaalpException e)
+                            {
+                                lastErrKind = e.Kind;
+                            }
+                            return Out("valid", lastErrKind == "", "error", lastErrKind);
+                        }
+
+                        case "linearize":
+                        {
+                            List<Federation.CausalNode> nodes = FederationNodesFrom(inn);
+                            try
+                            {
+                                Federation.Reconcile(nodes);
+                            }
+                            catch (NaalpException e)
+                            {
+                                lastErrKind = e.Kind;
+                            }
+                            return Out("valid", lastErrKind == "", "error", lastErrKind);
+                        }
+
+                        case "verify":
+                        {
+                            List<Federation.CausalNode> nodes = FederationNodesFrom(inn);
+                            var order = new List<byte[]>();
+                            if (inn.TryGetProperty("claimed_order_hex", out JsonElement ordRaw) && ordRaw.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (JsonElement o in ordRaw.EnumerateArray())
+                                {
+                                    order.Add(Hex.Decode(o.GetString()!));
+                                }
+                            }
+                            var rec = new Federation.ReconcileRecord(new List<string>(), order);
+                            try
+                            {
+                                Federation.VerifyReconcileOrder(rec, nodes);
+                            }
+                            catch (NaalpException e)
+                            {
+                                lastErrKind = e.Kind;
+                            }
+                            return Out("valid", lastErrKind == "", "error", lastErrKind);
+                        }
+
+                        default:
+                            return Error("reconcile.state: unknown event \"" + Str(inn, "event") + "\"");
+                    }
+                }
+
+                case "object.decode":
+                {
+                    // R7 decoder resource bounds: decode + bound-enforce an untrusted object; all four
+                    // object-level bounds fire BEFORE the COSE signature is checked, so NO verifier is
+                    // needed. over_size materializes the octet-size bound (rejected on raw length before
+                    // any parse).
+                    byte[] obj;
+                    if (inn.ValueKind == JsonValueKind.Object && inn.TryGetProperty("over_size", out JsonElement ov))
+                    {
+                        obj = new byte[IntVal(inn, "over_size")];
+                    }
+                    else
+                    {
+                        obj = Hx(inn, "obj_hex");
+                    }
+                    try
+                    {
+                        Envelope.Verify(1, 0, Array.Empty<byte>(), (ch, k) => true, obj);
+                        return Out("valid", true, "error", "");
+                    }
+                    catch (NaalpException e)
+                    {
+                        return Out("valid", false, "error", e.Kind);
+                    }
+                }
+
+                case "stream.verify_commit":
+                {
+                    int n = IntVal(inn, "chunk_count");
+                    var chunks = new List<Streaming.Chunk>(n);
+                    for (int i = 0; i < n; i++)
+                    {
+                        chunks.Add(new Streaming.Chunk(0, Array.Empty<byte>()));
+                    }
+                    try
+                    {
+                        Streaming.VerifyCommit(new Streaming.StreamCommit(Array.Empty<byte>(), Array.Empty<byte>()), chunks);
+                        return Out("valid", true, "error", "");
+                    }
+                    catch (NaalpException e)
+                    {
+                        return Out("valid", false, "error", e.Kind);
+                    }
+                }
+
+                // ---- opt-in LAMPS composite signature (alg -65537, design.md §4.2) ----
+                case "composite.mprime":
+                    return Out("mprime_hex", Hex.Encode(Cose.ComputeMprime(
+                        Encoding.ASCII.GetBytes("COMPSIG-MLDSA65-Ed25519-SHA512"), Array.Empty<byte>(), Hx(inn, "m_hex"))));
+
+                case "composite.signerid":
+                    return Out("signer_id", Identity.CompositeSignerId(
+                        IntVal(inn, "mldsa_alg"), Hx(inn, "mldsa_pubkey_hex"), Hx(inn, "ed_pubkey_hex")));
+
+                case "composite.sign":
+                    return Out("value_hex", Hex.Encode(Cose.CompositeSign(
+                        Hx(inn, "mldsa_seed_hex"), Hx(inn, "ed_seed_hex"), Hx(inn, "tbs_hex"))));
+
+                case "composite.verify":
+                    return Out("valid", Cose.CompositeVerify(
+                        Hx(inn, "mldsa_pubkey_hex"), Hx(inn, "ed_pubkey_hex"), Hx(inn, "m_hex"), Hx(inn, "sig_hex")));
+
+                case "error.name_for_code":
+                {
+                    // T3.3: the naalp-error registry table lookup (design.md §3.5). Grades the port's
+                    // embedded 119-entry name<->code table per-code, plus the unknown-code (opaque)
+                    // contract.
+                    (string name, bool registered) = NaalpError.NameForCode(IntVal(inn, "code"));
+                    return Out("name", name, "registered", registered);
+                }
+
+                case "error.encode":
+                {
+                    // T3.3: deterministic CBOR of a naalp-error body {1:code, 2:name, ?3:detail,
+                    // ?4:subject}.
+                    byte[]? subj = null;
+                    if (inn.ValueKind == JsonValueKind.Object && inn.TryGetProperty("subject_hex", out JsonElement _))
+                    {
+                        subj = Hx(inn, "subject_hex");
+                    }
+                    string detail = Str(inn, "detail");
+                    string name = Str(inn, "name");
+                    byte[] b = NaalpError.Encode(IntVal(inn, "code"), name, detail, subj);
+                    return Out("body_hex", Hex.Encode(b));
+                }
+
+                case "error.decode":
+                {
+                    // T3.3: parse + dual-carriage validate a naalp-error body (registered code + wrong
+                    // name -> Malformed; unknown code -> opaque accept).
+                    byte[] body = Hx(inn, "body_hex");
+                    try
+                    {
+                        NaalpError.Object eo = NaalpError.Decode(body);
+                        return Out("valid", true, "code", eo.Code, "name", eo.Name);
+                    }
+                    catch (NaalpException e)
+                    {
+                        return Out("valid", false, "error", e.Kind);
+                    }
                 }
 
                 default:

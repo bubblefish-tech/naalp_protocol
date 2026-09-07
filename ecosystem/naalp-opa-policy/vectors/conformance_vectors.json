@@ -1,0 +1,69 @@
+{
+  "_provenance": "F3 non-circular conformance. The ORACLE for every vector below is the REAL `opa` engine (github.com/open-policy-agent/opa, invoked exactly as naalp_opa_policy.opa_policy.OPAEngine invokes it: `opa eval -f json -d <this package's checked-in policies/ dir> -I data.naalp.authz.allow`), evaluating the checked-in policy at naalp_opa_policy/policies/naalp_authz.rego + policies/data.json -- NEVER a re-implementation of Rego and never a value this package's own Python code produced. Each `expected` value is HAND-DERIVED from reading the three rule bodies in naalp_authz.rego (effect_within_ceiling / signer_matches_grant / audience_ok) against the vector's own `input` fields -- the `reason` field states that derivation in the same terms an administrator reading the policy would use -- and is confirmed to match the real engine's output by tests/test_opa_policy.py's OracleGroundingTests, which run BEFORE any mutation-surviving or fail-closed test in that file relies on the policy meaning what this file claims it means. The code genuinely under test by this package (OPAEngine.decide, build_input, authorize_with_policy) is graded SEPARATELY in test_opa_policy.py by constructing REAL, cryptographically-verified N-AALP objects whose fields reproduce these same logical scenarios and confirming the mapping+integration reaches the identical Allow/Deny outcome -- so this file grades whether the checked-in Rego means what we say it means, and the mapping tests grade whether the Python glue wires it correctly; neither substitutes for the other.",
+  "this_authority": "svc:payments",
+  "vectors": [
+    {
+      "name": "allow_read_only_matching_everything",
+      "input": {"effect": 0, "audience": "svc:payments", "kind": 1, "channel": 4,
+                 "signer": "principal-A", "grant": {"principal": "principal-A", "max_effect": 3}},
+      "expected": true,
+      "reason": "effect(0) <= grant.max_effect(3) -> effect_within_ceiling holds; signer('principal-A') == grant.principal('principal-A') -> signer_matches_grant holds; audience('svc:payments') == data.naalp.this_authority('svc:payments') -> audience_ok holds via its second branch. All three allow-conjuncts hold, so the default-false rule's 'allow if' body fires."
+    },
+    {
+      "name": "deny_destructive_effect_exceeds_ceiling",
+      "input": {"effect": 3, "audience": "svc:payments", "kind": 1, "channel": 4,
+                 "signer": "principal-A", "grant": {"principal": "principal-A", "max_effect": 1}},
+      "expected": false,
+      "reason": "effect(3, DESTRUCTIVE) > grant.max_effect(1) -> effect_within_ceiling FAILS (no branch of the <= comparison holds), so the allow rule's conjunction is undefined regardless of the other two conjuncts, and the default false applies."
+    },
+    {
+      "name": "deny_wrong_audience",
+      "input": {"effect": 0, "audience": "svc:other-service", "kind": 1, "channel": 4,
+                 "signer": "principal-A", "grant": {"principal": "principal-A", "max_effect": 3}},
+      "expected": false,
+      "reason": "audience('svc:other-service') is neither '' (first audience_ok branch) nor equal to data.naalp.this_authority('svc:payments', second branch) -- audience_ok FAILS, so allow's conjunction is undefined and the default false applies, even though effect and signer both hold."
+    },
+    {
+      "name": "allow_empty_audience_broadcast_object",
+      "input": {"effect": 1, "audience": "", "kind": 2, "channel": 4,
+                 "signer": "principal-A", "grant": {"principal": "principal-A", "max_effect": 3}},
+      "expected": true,
+      "reason": "audience('') matches audience_ok's FIRST branch (input.audience == '') directly, independent of data.naalp.this_authority; effect(1) <= max_effect(3) and signer matches, so all three conjuncts hold."
+    },
+    {
+      "name": "deny_wrong_signer",
+      "input": {"effect": 0, "audience": "svc:payments", "kind": 1, "channel": 4,
+                 "signer": "principal-EVE", "grant": {"principal": "principal-A", "max_effect": 3}},
+      "expected": false,
+      "reason": "signer('principal-EVE') != grant.principal('principal-A') -> signer_matches_grant FAILS: this grant was never issued to principal-EVE, regardless of how low the requested effect or how correct the audience is."
+    },
+    {
+      "name": "allow_effect_exactly_at_ceiling_boundary",
+      "input": {"effect": 2, "audience": "svc:payments", "kind": 1, "channel": 4,
+                 "signer": "principal-A", "grant": {"principal": "principal-A", "max_effect": 2}},
+      "expected": true,
+      "reason": "effect(2) <= grant.max_effect(2) is true at the boundary (Rego's <= is inclusive, mirroring naalp.policy.authorizes: action <= ceiling) -- effect_within_ceiling holds, and with the other two conjuncts also holding, allow fires."
+    },
+    {
+      "name": "deny_effect_one_above_ceiling_boundary",
+      "input": {"effect": 2, "audience": "svc:payments", "kind": 1, "channel": 4,
+                 "signer": "principal-A", "grant": {"principal": "principal-A", "max_effect": 1}},
+      "expected": false,
+      "reason": "effect(2) <= grant.max_effect(1) is false by exactly one step across the boundary -- effect_within_ceiling FAILS, so allow's conjunction is undefined and the default false applies."
+    },
+    {
+      "name": "allow_audience_exactly_equals_configured_authority",
+      "input": {"effect": 0, "audience": "svc:payments", "kind": 5, "channel": 11,
+                 "signer": "principal-A", "grant": {"principal": "principal-A", "max_effect": 3}},
+      "expected": true,
+      "reason": "audience('svc:payments') is character-for-character equal to data.naalp.this_authority ('svc:payments', policies/data.json) -- audience_ok's second branch fires; kind/channel are not referenced by any rule body in naalp_authz.rego, so their values (5, 11) are irrelevant to the decision and are varied here deliberately to prove that."
+    },
+    {
+      "name": "allow_read_only_effect_at_zero_ceiling_boundary",
+      "input": {"effect": 0, "audience": "svc:payments", "kind": 1, "channel": 4,
+                 "signer": "principal-A", "grant": {"principal": "principal-A", "max_effect": 0}},
+      "expected": true,
+      "reason": "effect(0, READ_ONLY) <= grant.max_effect(0) holds at the lowest possible ceiling (a grant that authorizes ONLY read_only still authorizes a read_only object) -- the zero-ceiling boundary case, distinct from the effect-2-vs-1 boundary above."
+    }
+  ]
+}

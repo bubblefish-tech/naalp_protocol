@@ -20,6 +20,18 @@
       "name": "SettleReject",
       "effect": 1,
       "variable": false
+    },
+    {
+      "code": 3,
+      "name": "PaymentImport",
+      "effect": 2,
+      "variable": false
+    },
+    {
+      "code": 4,
+      "name": "PaymentChargeBinding",
+      "effect": 2,
+      "variable": false
     }
   ],
   "states": [

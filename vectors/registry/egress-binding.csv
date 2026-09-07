@@ -1,0 +1,3 @@
+binding_code,binding_name,description
+0,content-bound,"digest is the crossed object's T1 content id"
+1,content-free,"digest is a hiding commitment SHA-384(content_id || salt), openable later by the gateway revealing (content_id, salt)"

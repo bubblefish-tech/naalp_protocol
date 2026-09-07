@@ -1,0 +1,162 @@
+{
+  "source": "E6.3 (held at the wire-freeze gate); naalp-egress-attestation {1:binding,2:digest,3:effect,4:audience,5:at} is a signed attestation a gateway/sidecar emits that an object of a given effect class, bound to a given audience, crossed an egress boundary at a given time - third-party verifiable WITHOUT the payload. A near-clone of naalp-gateway-decision (design section 24). Its authority is the signature over the bytes, never the connection, so it verifies offline and re-verifies IDENTICALLY when served by a party other than the gateway (third-party re-serve). binding in {content_bound,content_free}; digest = T1 content-id (content_bound) or SHA-384(content_id||salt) hiding commitment (content_free); effect = C5 class; audience = bound destination (empty-permitted); at = epoch ms. head=SHA-384(body); content-id=multihash(0x20,SHA-384).",
+  "binding_vocabulary": [
+    {
+      "name": "content_bound",
+      "code": 0
+    },
+    {
+      "name": "content_free",
+      "code": 1
+    }
+  ],
+  "unknown_binding": 99,
+  "object_bytes_hex": "7b22746f6f6c223a226578706f72745f637573746f6d65725f64617461222c2261726773223a7b227461626c65223a227573657273222c22726f7773223a343832317d7d",
+  "object_cid_hex": "2030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b1",
+  "wrong_object_bytes_hex": "7b22746f6f6c223a226578706f72745f637573746f6d65725f64617461222c2261726773223a7b227461626c65223a22696e766f69636573222c22726f7773223a39307d7d",
+  "wrong_object_cid_hex": "203072d51e140d86011ef3d473838b23e9ea8c9ade6bd328256624fe058fe949947ea3dd12d77d64fe85c1e7975a6826bc77",
+  "audience_hex": "61636d652d706172746e65722d656e64706f696e74",
+  "attestations": {
+    "content_bound": {
+      "binding": 0,
+      "digest_hex": "2030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b1",
+      "effect": 1,
+      "audience_hex": "61636d652d706172746e65722d656e64706f696e74",
+      "at_str": "1735689600000",
+      "body_hex": "a501000258322030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b10301045561636d652d706172746e65722d656e64706f696e74051b000001941f297c00",
+      "head_hex": "116586f2fe21100ec5a92c1f737805c258c5f4957852fa7538383f08d3f38d52246809a737f9a65e9000d3c5c1442fad",
+      "id_hex": "2030116586f2fe21100ec5a92c1f737805c258c5f4957852fa7538383f08d3f38d52246809a737f9a65e9000d3c5c1442fad"
+    },
+    "content_free": {
+      "binding": 1,
+      "digest_hex": "1f9564d7b41b25ad9e93907a5eeef7c511784274ba23861198a656d4f583c6c35b5e480253828f6dec76e074b935d9cc",
+      "effect": 3,
+      "audience_hex": "61636d652d706172746e65722d656e64706f696e74",
+      "at_str": "1738368000000",
+      "body_hex": "a501010258301f9564d7b41b25ad9e93907a5eeef7c511784274ba23861198a656d4f583c6c35b5e480253828f6dec76e074b935d9cc0303045561636d652d706172746e65722d656e64706f696e74051b00000194becea000",
+      "head_hex": "aba202db777bf8e3955581f09d1bbe79f49e0fcff6010a156d5c7de74a8c691796e5fb9ae5117c7ab5fdd3526beb8daf",
+      "id_hex": "2030aba202db777bf8e3955581f09d1bbe79f49e0fcff6010a156d5c7de74a8c691796e5fb9ae5117c7ab5fdd3526beb8daf"
+    }
+  },
+  "attestations_with_ordering": {
+    "correspondence_only": {
+      "binding": 0,
+      "digest_hex": "2030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b1",
+      "effect": 1,
+      "audience_hex": "61636d652d706172746e65722d656e64706f696e74",
+      "at_str": "1735689600000",
+      "body_hex": "a601000258322030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b10301045561636d652d706172746e65722d656e64706f696e74051b000001941f297c0006a10100",
+      "head_hex": "83f07466ba58890dc12c4ccca84ad5278ffa68fc1e71dfc27eb523e2561a79e96c6c59494e0e3c8677b0d17035c6cb2e",
+      "id_hex": "203083f07466ba58890dc12c4ccca84ad5278ffa68fc1e71dfc27eb523e2561a79e96c6c59494e0e3c8677b0d17035c6cb2e"
+    },
+    "single_boundary": {
+      "binding": 0,
+      "digest_hex": "2030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b1",
+      "effect": 1,
+      "audience_hex": "61636d652d706172746e65722d656e64706f696e74",
+      "at_str": "1735689600000",
+      "body_hex": "a601000258322030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b10301045561636d652d706172746e65722d656e64706f696e74051b000001941f297c0006a201010251626f756e646172792d7369676e65722d58",
+      "head_hex": "09bd2da2cb611ab56f8dfb211c959d788890ba4ee1804a7dc81e87b8290d0b3d2b708c8e6230b3e4fae7b8671d7e8d56",
+      "id_hex": "203009bd2da2cb611ab56f8dfb211c959d788890ba4ee1804a7dc81e87b8290d0b3d2b708c8e6230b3e4fae7b8671d7e8d56"
+    },
+    "external_mechanism": {
+      "binding": 1,
+      "digest_hex": "1f9564d7b41b25ad9e93907a5eeef7c511784274ba23861198a656d4f583c6c35b5e480253828f6dec76e074b935d9cc",
+      "effect": 3,
+      "audience_hex": "61636d652d706172746e65722d656e64706f696e74",
+      "at_str": "1738368000000",
+      "body_hex": "a601010258301f9564d7b41b25ad9e93907a5eeef7c511784274ba23861198a656d4f583c6c35b5e480253828f6dec76e074b935d9cc0303045561636d652d706172746e65722d656e64706f696e74051b00000194becea00006a3010203582165787465726e616c2d6c6f673a61636d652d7472616e73706172656e63792d76310458322030c83b03ab5d26de33f037927bb2258fcfc3e8050793b68959bc5be954bcda9ca13875be35627f50f282c4eff9d807ea56",
+      "head_hex": "f0ce5555565a493b2005d1a7e3ddb038cfb5283a947c4aa7695cbc33c9d61abfd3f791957b23775b71111c3c7c54f06f",
+      "id_hex": "2030f0ce5555565a493b2005d1a7e3ddb038cfb5283a947c4aa7695cbc33c9d61abfd3f791957b23775b71111c3c7c54f06f"
+    }
+  },
+  "ordering_basis_vocabulary": [
+    {
+      "name": "correspondence-only",
+      "code": 0
+    },
+    {
+      "name": "single-boundary",
+      "code": 1
+    },
+    {
+      "name": "external-mechanism",
+      "code": 2
+    }
+  ],
+  "commitment_open": {
+    "object_cid_hex": "2030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b1",
+    "wrong_object_cid_hex": "203072d51e140d86011ef3d473838b23e9ea8c9ade6bd328256624fe058fe949947ea3dd12d77d64fe85c1e7975a6826bc77",
+    "salt_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "wrong_salt_hex": "1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100",
+    "commitment_hex": "1f9564d7b41b25ad9e93907a5eeef7c511784274ba23861198a656d4f583c6c35b5e480253828f6dec76e074b935d9cc",
+    "note": "OpenEgressCommitment(attestation, object_cid, salt) must be true; the wrong salt and the wrong object_cid must both make it false. binding must be content_free \u2014 a content_bound attestation never opens."
+  },
+  "edge_cases": {
+    "keys_out_of_order": {
+      "binding": 1,
+      "digest_hex": "c2f43160fcc1551e9ed6a4cc22433507bde9b499925a70da447391aca0380d8ab8ae0d105999002fd98160965de77d9c",
+      "effect": 3,
+      "audience_hex": "61636d652d706172746e65722d656e64706f696e74",
+      "at_str": "1735689600000",
+      "canonical_body_hex": "a50101025830c2f43160fcc1551e9ed6a4cc22433507bde9b499925a70da447391aca0380d8ab8ae0d105999002fd98160965de77d9c0303045561636d652d706172746e65722d656e64706f696e74051b000001941f297c00",
+      "noncanonical_body_hex": "a5051b000001941f297c00045561636d652d706172746e65722d656e64706f696e740303025830c2f43160fcc1551e9ed6a4cc22433507bde9b499925a70da447391aca0380d8ab8ae0d105999002fd98160965de77d9c0101",
+      "reject": "NonCanonical",
+      "note": "same content, top-level keys emitted descending (5,4,3,2,1) - the strict decoder rejects NonCanonical."
+    },
+    "empty_vs_absent": {
+      "empty_audience": {
+        "body_hex": "a501000258322030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b103010440051b000001941f297c00",
+        "id_hex": "2030ec5c21f068a048020e795c14034d5bbaf5f81a3f87546146f6119a1a4dae34cf3e49da25121a8d95f43d959537a91d10"
+      },
+      "populated_audience": {
+        "audience_hex": "61636d652d706172746e65722d656e64706f696e74",
+        "body_hex": "a501000258322030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b10301045561636d652d706172746e65722d656e64706f696e74051b000001941f297c00",
+        "id_hex": "2030116586f2fe21100ec5a92c1f737805c258c5f4957852fa7538383f08d3f38d52246809a737f9a65e9000d3c5c1442fad"
+      },
+      "absent_field": {
+        "body_hex": "a401000258322030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b10301051b000001941f297c00",
+        "reject": "EgMalformed"
+      },
+      "note": "an empty audience is present and valid (empty-permitted), distinct by content-id from a populated one; both differ from a body whose audience field is absent (rejected - field 4 is mandatory even though the empty string is a legal value)."
+    },
+    "oversized_counter": {
+      "binding": 0,
+      "digest_hex": "2030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b1",
+      "effect": 0,
+      "audience_hex": "61636d652d706172746e65722d656e64706f696e74",
+      "at_str": "18446744073709551615",
+      "body_hex": "a501000258322030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b10300045561636d652d706172746e65722d656e64706f696e74051bffffffffffffffff",
+      "id_hex": "2030879446ddb3fa82361ea80054c364fcbb0ac9413f9e34221c7f0cb00902b417a40c929af665d3712053f940c4a7d6df12",
+      "note": "at = 2^64-1 (the full uint64 range), > 2^53 - carried as at_str (decimal string) so no float64 JSON decoder anywhere in the toolchain can round it; the CBOR body itself carries the raw 64-bit uint unchanged."
+    },
+    "minimal": {
+      "binding": 0,
+      "digest_hex": "",
+      "effect": 0,
+      "audience_hex": "",
+      "at_str": "0",
+      "body_hex": "a501000240030004400500",
+      "id_hex": "203087ee765809d1c7e0ffd2c8cf72c81e9f6a55f7992cbbfcd4ed8474b8aba78d6b30a8922f78f64d4584ff8acbba65c27a",
+      "note": "smallest valid attestation: content_bound, empty digest, empty audience, read_only, at=0."
+    },
+    "look_alike": {
+      "body_hex": "a401010258322030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b10355706f6c6963793a61636d652d6567726573732d76330403",
+      "reject": "EgMalformed",
+      "note": "a naalp-gateway-decision body {1:uint,2:bstr,3:bstr,4:uint} (this construct's own near-clone sibling) fed to ParseEgressAttestation: field 5 (at) is absent."
+    }
+  },
+  "negative_ordering": {
+    "ordering_malformed_single_boundary_with_mechanism": {
+      "body_hex": "a601000258322030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b10301045561636d652d706172746e65722d656e64706f696e74051b000001941f297c0006a301010251626f756e646172792d7369676e65722d5803582165787465726e616c2d6c6f673a61636d652d7472616e73706172656e63792d7631",
+      "reject": "OrderingDisclosureMalformed",
+      "note": "field 6 basis=single-boundary but key 3 (mechanism) is also present; single-boundary requires 3/4 absent."
+    },
+    "unknown_ordering_basis": {
+      "body_hex": "a601000258322030c31dd5cc7f2d632ec36bcb0d57b0dd75ed6623871b608faf2b24447759f48a53317e71b6b1be0e27e602d0387927a3b10301045561636d652d706172746e65722d656e64706f696e74051b000001941f297c0006a1011863",
+      "reject": "UnknownOrderingBasis",
+      "note": "field 6 basis = 99, outside the closed {0,1,2} ordering-basis set."
+    }
+  },
+  "note": "both attestation bodies are ordinary COSE_Sign1 payloads; VerifyEgressAttestation takes NO serving-party/connection identity, so the same bytes verify identically whether the gateway or a third party serves them. The cross-language SIGNED-object digest pin (Go and Rust ML-DSA-65 over the content_free body, all-0x11 32-byte seed) is computed once from a Go/Rust run and hardcoded in both impls' tests, exactly as gateway_test.go's crossLangPinnedSignedDecisionSHA384 - Python stdlib has no ML-DSA so this oracle cannot compute it independently."
+}

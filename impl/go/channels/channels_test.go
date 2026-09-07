@@ -123,6 +123,13 @@ func TestSurfaceOverSpine(t *testing.T) {
 	signer, verifier, pkb := testSigner(t, 90)
 	for _, ch := range channels.Table {
 		k := ch.Kinds[0]
+		// The Identity Rotation kind (channel 3, kind 0) is a tag-98 co-signed object (§5.2),
+		// not a single-Sign1; exercise this single-Sign1 surface-over-spine round-trip with a
+		// non-rotation Identity kind (KeyAnnounce). Rotation is covered by the envelope rotation
+		// tests (SignRotation/VerifyRotationObject).
+		if ch.ID == 0x0003 && k.Code == 0 {
+			k = ch.Kinds[len(ch.Kinds)-1]
+		}
 		eff := uint64(k.Effect)
 		obj := &envelope.Object{Kind: k.Code, Channel: ch.ID, Tier: 0, Signer: pkb, Created: 100, Effect: eff, Profile: uint64(cose.ProfilePublic), Body: cbor.Uint(0)}
 		signed, err := envelope.Sign(obj, signer)

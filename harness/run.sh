@@ -7,7 +7,7 @@
 #       (regenerate every non-circular oracle -> Go build+vet+test-race -> Rust build+test ->
 #        Go == Rust byte-identical COSE_Sign1 + object envelope -> vector-drift gate)
 #   [2] CDDL conformance              scripts/cddl_check.sh
-#       (spec/naalp-draft-00.cddl is well-formed in the Bormann `cddl` tool AND validates the
+#       (spec/naalp-draft-01.cddl is well-formed in the Bormann `cddl` tool AND validates the
 #        committed vectors against their production; cross-rule mismatches are rejected)
 #   [3] registry drift                scripts/registry_drift.py
 #       (the machine-readable registries stay consistent with the graded vectors)
@@ -30,16 +30,28 @@ bash scripts/verify.sh; p1=$?
 step "[2/3] CDDL conformance (scripts/cddl_check.sh)"
 bash scripts/cddl_check.sh; p2=$?
 
-step "[3/4] registry drift (scripts/registry_drift.py)"
+step "[3/5] registry drift (scripts/registry_drift.py)"
 "${PYTHON:-python}" scripts/registry_drift.py; p3=$?
 
-step "[4/4] cross-language conformance (harness/cross_language.sh)"
+step "[4/5] cross-language conformance (harness/cross_language.sh)"
 bash harness/cross_language.sh; p4=$?
+
+# [5] The gate suite. Every gate here runs its fail-fixture FIRST and refuses to
+# report a result if the fixture did not make it fail, so a gate that has silently
+# stopped working breaks the build instead of reporting green. These gates cover the
+# properties the four steps above structurally cannot see: whether a value agrees
+# ACROSS ports (steps 1 and 2 grade one implementation or one file at a time),
+# whether every capability exists in all ten ports, whether a tested capability's
+# tests have ever been observed failing, and whether every public claim has a gate
+# behind it. The protected-header version split that survived the entire companion
+# build with all four steps above green is what this step exists to catch.
+step "[5/5] gate suite (scripts/run_gates.py)"
+"${PYTHON:-python}" scripts/run_gates.py; p5=$?
 
 step "per-construction conformance table"
 # Each row is graded by the gates above (Go + Rust vs the independent oracle, and — where it has a
 # wire production — the CDDL). Printed only when all four gates are green.
-if [ "$p1" -eq 0 ] && [ "$p2" -eq 0 ] && [ "$p3" -eq 0 ] && [ "$p4" -eq 0 ]; then
+if [ "$p1" -eq 0 ] && [ "$p2" -eq 0 ] && [ "$p3" -eq 0 ] && [ "$p4" -eq 0 ] && [ "$p5" -eq 0 ]; then
   printf '  %-28s %-8s %-8s %-8s %s\n' "construction" "Go" "Rust" "CDDL" "oracle"
   printf '  %-28s %-8s %-8s %-8s %s\n' "----------------------------" "----" "----" "----" "------"
   row() { printf '  %-28s %-8s %-8s %-8s %s\n' "$1" "graded" "graded" "$2" "$3"; }
@@ -63,7 +75,11 @@ if [ "$p1" -eq 0 ] && [ "$p2" -eq 0 ] && [ "$p3" -eq 0 ] && [ "$p4" -eq 0 ]; the
   echo "agree on the shared corpus and produce byte-identical deterministic ML-DSA signatures."
   exit 0
 else
-  echo "  parity=$([ $p1 -eq 0 ] && echo ok || echo FAIL)  cddl=$([ $p2 -eq 0 ] && echo ok || echo FAIL)  registry=$([ $p3 -eq 0 ] && echo ok || echo FAIL)  cross-lang=$([ $p4 -eq 0 ] && echo ok || echo FAIL)"
+  echo "  parity=$([ $p1 -eq 0 ] && echo ok || echo FAIL)  cddl=$([ $p2 -eq 0 ] && echo ok || echo FAIL)  registry=$([ $p3 -eq 0 ] && echo ok || echo FAIL)  cross-lang=$([ $p4 -eq 0 ] && echo ok || echo FAIL)  gates=$([ $p5 -eq 0 ] && echo ok || echo FAIL)"
+  if [ "$p5" -eq 2 ]; then
+    echo "  NOTE: gates exited 2 -- a GATE is broken, not the tree. Fix the gate first;"
+    echo "        until then no green result from the suite means anything."
+  fi
   echo "N-AALP CONFORMANCE: FAILED"
   exit 1
 fi

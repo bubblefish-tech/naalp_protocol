@@ -2,7 +2,7 @@
 
 # N-AALP PHP SDK — Quickstart
 
-A reference implementation of the N-AALP (draft-bubblefish-naalp-00) spine in PHP (8.1+),
+A reference implementation of the N-AALP (draft-bubblefish-naalp-01) spine in PHP (8.1+),
 byte-identical to the Python, Go, and Rust reference implementations. Namespace `Naalp`.
 Composer package `bubblefish/naalp`.
 

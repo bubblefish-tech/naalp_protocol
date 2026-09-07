@@ -2,7 +2,7 @@
 
 # N-AALP Rust SDK
 
-The Rust reference implementation of **N-AALP** (draft-bubblefish-naalp-00) — one of the two
+The Rust reference implementation of **N-AALP** (draft-bubblefish-naalp-01) — one of the two
 primary references (Go and Rust produce byte-identical output for every construction). Every
 N-AALP object is a deterministically-encoded CBOR structure signed with COSE that carries, under
 one signature, its content identity, its signer, a closed effect label, optional approval/audit

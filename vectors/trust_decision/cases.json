@@ -1,0 +1,54 @@
+{
+  "source": "design \u00a725 (C22, R-TDCS-3/5); bodies built by the shared RFC-8949 CBOR constructor (T1); content id = multihash(0x20, SHA-384(canonical CBOR)); approver id from the T4 identity corpus.",
+  "audience": {
+    "approver": "bciqid2nxywfacr2jaqmyzmkix5kca447hzwtrq5ys5iczm5ufd5k3qy",
+    "approves_hex": "20304e8abef02897dcc39231d926feb79b34534c6d474cd49a5b4dec2cc2cce90d251eef7418782006d829bd7f30ae8626ff",
+    "grant": 2,
+    "nonce_hex": "07070707070707070707070707070707",
+    "not_after": 1000,
+    "use_context_match": "billing.example.v1",
+    "use_context_mismatch": "payments.example.v1",
+    "cases": [
+      {
+        "name": "audience_present",
+        "audience": "billing.example.v1",
+        "record_hex": "a601583220304e8abef02897dcc39231d926feb79b34534c6d474cd49a5b4dec2cc2cce90d251eef7418782006d829bd7f30ae8626ff027838626369716964326e78797766616372326a61716d797a6d6b6978356b6361343437687a777472713579733569637a6d35756664356b3371790302045007070707070707070707070707070707051903e8067262696c6c696e672e6578616d706c652e7631",
+        "approval_id_hex": "20304807c11a81276f951b0b261a8ad4975e8c0a13bea8eb921eed9a05aaef6a485a75280d01d9b8ece668ea9859d515bc64"
+      },
+      {
+        "name": "audience_absent",
+        "audience": "",
+        "record_hex": "a501583220304e8abef02897dcc39231d926feb79b34534c6d474cd49a5b4dec2cc2cce90d251eef7418782006d829bd7f30ae8626ff027838626369716964326e78797766616372326a61716d797a6d6b6978356b6361343437687a777472713579733569637a6d35756664356b3371790302045007070707070707070707070707070707051903e8",
+        "approval_id_hex": "20302017f3b9c002809c74a011b155858cb19238772b7527f35282f958c5de7650d6d08083362bfc823b755bec97a772c74b"
+      }
+    ]
+  },
+  "refusal": {
+    "full_record_hex": "a201583220304e8abef02897dcc39231d926feb79b34534c6d474cd49a5b4dec2cc2cce90d251eef7418782006d829bd7f30ae8626ff02783e696e73756666696369656e7420617070726f7665722071756f72756d3a2031206f66203220726571756972656420617070726f76657273207369676e6564",
+    "full_record_id_hex": "2030c2319915e156e7049b3d19cdcea7b5e1be0e600dd702e9e55e944aa0e4902e7f27d6821f23734efffe826290ce52f9cf",
+    "leaked_reason": "insufficient approver quorum: 1 of 2 required approvers signed",
+    "cases": [
+      {
+        "name": "denied",
+        "outcome": 0,
+        "record_hex": "a201000258322030c2319915e156e7049b3d19cdcea7b5e1be0e600dd702e9e55e944aa0e4902e7f27d6821f23734efffe826290ce52f9cf"
+      },
+      {
+        "name": "held",
+        "outcome": 1,
+        "record_hex": "a201010258322030c2319915e156e7049b3d19cdcea7b5e1be0e600dd702e9e55e944aa0e4902e7f27d6821f23734efffe826290ce52f9cf"
+      },
+      {
+        "name": "unverifiable",
+        "outcome": 2,
+        "record_hex": "a201020258322030c2319915e156e7049b3d19cdcea7b5e1be0e600dd702e9e55e944aa0e4902e7f27d6821f23734efffe826290ce52f9cf"
+      }
+    ],
+    "reject": {
+      "unknown_outcome_hex": "a201030258322030c2319915e156e7049b3d19cdcea7b5e1be0e600dd702e9e55e944aa0e4902e7f27d6821f23734efffe826290ce52f9cf",
+      "detail_leak_extra_field_hex": "a301010258322030c2319915e156e7049b3d19cdcea7b5e1be0e600dd702e9e55e944aa0e4902e7f27d6821f23734efffe826290ce52f9cf03783e696e73756666696369656e7420617070726f7665722071756f72756d3a2031206f66203220726571756972656420617070726f76657273207369676e6564",
+      "missing_record_hex": "a10101",
+      "empty_record_hex": "a201010240"
+    }
+  }
+}

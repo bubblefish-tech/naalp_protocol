@@ -1,0 +1,6 @@
+ext_key,name,maps,description
+1,safety-label,ext,OPTIONAL signed non-critical safety label {risk scope} (design 6.4 / R-6.4); rides the non-critical ext map (object field 11)
+13,recheck,ext|cext,checkable-minimum re-check procedure id into recheck-procedure (design 2.5.1 / T1.3); may-ignore in ext (11); must-understand in cext (12) where an unknown id is UnknownCriticalExt
+14,signer-counter,ext,OPTIONAL forward-only per-signer position for duplication DETECTION (design 2.5.2 / T1.6 / NAALP-REQ-120); non-critical ext map (11) only; covered by the signer COSE_Sign1
+15,producing-boundary,ext,OPTIONAL per-object disclosure of the emitting trust boundary and observed-vs-relayed (design 2.5.4 / NA-IETF-1); non-critical ext map (11) only; self-asserted under the signer COSE_Sign1
+16,naalp-hazard-claim,cext,critical must-understand physical-hazard claim {class + envelope} into naalp-hazard-claim (Mfg-F); cext map (12) ONLY -- a safety gate so an unimplementing verifier fails closed (UnknownCriticalExt) not may-ignore in ext (11)

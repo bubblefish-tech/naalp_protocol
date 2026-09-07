@@ -2,7 +2,7 @@
 
 # N-AALP Go SDK
 
-The Go reference implementation of **N-AALP** (draft-bubblefish-naalp-00) — and the primary
+The Go reference implementation of **N-AALP** (draft-bubblefish-naalp-01) — and the primary
 reference against which every other SDK is byte-compared. Every N-AALP object is a
 deterministically-encoded CBOR structure signed with COSE that carries, under one signature, its
 content identity, its signer, a closed effect label, optional approval/audit bindings, and its

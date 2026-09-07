@@ -79,8 +79,34 @@ func SignerID(alg int, pubkey []byte) (string, error) {
 	}
 	tagged := append(uvarint(mc), pubkey...)
 	digest := sha256.Sum256(tagged)
-	mh := uvarint(mhSHA256)                    // sha2-256 multihash code (0x12)
+	mh := uvarint(mhSHA256)                          // sha2-256 multihash code (0x12)
 	mh = append(mh, uvarint(uint64(len(digest)))...) // length (0x20 = 32)
+	mh = append(mh, digest[:]...)
+	return "b" + multibaseBase32.EncodeToString(mh), nil
+}
+
+// CompositeSignerID derives the self-certifying signer id for a composite key pair (design.md
+// §5.1). The SHA-256 preimage is the multicodec-tagged ML-DSA public key concatenated with the
+// multicodec-tagged Ed25519 public key — using only existing official multicodecs (no new code) —
+// so stripping or substituting either leg changes the id (=> SignerMismatch before verify).
+// mldsaAlg selects the ML-DSA multicodec (0x1211 for ML-DSA-65, 0x1212 for ML-DSA-87); the
+// classical leg is always Ed25519 (0xed).
+func CompositeSignerID(mldsaAlg int, mldsaPub, edPub []byte) (string, error) {
+	if mldsaAlg != cose.AlgMLDSA65 && mldsaAlg != cose.AlgMLDSA87 {
+		return "", ErrUnknownAlg
+	}
+	mc, ok := multicodecFor(mldsaAlg)
+	if !ok {
+		return "", ErrUnknownAlg
+	}
+	preimage := make([]byte, 0, len(mldsaPub)+len(edPub)+8)
+	preimage = append(preimage, uvarint(mc)...)
+	preimage = append(preimage, mldsaPub...)
+	preimage = append(preimage, uvarint(codeEd25519)...)
+	preimage = append(preimage, edPub...)
+	digest := sha256.Sum256(preimage)
+	mh := uvarint(mhSHA256)
+	mh = append(mh, uvarint(uint64(len(digest)))...)
 	mh = append(mh, digest[:]...)
 	return "b" + multibaseBase32.EncodeToString(mh), nil
 }
@@ -170,11 +196,25 @@ func (r RevocationRecord) Bytes() []byte {
 	return b
 }
 
-// VerifyRevocation confirms the revocation is signed by the key it revokes (or a
-// deployer recovery key, out of scope here).
-func VerifyRevocation(r RevocationRecord, v cose.Verifier, pub, sig []byte) error {
-	if err := CheckSigner(r.Key, v.Alg(), pub); err != nil {
+// VerifyRevocation confirms a revocation is validly signed (§5.3): by the key it revokes, or by a
+// deployer-configured recovery key. recoveryIDs is the deployer's set of authorized recovery-key
+// signer ids; a revocation whose signer is neither r.Key nor a member of recoveryIDs is rejected
+// SignerMismatch (§5.5), fail-closed — an empty recoveryIDs admits only the revoked key itself.
+// The signer id is recomputed from the presented key and checked BEFORE the signature.
+func VerifyRevocation(r RevocationRecord, v cose.Verifier, pub, sig []byte, recoveryIDs []string) error {
+	id, err := SignerID(v.Alg(), pub)
+	if err != nil {
 		return err
+	}
+	authorized := id == r.Key
+	for _, rid := range recoveryIDs {
+		if rid == id {
+			authorized = true
+			break
+		}
+	}
+	if !authorized {
+		return ErrSignerMismatch
 	}
 	if !v.VerifyRaw(r.Bytes(), sig) {
 		return cose.ErrBadSignature

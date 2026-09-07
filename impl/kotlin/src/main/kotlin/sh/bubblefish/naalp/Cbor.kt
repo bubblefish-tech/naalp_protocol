@@ -48,12 +48,16 @@ object Cbor {
     // --- encoder ---
 
     private fun head(major: Int, n: Long): ByteArray {
+        // n is the CBOR argument as an UNSIGNED 64-bit value; Kotlin Long is signed, so values in
+        // [2^63, 2^64-1] appear negative. Select the shortest head by unsigned magnitude (via ULong)
+        // so the full uint64 range encodes correctly; the ushr shifts below are already unsigned.
         val m = major shl 5
+        val u = n.toULong()
         return when {
-            n < 24 -> byteArrayOf((m or n.toInt()).toByte())
-            n < 256 -> byteArrayOf((m or 24).toByte(), n.toByte())
-            n < 65536L -> byteArrayOf((m or 25).toByte(), (n ushr 8).toByte(), n.toByte())
-            n < 4294967296L -> byteArrayOf(
+            u < 24uL -> byteArrayOf((m or n.toInt()).toByte())
+            u < 256uL -> byteArrayOf((m or 24).toByte(), n.toByte())
+            u < 65536uL -> byteArrayOf((m or 25).toByte(), (n ushr 8).toByte(), n.toByte())
+            u < 4294967296uL -> byteArrayOf(
                 (m or 26).toByte(),
                 (n ushr 24).toByte(), (n ushr 16).toByte(), (n ushr 8).toByte(), n.toByte()
             )
@@ -75,7 +79,9 @@ object Cbor {
     private fun encodeInto(v: Value, out: ByteArrayOutputStream) {
         when (v) {
             is U -> {
-                if (v.v < 0) throw NaalpException("NonCanonical", "uint is negative")
+                // U is a CBOR unsigned integer; v.v carries the uint64 bit pattern (a value >= 2^63 is
+                // a "negative" Long). All bit patterns are valid uint64, matching the Go/Rust reference,
+                // so there is nothing to reject here -- head() emits the shortest form by unsigned magnitude.
                 out.writeBytes(head(0, v.v))
             }
             is N -> out.writeBytes(head(1, -1 - v.v))
@@ -137,7 +143,16 @@ object Cbor {
         fun remaining() = data.size - pos
     }
 
-    private fun dec(c: Cursor): Value {
+    // Nesting-depth counter (design.md §3.4, R7): the outermost item is depth 1, and each nested
+    // array element, map key/value, and tagged content is one deeper. decodeBounded rejects the
+    // first item whose depth exceeds maxDepth BEFORE it is materialized (RFC 8949 §10 decoder-
+    // memory guard). MAX_DEPTH_UNBOUNDED is the sentinel used by the trusted-input decode() path:
+    // far beyond any legitimate structure yet finite, so even the unbounded path cannot recurse
+    // without limit on a pathological input.
+    private const val MAX_DEPTH_UNBOUNDED = 1 shl 20
+
+    private fun dec(c: Cursor, depth: Int, maxDepth: Int): Value {
+        if (depth > maxDepth) throw NaalpException("DepthExceeded", "CBOR nesting depth exceeds the maximum")
         if (c.remaining() < 1) throw NaalpException("NonCanonical", "truncated")
         val ib = c.data[c.pos++].toInt() and 0xFF
         val major = ib ushr 5
@@ -191,7 +206,7 @@ object Cbor {
             4 -> {
                 val len = lenOf(arg)
                 val items = ArrayList<Value>(len)
-                repeat(len) { items.add(dec(c)) }
+                repeat(len) { items.add(dec(c, depth + 1, maxDepth)) }
                 A(items)
             }
             5 -> {
@@ -200,9 +215,9 @@ object Cbor {
                 var prev: ByteArray? = null
                 repeat(len) {
                     val before = c.pos
-                    val k = dec(c)
+                    val k = dec(c, depth + 1, maxDepth)
                     val kbytes = c.data.copyOfRange(before, c.pos)
-                    val value = dec(c)
+                    val value = dec(c, depth + 1, maxDepth)
                     if (prev != null && compareBytes(kbytes, prev!!) <= 0) {
                         throw NaalpException("NonCanonical", "map keys out of order or duplicate")
                     }
@@ -212,7 +227,7 @@ object Cbor {
                 M(pairs)
             }
             6 -> {
-                val content = dec(c)
+                val content = dec(c, depth + 1, maxDepth)
                 Tag(arg, content)
             }
             else -> throw NaalpException("NonCanonical", "unsupported major type $major")
@@ -232,15 +247,25 @@ object Cbor {
         return arg.toInt()
     }
 
-    /** Strict canonical decode: rejects any non-canonical encoding with a NonCanonical error. */
-    fun decode(data: ByteArray): Value {
+    private fun decodeTop(data: ByteArray, maxDepth: Int): Value {
         val c = Cursor(data)
-        val v = dec(c)
+        val v = dec(c, 1, maxDepth)
         if (c.remaining() != 0) {
             throw NaalpException("NonCanonical", "trailing bytes after top-level item")
         }
         return v
     }
+
+    /** Strict canonical decode: rejects any non-canonical encoding with a NonCanonical error. Does
+     *  not bound nesting depth (the trusted-input path); the untrusted object decode path uses
+     *  [decodeBounded] (design.md §3.4, R7). */
+    fun decode(data: ByteArray): Value = decodeTop(data, MAX_DEPTH_UNBOUNDED)
+
+    /** [decode] with a maximum CBOR nesting depth (design.md §3.4, R7): the outermost item is depth
+     *  1, each nested map key/value, array element and tagged content is one deeper, and an item at
+     *  depth maxDepth+1 is rejected with a DepthExceeded error BEFORE it is materialized (RFC 8949
+     *  §10 decoder-memory guard). */
+    fun decodeBounded(data: ByteArray, maxDepth: Int): Value = decodeTop(data, maxDepth)
 
     // --- content id ---
 

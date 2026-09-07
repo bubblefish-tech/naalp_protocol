@@ -50,6 +50,15 @@ type coseCases struct {
 		MsgHex string `json:"msg_hex"`
 		SigHex string `json:"sig_hex"`
 	} `json:"ed25519_rfc8032_test1"`
+	Composite struct {
+		Alg           int    `json:"alg"`
+		LabelHex      string `json:"label_hex"`
+		PayloadHex    string `json:"payload_hex"`
+		ProtectedHex  string `json:"protected_hex"`
+		ToBeSignedHex string `json:"tobesigned_hex"`
+		CtxHex        string `json:"ctx_hex"`
+		MprimeHex     string `json:"mprime_hex"`
+	} `json:"composite"`
 }
 
 func load(t *testing.T) coseCases {
@@ -285,5 +294,131 @@ func TestHybridAcceptAndIncomplete(t *testing.T) {
 	err = VerifyHybrid(ProfilePublic, Ed25519Verifier{PK: edPub}, MLDSA65Verifier{PK: pk}, tampered)
 	if ce, ok := err.(*Error); !ok || ce.Kind != "HybridIncomplete" {
 		t.Fatalf("want HybridIncomplete, got %v", err)
+	}
+}
+
+// compositeKeys builds a deterministic composite keypair: the ML-DSA-65 key from the NIST
+// keyGen seed and the Ed25519 key from the RFC 8032 §7.1 seed.
+func compositeKeys(t *testing.T, c coseCases) (*mldsa65.PrivateKey, *mldsa65.PublicKey, ed25519.PrivateKey, ed25519.PublicKey) {
+	t.Helper()
+	pk, sk := mldsa65KeyFromNIST(t, c)
+	edPriv := ed25519.NewKeyFromSeed(mustHex(t, c.Ed25519.SkHex))
+	return sk, pk, edPriv, edPriv.Public().(ed25519.PublicKey)
+}
+
+// TestCompositeMprimeMatchesOracle grades the composite protected header ({1:-65537}), the
+// COSE ToBeSigned M, and the LAMPS message representative M' against the independent oracle
+// (design.md §4.2; F3 non-circular). Mutation guard: a constant M' fails the fixed hex.
+func TestCompositeMprimeMatchesOracle(t *testing.T) {
+	c := load(t)
+	comp := c.Composite
+	if comp.Alg != AlgComposite65Ed25519 {
+		t.Fatalf("oracle composite alg %d != %d", comp.Alg, AlgComposite65Ed25519)
+	}
+	prot, err := protectedHeader(comp.Alg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := hex.EncodeToString(prot); got != comp.ProtectedHex {
+		t.Errorf("composite protected\n got %s\nwant %s", got, comp.ProtectedHex)
+	}
+	tbs, err := ToBeSigned(comp.Alg, mustHex(t, comp.PayloadHex))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := hex.EncodeToString(tbs); got != comp.ToBeSignedHex {
+		t.Errorf("composite tobesigned (M)\n got %s\nwant %s", got, comp.ToBeSignedHex)
+	}
+	mprime := ComputeMprime(mustHex(t, comp.LabelHex), mustHex(t, comp.CtxHex), tbs)
+	if got := hex.EncodeToString(mprime); got != comp.MprimeHex {
+		t.Errorf("composite M'\n got %s\nwant %s", got, comp.MprimeHex)
+	}
+}
+
+// TestCompositeRoundTripAndLegFailures: a composite signature verifies iff BOTH legs
+// validate; tampering EITHER leg independently yields HybridIncomplete; a value of the wrong
+// length is Malformed. It also confirms the signer's internal suite Label equals the oracle
+// label: the deterministic Ed25519 leg verifies against M' recomputed with the oracle label.
+func TestCompositeRoundTripAndLegFailures(t *testing.T) {
+	c := load(t)
+	sk, pk, edPriv, edPub := compositeKeys(t, c)
+	signer := CompositeSigner{ML65: sk, Ed: edPriv}
+	v := CompositeVerifier{ML65: pk, Ed: edPub}
+
+	// sign a bare COSE ToBeSigned (the envelope passes its own tbs here in production).
+	tbs, err := ToBeSigned(AlgComposite65Ed25519, mustHex(t, c.Composite.PayloadHex))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sig, err := signer.Sign(tbs)
+	if err != nil {
+		t.Fatalf("composite sign: %v", err)
+	}
+	if len(sig) != mldsa65.SignatureSize+ed25519.SignatureSize {
+		t.Fatalf("composite sig len %d", len(sig))
+	}
+	if err := VerifyComposite(v, tbs, sig); err != nil {
+		t.Fatalf("verify valid composite: %v", err)
+	}
+
+	// internal label == oracle label: the deterministic Ed25519 leg is over M'(oracle label).
+	mprimeOracle := ComputeMprime(mustHex(t, c.Composite.LabelHex), nil, tbs)
+	edLeg := sig[mldsa65.SignatureSize:]
+	if !ed25519.Verify(edPub, mprimeOracle, edLeg) {
+		t.Fatal("Ed25519 leg does not verify against M' built with the oracle label (label drift)")
+	}
+
+	// tamper the ML-DSA leg alone -> HybridIncomplete.
+	tamperML := append([]byte(nil), sig...)
+	tamperML[0] ^= 0x01
+	if err := VerifyComposite(v, tbs, tamperML); err == nil || err.(*Error).Kind != "HybridIncomplete" {
+		t.Fatalf("tampered ML-DSA leg: want HybridIncomplete, got %v", err)
+	}
+	// tamper the Ed25519 leg alone -> HybridIncomplete.
+	tamperEd := append([]byte(nil), sig...)
+	tamperEd[len(tamperEd)-1] ^= 0x01
+	if err := VerifyComposite(v, tbs, tamperEd); err == nil || err.(*Error).Kind != "HybridIncomplete" {
+		t.Fatalf("tampered Ed25519 leg: want HybridIncomplete, got %v", err)
+	}
+	// wrong-length value -> Malformed (structural).
+	if err := VerifyComposite(v, tbs, sig[:len(sig)-1]); err == nil || err.(*Error).Kind != "Malformed" {
+		t.Fatalf("short composite: want Malformed, got %v", err)
+	}
+}
+
+// TestCompositeLegStrippedFailsPureVerify (bar 3, non-separability): take a valid composite
+// signature and present its ML-DSA leg alone as if it were a plain ML-DSA-65 COSE_Sign1 over
+// the same payload. It MUST fail the pure Verify1, because the leg signed M' (a domain-
+// separated hash with context = Label), not the plain ToBeSigned. RFC 9955 Strong
+// Non-Separability: a stripped object has no valid signature even to a non-strict verifier.
+func TestCompositeLegStrippedFailsPureVerify(t *testing.T) {
+	c := load(t)
+	sk, pk, edPriv, _ := compositeKeys(t, c)
+	payload := mustHex(t, c.Composite.PayloadHex)
+	tbs, _ := ToBeSigned(AlgComposite65Ed25519, payload)
+	sig, _ := CompositeSigner{ML65: sk, Ed: edPriv}.Sign(tbs)
+
+	mlLeg := sig[:mldsa65.SignatureSize] // the ML-DSA leg alone
+	strippedObj, err := assembleSign1(AlgMLDSA65, payload, mlLeg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Verify1(ProfilePublic, MLDSA65Verifier{PK: pk}, strippedObj); err == nil {
+		t.Fatal("stripped ML-DSA leg verified as a plain ML-DSA object (separability!)")
+	} else if err.(*Error).Kind != "BadSignature" {
+		t.Fatalf("stripped leg: want BadSignature, got %v", err)
+	}
+}
+
+// TestCompositeDeterministic: composite signing is deterministic (both legs), so Go and Rust
+// reproduce identical bytes (R-16.2).
+func TestCompositeDeterministic(t *testing.T) {
+	c := load(t)
+	sk, _, edPriv, _ := compositeKeys(t, c)
+	tbs, _ := ToBeSigned(AlgComposite65Ed25519, mustHex(t, c.Composite.PayloadHex))
+	a, _ := CompositeSigner{ML65: sk, Ed: edPriv}.Sign(tbs)
+	b, _ := CompositeSigner{ML65: sk, Ed: edPriv}.Sign(tbs)
+	if hex.EncodeToString(a) != hex.EncodeToString(b) {
+		t.Fatal("composite signing is not deterministic across calls")
 	}
 }

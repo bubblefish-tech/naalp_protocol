@@ -131,9 +131,9 @@ codes, per the code-assignment order above.
 | 36 | `LedgerCorrupt` | no | approval | the consume ledger is structurally corrupt (§7) |
 | 37 | `LedgerUnsigned` | no | approval | a consume-ledger record is not signed (§7) |
 | 38 | `AudienceMismatch` | no | approval | a consume receipt's audience does not match the object (§7) |
-| 39 | `FreshnessSelfAsserted` | no | approval | an approval's freshness is only self-asserted, not independently anchored (§7) |
-| 40 | `UnknownRefusalOutcome` | no | refusal | a coarse-refusal object carries an unknown outcome value |
-| 41 | `RefusalDetailLeak` | no | refusal | a coarse-refusal object discloses detail beyond the coarse vocabulary |
+| 39 | `FreshnessSelfAsserted` | no | approval | an approval's freshness is only self-asserted, not independently anchored (§7, R-TDCS-4) |
+| 40 | `UnknownRefusalOutcome` | no | refusal | a coarse-refusal object carries an unknown outcome value (R-TDCS-3) |
+| 41 | `RefusalDetailLeak` | no | refusal | a coarse-refusal object discloses detail beyond the coarse vocabulary (R-TDCS-3) |
 | 42 | `ChainBroken` | no | audit | an audit or hash-chain link does not verify (§8) |
 | 43 | `Equivocation` | no | audit | two conflicting signed statements occupy one chain position (§8) |
 | 44 | `CausalViolation` | no | audit | an object is applied before a declared cause (§8, §13) |

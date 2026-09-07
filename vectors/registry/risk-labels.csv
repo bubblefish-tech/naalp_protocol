@@ -1,0 +1,4 @@
+label_name,label_code,class
+sensitive,1,gating
+egress,2,gating
+reversible,3,informing

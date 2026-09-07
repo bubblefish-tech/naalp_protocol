@@ -30,6 +30,8 @@ fn main() {
 
     // A Governance Approval object (channel 0x0004, kind 1), effect non_idempotent_write, Public.
     let mut o = Object {
+        audience: String::new(),
+        suite: 0,
         id: vec![],
         kind: 1,
         channel: 4,
@@ -44,7 +46,11 @@ fn main() {
         cext: None,
     };
     let signed = envelope::sign(&mut o, &cose::MlDsa65Signer(sk));
-    println!("signed object: {} bytes, signer {}...", signed.len(), &signer_id[..12]);
+    println!(
+        "signed object: {} bytes, signer {}...",
+        signed.len(),
+        &signer_id[..12]
+    );
 
     let v = cose::MlDsa65Verifier(pk);
     // The channel validator admits kind 1 on the Governance channel (0x0004) and nothing else.

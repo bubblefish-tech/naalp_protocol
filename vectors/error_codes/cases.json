@@ -1,0 +1,1207 @@
+{
+  "channel": 0,
+  "kind": 3,
+  "standards_max": 32767,
+  "unknown_code_example": 60000,
+  "errors": [
+    {
+      "code": 1,
+      "name": "NonCanonical",
+      "retryable": false,
+      "subsystem": "encoding",
+      "desc": "object or header is not the deterministic RFC 8949 \u00a74.2.1 encoding (non-minimal, indefinite-length, unsorted or duplicate keys, a float, or the 0x41A0 empty header)"
+    },
+    {
+      "code": 2,
+      "name": "DepthExceeded",
+      "retryable": false,
+      "subsystem": "encoding",
+      "desc": "CBOR nesting depth exceeds the maximum (\u00a73.4)"
+    },
+    {
+      "code": 3,
+      "name": "Malformed",
+      "retryable": false,
+      "subsystem": "object",
+      "desc": "structurally malformed object or COSE structure (the generic fallback rejection)"
+    },
+    {
+      "code": 4,
+      "name": "ContentIdMismatch",
+      "retryable": false,
+      "subsystem": "object",
+      "desc": "the recomputed content id does not equal the carried content id (\u00a72.3)"
+    },
+    {
+      "code": 5,
+      "name": "HeaderBodyMismatch",
+      "retryable": false,
+      "subsystem": "object",
+      "desc": "a protected-header routing copy disagrees with the signed body (\u00a72.6)"
+    },
+    {
+      "code": 6,
+      "name": "UnsupportedVersion",
+      "retryable": false,
+      "subsystem": "object",
+      "desc": "the protected-header naalp-version is not supported (\u00a72.5.3)"
+    },
+    {
+      "code": 7,
+      "name": "UnknownCriticalExt",
+      "retryable": false,
+      "subsystem": "object",
+      "desc": "a critical-extension (cext) key is not understood (\u00a72.5)"
+    },
+    {
+      "code": 8,
+      "name": "UnknownKind",
+      "retryable": false,
+      "subsystem": "object",
+      "desc": "the channel/kind code is not a registered surface (\u00a73.2)"
+    },
+    {
+      "code": 9,
+      "name": "RangeError",
+      "retryable": false,
+      "subsystem": "object",
+      "desc": "a field value is outside its permitted range"
+    },
+    {
+      "code": 10,
+      "name": "NonNFC",
+      "retryable": false,
+      "subsystem": "object",
+      "desc": "a text field is not in Unicode Normalization Form C (\u00a73.1)"
+    },
+    {
+      "code": 11,
+      "name": "WrongAudience",
+      "retryable": false,
+      "subsystem": "object",
+      "desc": "the signed audience is not the verifying party (\u00a72.5.3, R1)"
+    },
+    {
+      "code": 12,
+      "name": "TooLarge",
+      "retryable": false,
+      "subsystem": "bounds",
+      "desc": "the object exceeds the maximum octet size (\u00a73.4)"
+    },
+    {
+      "code": 13,
+      "name": "TooManyCauses",
+      "retryable": false,
+      "subsystem": "bounds",
+      "desc": "causes[] exceeds the maximum count (\u00a73.4)"
+    },
+    {
+      "code": 14,
+      "name": "TooManyExtensions",
+      "retryable": false,
+      "subsystem": "bounds",
+      "desc": "the ext or cext map exceeds the maximum cardinality (\u00a73.4)"
+    },
+    {
+      "code": 15,
+      "name": "TooManyChunks",
+      "retryable": false,
+      "subsystem": "bounds",
+      "desc": "a stream presents more chunks than the maximum (\u00a73.4, \u00a710)"
+    },
+    {
+      "code": 16,
+      "name": "UnknownAlg",
+      "retryable": false,
+      "subsystem": "crypto",
+      "desc": "the algorithm id is not in the N-AALP signature registry (\u00a74)"
+    },
+    {
+      "code": 17,
+      "name": "KeyAlgMismatch",
+      "retryable": false,
+      "subsystem": "crypto",
+      "desc": "the key algorithm does not match the object header (\u00a74.5)"
+    },
+    {
+      "code": 18,
+      "name": "ProfileDowngrade",
+      "retryable": false,
+      "subsystem": "crypto",
+      "desc": "the signature level is below the profile minimum (\u00a74.5)"
+    },
+    {
+      "code": 19,
+      "name": "HybridIncomplete",
+      "retryable": false,
+      "subsystem": "crypto",
+      "desc": "a hybrid/composite object has a component signature that does not verify (\u00a74.5)"
+    },
+    {
+      "code": 20,
+      "name": "SuiteMismatch",
+      "retryable": false,
+      "subsystem": "crypto",
+      "desc": "the signed suite declaration disagrees with the signature alg or structure (\u00a74.5)"
+    },
+    {
+      "code": 21,
+      "name": "CompositeRefused",
+      "retryable": false,
+      "subsystem": "crypto",
+      "desc": "a Sovereign verifier refuses a composite (non-pure) object (\u00a74.5)"
+    },
+    {
+      "code": 22,
+      "name": "BadSignature",
+      "retryable": false,
+      "subsystem": "crypto",
+      "desc": "signature verification failed (\u00a74)"
+    },
+    {
+      "code": 23,
+      "name": "SignerMismatch",
+      "retryable": false,
+      "subsystem": "identity",
+      "desc": "the recomputed signer id does not equal the key, or a revocation signer is neither the key nor a configured recovery key (\u00a75.1, \u00a75.3, \u00a75.5)"
+    },
+    {
+      "code": 24,
+      "name": "RotationUnauthorized",
+      "retryable": false,
+      "subsystem": "identity",
+      "desc": "a rotation object is not co-signed by both the old and new keys, or is presented as a single-signature object (\u00a75.2)"
+    },
+    {
+      "code": 25,
+      "name": "KeyRevoked",
+      "retryable": false,
+      "subsystem": "identity",
+      "desc": "the signing key is revoked as of the object's authoritative receipt position (\u00a75.3)"
+    },
+    {
+      "code": 26,
+      "name": "EffectNotAuthorized",
+      "retryable": false,
+      "subsystem": "effect",
+      "desc": "the declared effect is not authorized for the principal (\u00a76)"
+    },
+    {
+      "code": 27,
+      "name": "UnauthenticatedPrincipal",
+      "retryable": false,
+      "subsystem": "effect",
+      "desc": "a self-asserted principal was not authenticated by the transport (\u00a76.5, R1.3)"
+    },
+    {
+      "code": 28,
+      "name": "MalformedSafetyLabel",
+      "retryable": false,
+      "subsystem": "effect",
+      "desc": "the optional ext safety-label is structurally malformed (\u00a76.4)"
+    },
+    {
+      "code": 29,
+      "name": "ApprovalRequired",
+      "retryable": false,
+      "subsystem": "approval",
+      "desc": "an effecting object requires an approval and none was presented (\u00a77)"
+    },
+    {
+      "code": 30,
+      "name": "ApprovalMismatch",
+      "retryable": false,
+      "subsystem": "approval",
+      "desc": "the presented approval does not bind the object (\u00a77)"
+    },
+    {
+      "code": 31,
+      "name": "ApprovalExpired",
+      "retryable": false,
+      "subsystem": "approval",
+      "desc": "the approval's validity window has passed (\u00a77)"
+    },
+    {
+      "code": 32,
+      "name": "AlreadyConsumed",
+      "retryable": false,
+      "subsystem": "approval",
+      "desc": "a consume-once object was already consumed (\u00a77)"
+    },
+    {
+      "code": 33,
+      "name": "ConsumeFork",
+      "retryable": false,
+      "subsystem": "approval",
+      "desc": "two consume receipts fork the single-consume ledger (\u00a77)"
+    },
+    {
+      "code": 34,
+      "name": "ConsumeForkInvalid",
+      "retryable": false,
+      "subsystem": "approval",
+      "desc": "a presented consume-fork proof is not a valid fork (\u00a77)"
+    },
+    {
+      "code": 35,
+      "name": "ConsumeReceiptUnsigned",
+      "retryable": false,
+      "subsystem": "approval",
+      "desc": "a consume receipt is not signed (\u00a77)"
+    },
+    {
+      "code": 36,
+      "name": "LedgerCorrupt",
+      "retryable": false,
+      "subsystem": "approval",
+      "desc": "the consume ledger is structurally corrupt (\u00a77)"
+    },
+    {
+      "code": 37,
+      "name": "LedgerUnsigned",
+      "retryable": false,
+      "subsystem": "approval",
+      "desc": "a consume-ledger record is not signed (\u00a77)"
+    },
+    {
+      "code": 38,
+      "name": "AudienceMismatch",
+      "retryable": false,
+      "subsystem": "approval",
+      "desc": "a consume receipt's audience does not match the object (\u00a77)"
+    },
+    {
+      "code": 39,
+      "name": "FreshnessSelfAsserted",
+      "retryable": false,
+      "subsystem": "approval",
+      "desc": "an approval's freshness is only self-asserted, not independently anchored (\u00a77, R-TDCS-4)"
+    },
+    {
+      "code": 40,
+      "name": "UnknownRefusalOutcome",
+      "retryable": false,
+      "subsystem": "refusal",
+      "desc": "a coarse-refusal object carries an unknown outcome value (R-TDCS-3)"
+    },
+    {
+      "code": 41,
+      "name": "RefusalDetailLeak",
+      "retryable": false,
+      "subsystem": "refusal",
+      "desc": "a coarse-refusal object discloses detail beyond the coarse vocabulary (R-TDCS-3)"
+    },
+    {
+      "code": 42,
+      "name": "ChainBroken",
+      "retryable": false,
+      "subsystem": "audit",
+      "desc": "an audit or hash-chain link does not verify (\u00a78)"
+    },
+    {
+      "code": 43,
+      "name": "Equivocation",
+      "retryable": false,
+      "subsystem": "audit",
+      "desc": "two conflicting signed statements occupy one chain position (\u00a78)"
+    },
+    {
+      "code": 44,
+      "name": "CausalViolation",
+      "retryable": false,
+      "subsystem": "audit",
+      "desc": "an object is applied before a declared cause (\u00a78, \u00a713)"
+    },
+    {
+      "code": 45,
+      "name": "ReceiptUnsigned",
+      "retryable": false,
+      "subsystem": "audit",
+      "desc": "an authoritative receipt is not signed (\u00a78)"
+    },
+    {
+      "code": 46,
+      "name": "ForkProofInvalid",
+      "retryable": false,
+      "subsystem": "audit",
+      "desc": "an audit fork proof is not one signer over two conflicting objects (\u00a78)"
+    },
+    {
+      "code": 47,
+      "name": "StageOutOfOrder",
+      "retryable": false,
+      "subsystem": "delivery",
+      "desc": "a delivery stage arrived out of its required order (\u00a79)"
+    },
+    {
+      "code": 48,
+      "name": "StreamDigestMismatch",
+      "retryable": false,
+      "subsystem": "streaming",
+      "desc": "a stream commit digest does not equal the recomputed rolling digest (\u00a710)"
+    },
+    {
+      "code": 49,
+      "name": "StreamStateError",
+      "retryable": false,
+      "subsystem": "streaming",
+      "desc": "a streaming event is illegal for the current stream state (\u00a710 state table)"
+    },
+    {
+      "code": 50,
+      "name": "ConfidentialTransportRequired",
+      "retryable": false,
+      "subsystem": "transport",
+      "desc": "an object requiring a confidential transport was received without one (\u00a712)"
+    },
+    {
+      "code": 51,
+      "name": "PeerUnauthenticated",
+      "retryable": false,
+      "subsystem": "transport",
+      "desc": "the transport peer is not authenticated (\u00a712)"
+    },
+    {
+      "code": 52,
+      "name": "NotDelivered",
+      "retryable": true,
+      "subsystem": "carriage",
+      "desc": "a carriage delivery did not complete; an unmodified retry may later succeed (\u00a713)"
+    },
+    {
+      "code": 53,
+      "name": "MappingError",
+      "retryable": false,
+      "subsystem": "carriage",
+      "desc": "a foreign-carriage mapping could not be applied (\u00a713)"
+    },
+    {
+      "code": 54,
+      "name": "EffectDeclarationMismatch",
+      "retryable": false,
+      "subsystem": "channels",
+      "desc": "a channel object's declared effect disagrees with its kind (\u00a714)"
+    },
+    {
+      "code": 55,
+      "name": "StateTransitionError",
+      "retryable": false,
+      "subsystem": "channels",
+      "desc": "a channel state transition is not permitted (\u00a714 state table)"
+    },
+    {
+      "code": 56,
+      "name": "CapExceedsParent",
+      "retryable": false,
+      "subsystem": "channels",
+      "desc": "a capability grant exceeds its parent's scope (\u00a714)"
+    },
+    {
+      "code": 57,
+      "name": "TransformCycle",
+      "retryable": false,
+      "subsystem": "channels",
+      "desc": "a capability transform graph contains a cycle (\u00a714)"
+    },
+    {
+      "code": 58,
+      "name": "InputGateBypass",
+      "retryable": false,
+      "subsystem": "channels",
+      "desc": "a workflow input gate was bypassed (\u00a714)"
+    },
+    {
+      "code": 59,
+      "name": "TaskStateError",
+      "retryable": false,
+      "subsystem": "channels",
+      "desc": "a task state transition is not permitted (\u00a714)"
+    },
+    {
+      "code": 60,
+      "name": "ScopeOverlapConflict",
+      "retryable": false,
+      "subsystem": "federation",
+      "desc": "two federated scopes overlap in conflict (\u00a715)"
+    },
+    {
+      "code": 61,
+      "name": "ReconcileMismatch",
+      "retryable": false,
+      "subsystem": "federation",
+      "desc": "a federated reconcile verifier's independent recomputation disagrees with the presented linearization (\u00a715)"
+    },
+    {
+      "code": 62,
+      "name": "WrongFlow",
+      "retryable": false,
+      "subsystem": "continuation",
+      "desc": "a continuation frame names the wrong flow"
+    },
+    {
+      "code": 63,
+      "name": "SeqGap",
+      "retryable": false,
+      "subsystem": "continuation",
+      "desc": "a continuation sequence has a gap"
+    },
+    {
+      "code": 64,
+      "name": "AboveCeiling",
+      "retryable": false,
+      "subsystem": "continuation",
+      "desc": "a continuation sequence exceeds its declared ceiling"
+    },
+    {
+      "code": 65,
+      "name": "GapDetected",
+      "retryable": false,
+      "subsystem": "continuation",
+      "desc": "a continuation commit detects a missing frame"
+    },
+    {
+      "code": 66,
+      "name": "CommitMismatch",
+      "retryable": false,
+      "subsystem": "continuation",
+      "desc": "a continuation commit digest does not match the frames"
+    },
+    {
+      "code": 67,
+      "name": "ContMalformed",
+      "retryable": false,
+      "subsystem": "continuation",
+      "desc": "a continuation frame is structurally malformed"
+    },
+    {
+      "code": 68,
+      "name": "GrantExpired",
+      "retryable": false,
+      "subsystem": "delegation",
+      "desc": "a delegation grant's validity window has passed"
+    },
+    {
+      "code": 69,
+      "name": "GrantNotYetValid",
+      "retryable": false,
+      "subsystem": "delegation",
+      "desc": "a delegation grant is not yet valid"
+    },
+    {
+      "code": 70,
+      "name": "GrantRevoked",
+      "retryable": false,
+      "subsystem": "delegation",
+      "desc": "a delegation grant is revoked"
+    },
+    {
+      "code": 71,
+      "name": "UntrustedChainRoot",
+      "retryable": false,
+      "subsystem": "delegation",
+      "desc": "a delegation chain does not root in a trusted grantor"
+    },
+    {
+      "code": 72,
+      "name": "DelegationDepthExceeded",
+      "retryable": false,
+      "subsystem": "delegation",
+      "desc": "the declared or realized delegation depth exceeds max_depth"
+    },
+    {
+      "code": 73,
+      "name": "GrantMalformed",
+      "retryable": false,
+      "subsystem": "delegation",
+      "desc": "a delegation grant object is structurally malformed"
+    },
+    {
+      "code": 74,
+      "name": "NameMalformed",
+      "retryable": false,
+      "subsystem": "naming",
+      "desc": "a naming object is structurally malformed"
+    },
+    {
+      "code": 75,
+      "name": "NameChainBroken",
+      "retryable": false,
+      "subsystem": "naming",
+      "desc": "a name-binding chain link does not verify"
+    },
+    {
+      "code": 76,
+      "name": "NameForkProofInvalid",
+      "retryable": false,
+      "subsystem": "naming",
+      "desc": "a name fork proof is not one signer over two conflicting bindings"
+    },
+    {
+      "code": 77,
+      "name": "IllegalTransition",
+      "retryable": false,
+      "subsystem": "naming",
+      "desc": "a naming state transition is not permitted"
+    },
+    {
+      "code": 78,
+      "name": "TaskChainBroken",
+      "retryable": false,
+      "subsystem": "naming",
+      "desc": "an A2A task chain link does not verify"
+    },
+    {
+      "code": 79,
+      "name": "ForeignCard",
+      "retryable": false,
+      "subsystem": "naming",
+      "desc": "a foreign agent-card reference is invalid"
+    },
+    {
+      "code": 80,
+      "name": "DescMalformed",
+      "retryable": false,
+      "subsystem": "description",
+      "desc": "a description object is structurally malformed"
+    },
+    {
+      "code": 81,
+      "name": "MalformedApprovalFlag",
+      "retryable": false,
+      "subsystem": "description",
+      "desc": "a description approval flag is malformed"
+    },
+    {
+      "code": 82,
+      "name": "DirForkProofInvalid",
+      "retryable": false,
+      "subsystem": "description",
+      "desc": "a directory fork proof is not one signer over two conflicting directory objects"
+    },
+    {
+      "code": 83,
+      "name": "ImporterMismatch",
+      "retryable": false,
+      "subsystem": "description",
+      "desc": "a description import's importer does not match"
+    },
+    {
+      "code": 84,
+      "name": "UnknownDescriptionFormat",
+      "retryable": false,
+      "subsystem": "description",
+      "desc": "a description carries an unregistered format code"
+    },
+    {
+      "code": 85,
+      "name": "VerifierKeyMismatch",
+      "retryable": false,
+      "subsystem": "description",
+      "desc": "a description import's verifier key does not match the declared alg/key"
+    },
+    {
+      "code": 86,
+      "name": "NegMalformed",
+      "retryable": false,
+      "subsystem": "negotiation",
+      "desc": "a negotiation object is structurally malformed"
+    },
+    {
+      "code": 87,
+      "name": "UnknownRole",
+      "retryable": false,
+      "subsystem": "negotiation",
+      "desc": "a negotiation role is unknown"
+    },
+    {
+      "code": 88,
+      "name": "UnknownProfile",
+      "retryable": false,
+      "subsystem": "negotiation",
+      "desc": "a negotiation profile is unknown"
+    },
+    {
+      "code": 89,
+      "name": "NotDescended",
+      "retryable": false,
+      "subsystem": "negotiation",
+      "desc": "a negotiation accept does not descend from the offer"
+    },
+    {
+      "code": 90,
+      "name": "NotOffer",
+      "retryable": false,
+      "subsystem": "negotiation",
+      "desc": "an object expected to be an offer is not one"
+    },
+    {
+      "code": 91,
+      "name": "NotAccept",
+      "retryable": false,
+      "subsystem": "negotiation",
+      "desc": "an object expected to be an accept is not one"
+    },
+    {
+      "code": 92,
+      "name": "MalformedCriticalFlag",
+      "retryable": false,
+      "subsystem": "negotiation",
+      "desc": "a negotiation critical flag is malformed"
+    },
+    {
+      "code": 93,
+      "name": "UnknownCriticalRisk",
+      "retryable": false,
+      "subsystem": "negotiation",
+      "desc": "a negotiation carries an unknown critical risk label"
+    },
+    {
+      "code": 94,
+      "name": "ReferenceMismatch",
+      "retryable": false,
+      "subsystem": "negotiation",
+      "desc": "a negotiation trust reference does not match"
+    },
+    {
+      "code": 95,
+      "name": "MalformedAnnotation",
+      "retryable": false,
+      "subsystem": "mcp",
+      "desc": "an MCP tool annotation is malformed"
+    },
+    {
+      "code": 96,
+      "name": "EffectUnderDeclared",
+      "retryable": false,
+      "subsystem": "mcp",
+      "desc": "an MCP annotation declares a lower effect than its mapping requires"
+    },
+    {
+      "code": 97,
+      "name": "EffectOutsideLattice",
+      "retryable": false,
+      "subsystem": "mcp",
+      "desc": "an MCP annotation maps to an effect outside the closed lattice"
+    },
+    {
+      "code": 98,
+      "name": "ToolCallMalformed",
+      "retryable": false,
+      "subsystem": "mcp",
+      "desc": "an MCP tool-call object is malformed"
+    },
+    {
+      "code": 99,
+      "name": "PayMalformed",
+      "retryable": false,
+      "subsystem": "payment",
+      "desc": "a payment object is structurally malformed"
+    },
+    {
+      "code": 100,
+      "name": "UnknownPaymentFormat",
+      "retryable": false,
+      "subsystem": "payment",
+      "desc": "a payment carries an unregistered format code"
+    },
+    {
+      "code": 101,
+      "name": "GwMalformed",
+      "retryable": false,
+      "subsystem": "gateway",
+      "desc": "a gateway object is structurally malformed"
+    },
+    {
+      "code": 102,
+      "name": "UnknownGatewayDecision",
+      "retryable": false,
+      "subsystem": "gateway",
+      "desc": "a gateway decision value is unknown"
+    },
+    {
+      "code": 103,
+      "name": "UIMalformed",
+      "retryable": false,
+      "subsystem": "agui",
+      "desc": "an AG-UI event object is malformed"
+    },
+    {
+      "code": 104,
+      "name": "UIChainBroken",
+      "retryable": false,
+      "subsystem": "agui",
+      "desc": "an AG-UI event chain link does not verify"
+    },
+    {
+      "code": 105,
+      "name": "UnknownUIEventKind",
+      "retryable": false,
+      "subsystem": "agui",
+      "desc": "an AG-UI event kind is unknown"
+    },
+    {
+      "code": 106,
+      "name": "ActionSubstituted",
+      "retryable": false,
+      "subsystem": "agui",
+      "desc": "an AG-UI action was substituted between render and confirm"
+    },
+    {
+      "code": 107,
+      "name": "UINoConsent",
+      "retryable": false,
+      "subsystem": "agui",
+      "desc": "an AG-UI effecting action lacks recorded user consent"
+    },
+    {
+      "code": 108,
+      "name": "StaleEpoch",
+      "retryable": false,
+      "subsystem": "rooms",
+      "desc": "a room operation names a stale membership epoch"
+    },
+    {
+      "code": 109,
+      "name": "Unauthorized",
+      "retryable": false,
+      "subsystem": "rooms",
+      "desc": "a room operation is not authorized for the principal"
+    },
+    {
+      "code": 110,
+      "name": "OwnerImmutable",
+      "retryable": false,
+      "subsystem": "rooms",
+      "desc": "a room owner cannot be changed by this operation"
+    },
+    {
+      "code": 111,
+      "name": "MemberExists",
+      "retryable": false,
+      "subsystem": "rooms",
+      "desc": "a room member add conflicts with an existing member"
+    },
+    {
+      "code": 112,
+      "name": "MemberUnknown",
+      "retryable": false,
+      "subsystem": "rooms",
+      "desc": "a room operation names an unknown member"
+    },
+    {
+      "code": 113,
+      "name": "OwnerExists",
+      "retryable": false,
+      "subsystem": "rooms",
+      "desc": "a room create conflicts with an existing owner"
+    },
+    {
+      "code": 114,
+      "name": "RoleInvalid",
+      "retryable": false,
+      "subsystem": "rooms",
+      "desc": "a room role value is invalid"
+    },
+    {
+      "code": 115,
+      "name": "RoomOpMismatch",
+      "retryable": false,
+      "subsystem": "rooms",
+      "desc": "a room operation kind does not match its payload"
+    },
+    {
+      "code": 116,
+      "name": "OpUnknown",
+      "retryable": false,
+      "subsystem": "rooms",
+      "desc": "a room operation kind is unknown"
+    },
+    {
+      "code": 117,
+      "name": "PrincipalUnknown",
+      "retryable": false,
+      "subsystem": "rooms",
+      "desc": "a room operation names an unknown principal"
+    },
+    {
+      "code": 118,
+      "name": "PrincipalExists",
+      "retryable": false,
+      "subsystem": "rooms",
+      "desc": "a room principal add conflicts with an existing principal"
+    },
+    {
+      "code": 119,
+      "name": "RebindUnauthorized",
+      "retryable": false,
+      "subsystem": "rooms",
+      "desc": "a room principal rebind is not authorized"
+    },
+    {
+      "code": 120,
+      "name": "EgMalformed",
+      "retryable": false,
+      "subsystem": "gateway",
+      "desc": "an egress-attestation object is structurally malformed"
+    },
+    {
+      "code": 121,
+      "name": "UnknownEgressBinding",
+      "retryable": false,
+      "subsystem": "gateway",
+      "desc": "an egress-attestation binding value is outside the closed content-bound/content-free set"
+    },
+    {
+      "code": 122,
+      "name": "DecisionMalformed",
+      "retryable": false,
+      "subsystem": "gateway",
+      "desc": "a decision-record object is structurally malformed, or a deny/hold outcome carries a consume reference"
+    },
+    {
+      "code": 123,
+      "name": "UnknownOrderingBasis",
+      "retryable": false,
+      "subsystem": "gateway",
+      "desc": "an ordering-disclosure basis value is outside the closed correspondence-only/single-boundary/external-mechanism set"
+    },
+    {
+      "code": 124,
+      "name": "OrderingDisclosureMalformed",
+      "retryable": false,
+      "subsystem": "gateway",
+      "desc": "an ordering-disclosure group violates its basis-conditioned field well-formedness"
+    },
+    {
+      "code": 125,
+      "name": "TermDispositionMalformed",
+      "retryable": false,
+      "subsystem": "gateway",
+      "desc": "a decision-record terms map carries a key outside the record's own field set"
+    },
+    {
+      "code": 126,
+      "name": "CheckpointMalformed",
+      "retryable": false,
+      "subsystem": "audit",
+      "desc": "a checkpoint-root object is structurally malformed"
+    },
+    {
+      "code": 127,
+      "name": "WitnessRootMismatch",
+      "retryable": false,
+      "subsystem": "audit",
+      "desc": "a witness-cosign names a root content id that does not match the checkpoint it accompanies"
+    },
+    {
+      "code": 128,
+      "name": "InclusionProofInvalid",
+      "retryable": false,
+      "subsystem": "audit",
+      "desc": "an inclusion-proof audit path does not recompute to the named checkpoint root"
+    },
+    {
+      "code": 129,
+      "name": "ForeignProfileMalformed",
+      "retryable": false,
+      "subsystem": "gateway",
+      "desc": "a foreign-profile-pin object is structurally malformed"
+    },
+    {
+      "code": 130,
+      "name": "HazardMalformed",
+      "retryable": false,
+      "subsystem": "hazard",
+      "desc": "a naalp-hazard-claim or naalp-hazard-authorization body is structurally malformed (wrong shape; a spatial-bounds axis with min greater than max; empty axes; or a non-NFC frame)"
+    },
+    {
+      "code": 131,
+      "name": "HazardNotCovered",
+      "retryable": false,
+      "subsystem": "hazard",
+      "desc": "a well-formed hazard claim's class or envelope is not fully covered by the presented hazard authorization (class/frame/axis-count mismatch; or an axis/speed/window bound outside the grant)"
+    },
+    {
+      "code": 132,
+      "name": "HazardUnknown",
+      "retryable": false,
+      "subsystem": "hazard",
+      "desc": "an action requiring a hazard declaration carries none or carries an unrecognized hazard value (normalized to the fail-closed class; returned when no claim exists to check coverage against)"
+    }
+  ],
+  "names": [
+    "NonCanonical",
+    "DepthExceeded",
+    "Malformed",
+    "ContentIdMismatch",
+    "HeaderBodyMismatch",
+    "UnsupportedVersion",
+    "UnknownCriticalExt",
+    "UnknownKind",
+    "RangeError",
+    "NonNFC",
+    "WrongAudience",
+    "TooLarge",
+    "TooManyCauses",
+    "TooManyExtensions",
+    "TooManyChunks",
+    "UnknownAlg",
+    "KeyAlgMismatch",
+    "ProfileDowngrade",
+    "HybridIncomplete",
+    "SuiteMismatch",
+    "CompositeRefused",
+    "BadSignature",
+    "SignerMismatch",
+    "RotationUnauthorized",
+    "KeyRevoked",
+    "EffectNotAuthorized",
+    "UnauthenticatedPrincipal",
+    "MalformedSafetyLabel",
+    "ApprovalRequired",
+    "ApprovalMismatch",
+    "ApprovalExpired",
+    "AlreadyConsumed",
+    "ConsumeFork",
+    "ConsumeForkInvalid",
+    "ConsumeReceiptUnsigned",
+    "LedgerCorrupt",
+    "LedgerUnsigned",
+    "AudienceMismatch",
+    "FreshnessSelfAsserted",
+    "UnknownRefusalOutcome",
+    "RefusalDetailLeak",
+    "ChainBroken",
+    "Equivocation",
+    "CausalViolation",
+    "ReceiptUnsigned",
+    "ForkProofInvalid",
+    "StageOutOfOrder",
+    "StreamDigestMismatch",
+    "StreamStateError",
+    "ConfidentialTransportRequired",
+    "PeerUnauthenticated",
+    "NotDelivered",
+    "MappingError",
+    "EffectDeclarationMismatch",
+    "StateTransitionError",
+    "CapExceedsParent",
+    "TransformCycle",
+    "InputGateBypass",
+    "TaskStateError",
+    "ScopeOverlapConflict",
+    "ReconcileMismatch",
+    "WrongFlow",
+    "SeqGap",
+    "AboveCeiling",
+    "GapDetected",
+    "CommitMismatch",
+    "ContMalformed",
+    "GrantExpired",
+    "GrantNotYetValid",
+    "GrantRevoked",
+    "UntrustedChainRoot",
+    "DelegationDepthExceeded",
+    "GrantMalformed",
+    "NameMalformed",
+    "NameChainBroken",
+    "NameForkProofInvalid",
+    "IllegalTransition",
+    "TaskChainBroken",
+    "ForeignCard",
+    "DescMalformed",
+    "MalformedApprovalFlag",
+    "DirForkProofInvalid",
+    "ImporterMismatch",
+    "UnknownDescriptionFormat",
+    "VerifierKeyMismatch",
+    "NegMalformed",
+    "UnknownRole",
+    "UnknownProfile",
+    "NotDescended",
+    "NotOffer",
+    "NotAccept",
+    "MalformedCriticalFlag",
+    "UnknownCriticalRisk",
+    "ReferenceMismatch",
+    "MalformedAnnotation",
+    "EffectUnderDeclared",
+    "EffectOutsideLattice",
+    "ToolCallMalformed",
+    "PayMalformed",
+    "UnknownPaymentFormat",
+    "GwMalformed",
+    "UnknownGatewayDecision",
+    "UIMalformed",
+    "UIChainBroken",
+    "UnknownUIEventKind",
+    "ActionSubstituted",
+    "UINoConsent",
+    "StaleEpoch",
+    "Unauthorized",
+    "OwnerImmutable",
+    "MemberExists",
+    "MemberUnknown",
+    "OwnerExists",
+    "RoleInvalid",
+    "RoomOpMismatch",
+    "OpUnknown",
+    "PrincipalUnknown",
+    "PrincipalExists",
+    "RebindUnauthorized",
+    "EgMalformed",
+    "UnknownEgressBinding",
+    "DecisionMalformed",
+    "UnknownOrderingBasis",
+    "OrderingDisclosureMalformed",
+    "TermDispositionMalformed",
+    "CheckpointMalformed",
+    "WitnessRootMismatch",
+    "InclusionProofInvalid",
+    "ForeignProfileMalformed",
+    "HazardMalformed",
+    "HazardNotCovered",
+    "HazardUnknown"
+  ],
+  "encode_cases": [
+    {
+      "tcId": 1,
+      "code": 1,
+      "name": "NonCanonical",
+      "detail": null,
+      "subject_hex": null,
+      "want_hex": "a20101026c4e6f6e43616e6f6e6963616c"
+    },
+    {
+      "tcId": 2,
+      "code": 3,
+      "name": "Malformed",
+      "detail": null,
+      "subject_hex": null,
+      "want_hex": "a2010302694d616c666f726d6564"
+    },
+    {
+      "tcId": 3,
+      "code": 11,
+      "name": "WrongAudience",
+      "detail": null,
+      "subject_hex": null,
+      "want_hex": "a2010b026d57726f6e6741756469656e6365"
+    },
+    {
+      "tcId": 4,
+      "code": 22,
+      "name": "BadSignature",
+      "detail": null,
+      "subject_hex": null,
+      "want_hex": "a20116026c4261645369676e6174757265"
+    },
+    {
+      "tcId": 5,
+      "code": 52,
+      "name": "NotDelivered",
+      "detail": null,
+      "subject_hex": null,
+      "want_hex": "a2011834026c4e6f7444656c697665726564"
+    },
+    {
+      "tcId": 6,
+      "code": 60,
+      "name": "ScopeOverlapConflict",
+      "detail": null,
+      "subject_hex": null,
+      "want_hex": "a201183c027453636f70654f7665726c6170436f6e666c696374"
+    },
+    {
+      "tcId": 7,
+      "code": 61,
+      "name": "ReconcileMismatch",
+      "detail": null,
+      "subject_hex": null,
+      "want_hex": "a201183d02715265636f6e63696c654d69736d61746368"
+    },
+    {
+      "tcId": 8,
+      "code": 119,
+      "name": "RebindUnauthorized",
+      "detail": null,
+      "subject_hex": null,
+      "want_hex": "a20118770272526562696e64556e617574686f72697a6564"
+    },
+    {
+      "tcId": 9,
+      "code": 22,
+      "name": "BadSignature",
+      "detail": "verifier reason: see log",
+      "subject_hex": "2030000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f",
+      "want_hex": "a40116026c4261645369676e6174757265037818766572696669657220726561736f6e3a20736565206c6f670458322030000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+    },
+    {
+      "tcId": 10,
+      "code": 11,
+      "name": "WrongAudience",
+      "detail": "audience was other-endpoint",
+      "subject_hex": "2030000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f",
+      "want_hex": "a4010b026d57726f6e6741756469656e636503781b61756469656e636520776173206f746865722d656e64706f696e740458322030000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+    }
+  ],
+  "decode_cases": [
+    {
+      "tcId": 1,
+      "in_hex": "a20101026c4e6f6e43616e6f6e6963616c",
+      "want": {
+        "code": 1,
+        "name": "NonCanonical"
+      },
+      "reject": null,
+      "note": "canonical NonCanonical round-trips"
+    },
+    {
+      "tcId": 2,
+      "in_hex": "a20116026c4261645369676e6174757265",
+      "want": {
+        "code": 22,
+        "name": "BadSignature"
+      },
+      "reject": null,
+      "note": "canonical BadSignature round-trips"
+    },
+    {
+      "tcId": 3,
+      "in_hex": "a2011834026c4e6f7444656c697665726564",
+      "want": {
+        "code": 52,
+        "name": "NotDelivered"
+      },
+      "reject": null,
+      "note": "canonical NotDelivered round-trips"
+    },
+    {
+      "tcId": 4,
+      "in_hex": "a20118770272526562696e64556e617574686f72697a6564",
+      "want": {
+        "code": 119,
+        "name": "RebindUnauthorized"
+      },
+      "reject": null,
+      "note": "canonical RebindUnauthorized round-trips"
+    },
+    {
+      "tcId": 5,
+      "in_hex": "a20116026c4e6f7444656c697665726564",
+      "want": null,
+      "reject": "Malformed",
+      "note": "code=22 (BadSignature) but name=NotDelivered: registered code + wrong name -> Malformed"
+    },
+    {
+      "tcId": 6,
+      "in_hex": "a20119ea60026f536f6d654675747572654572726f72",
+      "want": {
+        "code": 60000,
+        "name": "SomeFutureError"
+      },
+      "reject": null,
+      "note": "unknown code is opaque and non-fatal (open registry, RFC Required)"
+    }
+  ]
+}

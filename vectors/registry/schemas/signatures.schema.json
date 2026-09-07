@@ -12,12 +12,11 @@
       "name": { "type": "string", "minLength": 1, "description": "Signature algorithm name; MUST be non-empty (e.g. ML-DSA-65)." },
       "cose_alg": { "oneOf": [ { "type": "integer" }, { "type": "string", "maxLength": 0 } ], "description": "COSE algorithm identifier (signed integer) for a registered algorithm; empty for a reserved algorithm that carries no code point." },
       "nist_level": { "type": "integer", "minimum": 0, "maximum": 5, "description": "NIST PQ security category: 0 for the classical hybrid leg, 1-5 otherwise." },
-      "role": { "type": "string", "enum": ["pq-signature", "classical-hybrid-leg"], "description": "Role of the algorithm in the object-signing profile." },
-      "status": { "type": "string", "enum": ["registered", "reserved"], "description": "'registered' (has a code point and vectors) or 'reserved' (name held, no code point yet)." },
-      "reference": { "type": "string", "minLength": 1, "description": "Normative reference (e.g. RFC9964, RFC9864, FIPS205); MUST be non-empty." }
+      "role": { "type": "string", "enum": ["pq-signature", "classical-hybrid-leg", "pq-composite-signature"], "description": "Role of the algorithm in the object-signing profile. 'pq-composite-signature' is an IETF LAMPS composite of a PQ leg and a classical leg (design.md §4.2)." },
+      "status": { "type": "string", "enum": ["registered", "provisional", "reserved"], "description": "'registered' (has a code point and vectors, stable reference), 'provisional' (has a code point and vectors, an N-AALP-provisional private-use point pending a public assignment), or 'reserved' (name/point held, not yet implemented)." },
+      "reference": { "type": "string", "minLength": 1, "description": "Normative reference (e.g. RFC9964, RFC9864, FIPS205, draft-ietf-lamps-pq-composite-sigs); MUST be non-empty." }
     },
-    "if": { "properties": { "status": { "const": "registered" } } },
-    "then": { "properties": { "cose_alg": { "type": "integer" } } },
-    "else": { "properties": { "cose_alg": { "type": "string", "maxLength": 0 } } }
+    "if": { "properties": { "status": { "enum": ["registered", "provisional"] } } },
+    "then": { "properties": { "cose_alg": { "type": "integer" } } }
   }
 }

@@ -2,7 +2,7 @@
 
 # N-AALP Kotlin SDK
 
-The Kotlin reference implementation of **N-AALP** (draft-bubblefish-naalp-00) — an
+The Kotlin reference implementation of **N-AALP** (draft-bubblefish-naalp-01) — an
 application-layer object protocol for autonomous agents. Every N-AALP object is a
 deterministically-encoded CBOR structure signed with COSE that carries, under one signature, its
 content identity, its signer, a closed effect label, optional approval/audit bindings, and its
@@ -24,7 +24,7 @@ Maven artifact `sh.bubblefish:naalp-kotlin` (the `-kotlin` suffix disambiguates 
 
 Every construction is **graded byte-for-byte** against the shared conformance corpus
 (== Go == Rust == Python); the reference worked object is reproduced exactly
-(`src/test/kotlin/WorkedExampleKat.kt`).
+(`src/test/kotlin/WorkedExampleKatTest.kt`).
 
 ## What this SDK does NOT provide
 
@@ -93,7 +93,7 @@ or standalone, without Gradle:
 
 ```sh
 "$KOTLINC" -cp "$BC" impl/kotlin/src/main/kotlin/sh/bubblefish/naalp/*.kt impl/kotlin/src/test/kotlin/*.kt -include-runtime -d naalp-tests.jar
-java -cp "naalp-tests.jar;$BC" sh.bubblefish.naalp.WorkedExampleKatKt
+java -cp "naalp-tests.jar;$BC" sh.bubblefish.naalp.WorkedExampleKatTestKt
 java -cp "naalp-tests.jar;$BC" sh.bubblefish.naalp.PrimitivesSmokeKt
 ```
 

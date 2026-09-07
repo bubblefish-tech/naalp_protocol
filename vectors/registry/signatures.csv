@@ -2,4 +2,6 @@ name,cose_alg,nist_level,role,status,reference
 ML-DSA-65,-49,3,pq-signature,registered,RFC9964
 ML-DSA-87,-50,5,pq-signature,registered,RFC9964
 Ed25519,-19,0,classical-hybrid-leg,registered,RFC9864
+COMPSIG-MLDSA65-Ed25519-SHA512,-65537,3,pq-composite-signature,provisional,draft-ietf-lamps-pq-composite-sigs
+COMPSIG-MLDSA44-Ed25519-SHA512,-65538,2,pq-composite-signature,reserved,draft-ietf-lamps-pq-composite-sigs
 SLH-DSA,,5,pq-signature,reserved,FIPS205

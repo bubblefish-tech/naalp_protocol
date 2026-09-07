@@ -1,0 +1,4 @@
+format_code,format_name,description
+1,ap2-mandate,AP2 mandate (imported as opaque foreign bytes; carriage-not-adoption; spent single-use as a §7 approval)
+2,acp-delegated-token,Agentic Commerce Protocol delegated token (imported as opaque foreign bytes; carriage-not-adoption; spent single-use as a §7 approval)
+3,x402-payload,x402 payload (imported as opaque foreign bytes; carriage-not-adoption; spent single-use as a §7 approval)

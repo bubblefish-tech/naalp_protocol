@@ -1,0 +1,25 @@
+[package]
+name = "naalp-hazard"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Manufacturing Add-ons Component F: physical-hazard authorization extension (HELD, pending wire-byte approval)"
+repository = "https://github.com/bubblefish-tech/naalp_protocol"
+
+# Component F (design.md addendum; requirements F1-F5): a hazard dimension orthogonal
+# to the existing effect field, a
+# fail-closed 0-4 class, an envelope (spatial bounds, speed bound, time window), and a
+# grant-coverage check (exact class match + full envelope containment). This crate adds no
+# new cryptography or CBOR codec of its own -- it reuses naalp::cbor::{Value, encode,
+# decode, content_id} for its own deterministic-CBOR encoding, exactly as naalpcore and
+# naalp-ffi do (see impl/rust/src/naalpcore.rs).
+[dependencies]
+# Path dependency on the sibling `naalp` package (impl/rust) -- not a workspace member, so
+# this crate builds standalone (`cd impl/rust/naalp-hazard && cargo build`) without any
+# edit to impl/rust/Cargo.toml or its existing single-package layout (the naalp-ffi
+# precedent, impl/rust/naalp-ffi/Cargo.toml).
+naalp = { path = ".." }
+
+[dev-dependencies]
+serde_json = "1"
+hex = "0.4"

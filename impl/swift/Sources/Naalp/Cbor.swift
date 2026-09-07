@@ -127,11 +127,26 @@ public enum Cbor {
 
     // --- decoding ---
 
+    /// maxDepthUnbounded is the sentinel used by the trusted-input `decode(_:)` path: far beyond
+    /// any legitimate structure yet finite, so even the unbounded path cannot recurse without
+    /// limit on a pathological input (mirrors impl/go/cbor.maxDepthUnbounded).
+    static let maxDepthUnbounded = 1 << 20
+
+    /// depthExceeded is thrown when a decoded item nests deeper than the caller's maximum
+    /// (design.md §3.4, R7). The outermost item is depth 1.
+    static func depthExceeded() -> NaalpError {
+        NaalpError("DepthExceeded", "CBOR nesting depth exceeds the maximum")
+    }
+
     /// A cursor over the input performing strict canonical decode.
     final class Reader {
         let data: [UInt8]
         var pos: Int = 0
-        init(_ data: [UInt8]) { self.data = data }
+        let maxDepth: Int
+        init(_ data: [UInt8], maxDepth: Int) {
+            self.data = data
+            self.maxDepth = maxDepth
+        }
 
         func remaining() -> Int { data.count - pos }
 
@@ -151,7 +166,10 @@ public enum Cbor {
 
         /// Decode one item at the cursor, advancing it. Enforces shortest-form heads,
         /// forbids indefinite lengths, and enforces canonical, duplicate-free map keys.
-        func decode() throws -> CborValue {
+        /// `depth` is the depth of the item being decoded HERE (the outermost item is depth 1,
+        /// design.md §3.4, R7); rejected BEFORE the item is materialized if it exceeds maxDepth.
+        func decode(_ depth: Int) throws -> CborValue {
+            if depth > maxDepth { throw Cbor.depthExceeded() }
             if pos >= data.count { throw NaalpError("NonCanonical", "truncated") }
             let ib = data[pos]
             pos += 1
@@ -209,7 +227,7 @@ public enum Cbor {
                 let n = try intFromArg(arg)
                 var items: [CborValue] = []
                 items.reserveCapacity(n)
-                for _ in 0..<n { items.append(try decode()) }
+                for _ in 0..<n { items.append(try decode(depth + 1)) }
                 return .a(items)
             case 5:
                 let n = try intFromArg(arg)
@@ -218,9 +236,9 @@ public enum Cbor {
                 var prev: [UInt8]? = nil
                 for _ in 0..<n {
                     let before = pos
-                    let k = try decode()
+                    let k = try decode(depth + 1)
                     let kbytes = Array(data[before..<pos])
-                    let val = try decode()
+                    let val = try decode(depth + 1)
                     if let p = prev, !lexLess(p, kbytes) {
                         // current key <= prev key -> out of order or duplicate
                         throw NaalpError("NonCanonical", "map keys out of order or duplicate")
@@ -230,7 +248,7 @@ public enum Cbor {
                 }
                 return .m(pairs)
             case 6:
-                let content = try decode()
+                let content = try decode(depth + 1)
                 return .tag(arg, content)
             default:
                 throw NaalpError("NonCanonical", "unsupported major type \(major)")
@@ -243,11 +261,27 @@ public enum Cbor {
         }
     }
 
-    /// Strict canonical decode: rejects any non-canonical encoding and trailing bytes.
+    /// Strict canonical decode: rejects any non-canonical encoding and trailing bytes. Does not
+    /// bound nesting depth on this trusted-input path; the untrusted object decode path uses
+    /// `decodeBounded` (design.md §3.4, R7).
     @discardableResult
     public static func decode(_ data: [UInt8]) throws -> CborValue {
-        let r = Reader(data)
-        let v = try r.decode()
+        let r = Reader(data, maxDepth: maxDepthUnbounded)
+        let v = try r.decode(1)
+        if r.remaining() != 0 {
+            throw NaalpError("NonCanonical", "trailing bytes after top-level item")
+        }
+        return v
+    }
+
+    /// `decode(_:)` with a maximum CBOR nesting depth (design.md §3.4, R7): the outermost item is
+    /// depth 1, each nested map key/value, array element, and tagged content is one deeper, and an
+    /// item at depth maxDepth+1 is rejected with a DepthExceeded error BEFORE it is materialized
+    /// (RFC 8949 §10 decoder-memory guard).
+    @discardableResult
+    public static func decodeBounded(_ data: [UInt8], _ maxDepth: Int) throws -> CborValue {
+        let r = Reader(data, maxDepth: maxDepth)
+        let v = try r.decode(1)
         if r.remaining() != 0 {
             throw NaalpError("NonCanonical", "trailing bytes after top-level item")
         }

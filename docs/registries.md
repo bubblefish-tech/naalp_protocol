@@ -4,7 +4,7 @@
 
 The machine-readable registries under `vectors/registry/*.csv` are the source the prose and CDDL
 are generated from; a drift check (`scripts/registry_drift.py`) keeps them consistent with the
-graded conformance vectors, and the IANA considerations (in the Internet-Draft) request
+graded conformance vectors, and the IANA considerations (see the [Internet-Draft](../ietf/draft-bubblefish-naalp-01.md)) request
 each as an IANA registry.
 
 | registry | file | policy (IANA) | contents |
@@ -14,11 +14,11 @@ each as an IANA registry.
 | Signatures (COSE algs) | `signatures.csv` | reuse IANA COSE registry | ML-DSA-65/-87, Ed25519, SLH-DSA (reserved) |
 | Multicodec (signer-id keys) | `multicodec.csv` | multiformats (referenced) | ed25519-pub, mldsa-65/87-pub, sha2-256/384 |
 | Carriage Protocol Ids | `protocols.csv` | RFC Required / FCFS / Experimental / Private | MCP, A2A, HTTP, WebSocket + ranges |
-| Carriage Content Types | `carriage-content-types.csv` | RFC Required / FCFS (standards); no-reg (exp + private) | 0 json, 1 octet-stream, 2 text + ranges |
-| Extension Keys | `extension-keys.csv` | RFC Required / FCFS | ext (field 11) / cext (field 12) map keys: 1 safety-label, 13 recheck, 14 signer-counter, 15 producing-boundary |
+| Carriage Content Types | `carriage-content-types.csv` | RFC Required / FCFS (standards); no-reg (exp + private) | 0 json, 1 octet-stream, 2 text + ranges — R11 |
+| Extension Keys | `extension-keys.csv` | RFC Required / FCFS | ext (field 11) / cext (field 12) map keys: 1 safety-label, 13 recheck, 14 signer-counter, 15 producing-boundary — R4 |
 | Effects | (in the draft) | RFC Required / FCFS | read_only, idempotent_write, non_idempotent_write, destructive |
-| Error Codes | `error-codes.csv` | RFC Required / FCFS (standards 1–0x7FFF); no-reg (private ≥0x8000) | 119 numeric error codes carried by the `naalp-error` object (Control/Error, channel 0/kind 3); `code`+`name` dual-carriage, unknown code opaque |
-| Trust-Decision Input Classes | `trust-decision-input-classes.csv` | RFC Required / FCFS | 10 decision-input classes, each classified by safe shape (verifiable / attenuating / committed) |
+| Error Codes | `error-codes.csv` | RFC Required / FCFS (standards 1–0x7FFF); no-reg (private ≥0x8000) | 119 numeric error codes carried by the `naalp-error` object (Control/Error, channel 0/kind 3); `code`+`name` dual-carriage, unknown code opaque — T3.3, R3.3/3.4 |
+| Trust-Decision Input Classes | `trust-decision-input-classes.csv` | RFC Required / FCFS | 10 decision-input classes, each classified by safe shape (verifiable / attenuating / committed) — C22, R-TDCS-1 |
 
 ## Protocol-id ranges (carriage)
 

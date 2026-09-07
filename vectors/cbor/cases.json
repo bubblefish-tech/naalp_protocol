@@ -243,6 +243,11 @@
       "name": "duplicate_key",
       "bytes_hex": "a201000101",
       "expect": "NonCanonical"
+    },
+    {
+      "name": "float_half",
+      "bytes_hex": "f93e00",
+      "expect": "NonCanonical"
     }
   ],
   "sha384_kat": {
