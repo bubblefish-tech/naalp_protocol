@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "naalp-mcp-guard"
+version = "0.1.0"
+description = "N-AALP one-command MCP guard: effect-authorization + human-approval + PQ-signed per-effect receipts in front of any MCP server."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+
+[project.scripts]
+naalp-mcp-guard = "naalp_mcp_guard.cli:main"
+
+[tool.setuptools]
+packages = ["naalp_mcp_guard"]
+
+# KNOWN LIMITATION (stated honestly -- see README "Known limitations"): this package's
+# `_bootstrap.py` locates its `naalp` / `naalp_mcp_bridge` / `naalp_hitl` dependencies by walking
+# UP from its own file location to the sibling source trees inside this repo -- it does not
+# declare them as installable PyPI dependencies because none of the three is published there yet.
+# `pip install -e .` (an editable install, which keeps this file at its real repo path) works
+# today; a non-editable wheel install does NOT, because the sibling trees would no longer be
+# reachable by relative path. Real standalone `uvx naalp-mcp-guard` distribution needs the three
+# dependencies vendored or published alongside this package -- tracked as ecosystem-wide
+# packaging follow-up work, not part of this task's Group 6 core.
